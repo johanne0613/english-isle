@@ -1181,7 +1181,14 @@ ${lines.join('\n')}
    FIREBASE_CONFIG 貼 Firebase 給的設定；TEACHERS 是能進後台的 Gmail
    （真正的權限由 Firestore 規則決定，這裡只是畫面判斷）
    ========================================================== */
-const FIREBASE_CONFIG = null;
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyB3jwNuOWZEa1OvDlIz7ZcHbbhH-iXyGzU',
+  authDomain: 'english-isle.firebaseapp.com',
+  projectId: 'english-isle',
+  storageBucket: 'english-isle.firebasestorage.app',
+  messagingSenderId: '837870704801',
+  appId: '1:837870704801:web:ce49c18fb4227b9d6db8e0'
+};
 const EMU = /[?&]emu=1/.test(location.search);
 const TEACHERS = EMU ? ['teacher@example.com'] : ['johannetsai@gmail.com', 'taffydavid7177@gmail.com'];
 const FB_VER = '10.12.2';
