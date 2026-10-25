@@ -78,6 +78,13 @@ label{font-size:13px;color:var(--muted);font-weight:600}
 .chip-btn:hover{border-color:var(--pumpkin)}
 .mic-test{margin-top:26px;padding-top:18px;border-top:1px dashed var(--line);display:grid;gap:10px}
 .mic-test .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.meter{height:12px;max-width:340px;border-radius:6px;background:var(--sea-deep);overflow:hidden;border:1px solid var(--line)}
+.meter i{display:block;height:100%;width:0;background:var(--r3);transition:width .08s linear}
+.alts{font-family:var(--f-learn);font-size:16px;color:var(--muted)}
+.help{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 16px}
+.help summary{cursor:pointer;font-weight:700}
+.help ol{display:grid;gap:8px;margin-top:10px;font-size:15px}
+.help code{background:var(--sea-deep);border-radius:6px;padding:1px 6px;font-size:13px;word-break:break-all}
 @media (max-width:820px){.login{grid-template-columns:1fr;min-height:0}}
 
 /* 這段在做什麼：島嶼地圖 */
@@ -190,6 +197,8 @@ label{font-size:13px;color:var(--muted);font-weight:600}
 .mic-btn .mi{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--pumpkin-ink);color:var(--pumpkin)}
 .mic-btn .mi svg{width:20px;height:20px}
 .mic-btn.on{background:var(--rec)}
+.mic-btn.wait{background:var(--card-2);color:var(--muted)}
+.mic-btn.wait .mi{background:var(--sea-deep);color:var(--muted)}
 .mic-btn.on .mi{animation:breathe 1.2s ease-in-out infinite}
 @keyframes breathe{50%{transform:scale(1.15)}}
 .mic-btn.sm{min-height:40px;font-size:14px;padding:6px 14px 6px 8px}
@@ -691,10 +700,18 @@ const Speech = {
     rec.lang = 'en-US';
     rec.interimResults = true;
     rec.maxAlternatives = 5;
-    rec.continuous = !!opts.continuous;
+    // 一律用連續模式，自己判斷「說完了沒」：學生想一下、停一下也不會被切掉
+    rec.continuous = true;
     const finals = [], alts = [];
-    let interim = '', ended = false, errorCode = null;
+    let interim = '', ended = false, errorCode = null, heardAt = 0, readyAt = 0, stopping = false;
+    const began = Date.now();
+    const silenceMs = opts.silenceMs || 1800, waitMs = opts.waitMs || 9000, maxMs = opts.maxMs || 30000;
+    const stopNow = () => { if (stopping) return; stopping = true; try { rec.stop(); } catch (e) { /* 忽略 */ } };
+    const markReady = () => { if (readyAt) return; readyAt = Date.now(); opts.onReady && opts.onReady(); };
+    rec.onaudiostart = markReady; rec.onsoundstart = markReady; rec.onspeechstart = markReady;
     rec.onresult = e => {
+      markReady();
+      heardAt = Date.now();
       interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i];
@@ -707,15 +724,21 @@ const Speech = {
     rec.onend = () => {
       if (ended) return;
       ended = true;
-      clearTimeout(timer);
+      clearInterval(watch);
       if (this.rec === rec) { this.rec = null; this.owner = null; }
       const text = [...finals.filter(Boolean), interim].join(' ').replace(/\s+/g, ' ').trim();
       if (text) opts.onDone && opts.onDone({ text, alts: alts.filter(Boolean) });
       else if (errorCode !== 'aborted') opts.onError && opts.onError(errorCode || 'no-speech');
       opts.onEnd && opts.onEnd();
     };
-    const timer = setTimeout(() => { try { rec.stop(); } catch (e) { /* 忽略 */ } }, opts.maxMs || 20000);
-    try { rec.start(); } catch (e) { clearTimeout(timer); opts.onError && opts.onError('start-failed'); return false; }
+    // 這段在做什麼：每 0.25 秒檢查一次——說完停頓夠久、一直沒開口、或講太久，就收音結束
+    const watch = setInterval(() => {
+      const now = Date.now();
+      if (heardAt && now - heardAt > silenceMs) stopNow();
+      else if (!heardAt && now - (readyAt || began) > waitMs) stopNow();
+      else if (now - began > maxMs) stopNow();
+    }, 250);
+    try { rec.start(); } catch (e) { clearInterval(watch); opts.onError && opts.onError('start-failed'); return false; }
     this.rec = rec; this.owner = opts.owner || null;
     return true;
   },
@@ -725,7 +748,7 @@ const Speech = {
 const MIC_ERRORS = {
   'not-allowed': '麥克風被擋住了。點網址列左邊的圖示，把「麥克風」改成允許，再重新整理。',
   'service-not-allowed': '瀏覽器不讓這個檔案用語音辨識。請改用 Chrome 打開。',
-  'no-speech': '沒聽到聲音。靠近麥克風一點，再按一次。',
+  'no-speech': '沒聽到聲音。等按鈕出現「請說話」再開口，說大聲一點。一直這樣的話，回第一頁按「測試麥克風」檢查。',
   'audio-capture': '找不到麥克風。檢查耳機或麥克風有沒有接好。',
   'network': '語音辨識需要網路。檢查網路後再試一次。',
   'language-not-supported': '這個瀏覽器不支援英文辨識，請改用 Chrome。',
@@ -733,14 +756,16 @@ const MIC_ERRORS = {
 };
 
 /* 這段在做什麼：做出一顆麥克風按鈕，說完會把文字交給 onDone */
-function micControl({ owner, continuous, maxMs, small, label, onDone }) {
+function micControl({ owner, silenceMs, maxMs, small, label, onDone, onReady, onFinish }) {
   const wrap = h('div', { class: 'mic' });
   const live = h('p', { class: 'live', 'aria-live': 'polite' });
   const err = h('p', { class: 'mic-err', 'aria-live': 'polite' });
   const btn = h('button', { class: 'mic-btn' + (small ? ' sm' : ''), type: 'button', 'data-mic': owner });
   const idleLabel = label || '按我開始說';
-  const setIdle = () => { btn.classList.remove('on'); btn.replaceChildren(h('span', { class: 'mi' }, svg(ICON.mic)), idleLabel); };
-  const setOn = () => { btn.classList.add('on'); btn.replaceChildren(h('span', { class: 'mi' }, svg(ICON.stop)), '聆聽中…說完按這裡'); };
+  // 這段在做什麼：按鈕三種狀態——平常、準備中（還不能說）、請說話（開始收音）
+  const setIdle = () => { btn.classList.remove('on', 'wait'); btn.replaceChildren(h('span', { class: 'mi' }, svg(ICON.mic)), idleLabel); };
+  const setWait = () => { btn.classList.remove('on'); btn.classList.add('wait'); btn.replaceChildren(h('span', { class: 'mi' }, svg(ICON.mic)), '準備中，先不要說…'); };
+  const setOn = () => { btn.classList.remove('wait'); btn.classList.add('on'); btn.replaceChildren(h('span', { class: 'mi' }, svg(ICON.stop)), small ? '請說話' : '請說話…說完會自動停'); };
   setIdle();
   if (!Speech.supported()) {
     btn.disabled = true;
@@ -754,13 +779,14 @@ function micControl({ owner, continuous, maxMs, small, label, onDone }) {
     live.textContent = '';
     try { speechSynthesis.cancel(); } catch (e) { /* 忽略 */ }
     const ok = Speech.start({
-      owner, continuous, maxMs,
+      owner, silenceMs, maxMs,
+      onReady: () => { if (btn.isConnected) setOn(); onReady && onReady(); },
       onInterim: t => { live.textContent = t; },
       onDone: r => { live.textContent = ''; onDone(r); },
       onError: code => { err.textContent = MIC_ERRORS[code] || '沒有辨識成功，再按一次試試。'; },
-      onEnd: () => { if (btn.isConnected) setIdle(); }
+      onEnd: () => { if (btn.isConnected) setIdle(); onFinish && onFinish(); }
     });
-    if (ok) setOn();
+    if (ok) setWait();
   });
   wrap.append(btn, live, err);
   return wrap;
@@ -973,7 +999,6 @@ function viewLogin() {
     pickStudent(s);
   };
   input.addEventListener('keydown', e => { if (e.key === 'Enter') go1(); });
-  const testRes = h('p', { class: 'live' });
   return h('div', { class: 'login' },
     h('div', null,
       h('p', { class: 'eyebrow' }, 'English Isle・家教課'),
@@ -983,13 +1008,76 @@ function viewLogin() {
       state.roster.length ? h('div', { class: 'roster' },
         h('p', { class: 'label' }, '之前上過課的學生'),
         h('div', { class: 'chips' }, state.roster.map(s => h('button', { class: 'chip-btn', type: 'button', onclick: () => pickStudent(s) }, s.name)))) : null,
-      h('div', { class: 'mic-test' },
-        h('p', { class: 'label' }, '上課前先測試麥克風：按下去，說「Happy Halloween」'),
-        micControl({ owner: 'test', continuous: false, maxMs: 8000, label: '測試麥克風', onDone: r => { testRes.textContent = '電腦聽到：' + r.text; } }),
-        testRes)
+      micTestPanel()
     ),
     h('div', null, islandMap(false))
   );
+}
+/* 這段在做什麼：麥克風測試（音量條＋電腦聽到什麼＋排除問題清單） */
+async function startMeter(bar, devLabel, onLevel) {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AC();
+    const an = ctx.createAnalyser(); an.fftSize = 1024;
+    ctx.createMediaStreamSource(stream).connect(an);
+    const data = new Uint8Array(an.fftSize);
+    const track = stream.getAudioTracks()[0];
+    devLabel.textContent = '正在使用的麥克風：' + ((track && track.label) || '電腦預設的麥克風');
+    let raf = 0;
+    const loop = () => {
+      an.getByteTimeDomainData(data);
+      let sum = 0; for (const v of data) { const x = (v - 128) / 128; sum += x * x; }
+      const rms = Math.sqrt(sum / data.length);
+      bar.style.width = Math.min(100, rms * 500) + '%';
+      onLevel && onLevel(rms);
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+    return () => { cancelAnimationFrame(raf); stream.getTracks().forEach(t => t.stop()); try { ctx.close(); } catch (e) { /* 忽略 */ } bar.style.width = '0%'; };
+  } catch (e) {
+    devLabel.textContent = e && e.name === 'NotAllowedError' ? '麥克風權限被拒絕：點網址列左邊的圖示，把麥克風改成允許。'
+      : e && e.name === 'NotFoundError' ? '找不到麥克風，檢查有沒有接好。' : '拿不到麥克風：' + ((e && e.message) || '');
+    return () => {};
+  }
+}
+function micTestPanel() {
+  const bar = h('i');
+  const devLabel = h('p', { class: 'muted sm' }, '按下去之後，這裡會顯示正在用哪一支麥克風。');
+  const res = h('div', { class: 'mic-test-res', 'aria-live': 'polite' });
+  let stopMeter = null, peak = 0;
+  const copyBtn = h('button', { class: 'btn small', type: 'button' }, '複製這個網址');
+  copyBtn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText('chrome://settings/content/microphone'); copyBtn.textContent = '已複製，貼到網址列'; }
+    catch (e) { copyBtn.textContent = '請手動複製'; }
+  });
+  return h('div', { class: 'mic-test' },
+    h('p', { class: 'label' }, '上課前先測試麥克風'),
+    h('p', { class: 'muted sm' }, '按下按鈕，等它變紅、出現「請說話」，再說：I like Halloween because I can eat candy.'),
+    micControl({ owner: 'test', silenceMs: 1800, maxMs: 12000, label: '測試麥克風',
+      onReady: async () => { peak = 0; res.replaceChildren(); stopMeter = await startMeter(bar, devLabel, v => { if (v > peak) peak = v; }); },
+      onFinish: () => {
+        if (stopMeter) { stopMeter(); stopMeter = null; }
+        if (peak > 0 && peak < 0.015) res.append(h('p', { class: 'mic-err' }, '音量條幾乎沒有動，麥克風收不到聲音。可能是 Chrome 選錯麥克風，請看下面的檢查清單第 3、4 點。'));
+      },
+      onDone: r => {
+        const others = [...new Set((r.alts || []).flat().map(x => x.trim()))].filter(x => x && x.toLowerCase() !== r.text.toLowerCase()).slice(0, 3);
+        res.replaceChildren(
+          h('p', { class: 'heard' }, '電腦聽到：' + r.text),
+          others.length ? h('p', { class: 'alts' }, '其他可能：' + others.join(' / ')) : null);
+      } }),
+    h('div', { class: 'meter', 'aria-hidden': 'true' }, bar),
+    devLabel, res,
+    h('details', { class: 'help' },
+      h('summary', null, '一直說「沒聽到」或聽錯？照這個順序檢查'),
+      h('ol', null,
+        h('li', null, '等按鈕變紅、出現「請說話」再開口。太早說，前面幾個字會被切掉。'),
+        h('li', null, '說話時看音量條有沒有跳動。有跳代表麥克風正常，只是沒聽清楚：說慢一點、說完整一句。'),
+        h('li', null, '音量條不動，代表 Chrome 用錯麥克風。在網址列貼上 ', h('code', null, 'chrome://settings/content/microphone'), '，把最上面的麥克風改成筆電內建的。 ', copyBtn),
+        h('li', null, 'Mac：系統設定 → 隱私權與安全性 → 麥克風，打開 Google Chrome，再把 Chrome 整個關掉重開。Windows：設定 → 隱私權 → 麥克風，允許桌面應用程式使用。'),
+        h('li', null, '不要用藍牙耳機（像 AirPods）的麥克風，最容易聽錯。用筆電內建或有線耳麥。'),
+        h('li', null, '只說一個字最容易聽錯，用完整句子會準很多。'),
+        h('li', null, '請用 Google Chrome。Safari、LINE 裡面直接開、Brave 都常常不能用。'))));
 }
 function pickStudent(s) { state.student = s; state.zoneOpen = 'festival'; go('map'); }
 
@@ -1238,7 +1326,7 @@ function renderQuestion(st, it, k) {
     h('p', { class: 'prompt' }, it.prompt),
     h('div', { class: 'tools' }, speakBtn(it.prompt, '聽題目'), hint.btn),
     hint.content,
-    micControl({ owner: k, continuous: true, maxMs: 45000, onDone: r => handleSpeech(k, r.text, r.alts, t => evalOpen(it.expect || {}, t)) }),
+    micControl({ owner: k, silenceMs: 3000, maxMs: 45000, onDone: r => handleSpeech(k, r.text, r.alts, t => evalOpen(it.expect || {}, t)) }),
     resultBox(k),
     it.follow ? h('p', { class: 'follow' }, h('span', { class: 'tag' }, '老師'), it.follow) : null);
   if (!st.scene) return main;
@@ -1265,7 +1353,7 @@ function renderWord(st, it, k) {
       h('div', { class: 'tools' }, speakBtn(it.word, '聽發音'), ex.btn, zh.btn),
       ex.content, zh.content,
       h('p', { class: 'task' }, 'Say the word. Then make your own sentence.'),
-      micControl({ owner: k, continuous: false, maxMs: 15000, onDone: r => handleSpeech(k, r.text, r.alts, (t, a) => evalWord(it, t, a)) }),
+      micControl({ owner: k, silenceMs: 2000, maxMs: 15000, onDone: r => handleSpeech(k, r.text, r.alts, (t, a) => evalWord(it, t, a)) }),
       resultBox(k)));
 }
 
@@ -1323,7 +1411,7 @@ function renderShadow(st, it, k) {
     h('div', { class: 'tools' },
       speakBtn(it.text, '聽一次'),
       h('span', { class: 'muted sm' }, '先聽，再跟著說一次。也可以回影片重播這一句。')),
-    micControl({ owner: k, continuous: false, maxMs: 15000, label: '按我開始跟讀', onDone: r => handleSpeech(k, r.text, r.alts, t => evalShadow(it.text, t)) }),
+    micControl({ owner: k, silenceMs: 2000, maxMs: 15000, label: '按我開始跟讀', onDone: r => handleSpeech(k, r.text, r.alts, t => evalShadow(it.text, t)) }),
     resultBox(k),
     h('div', { class: 'tools', style: 'margin-top:14px' },
       h('button', { class: 'linkish', type: 'button', onclick: () => { addBox.hidden = !addBox.hidden; if (!addBox.hidden) add.focus(); } }, '＋ 貼上影片逐字稿的句子'),
@@ -1388,7 +1476,7 @@ function renderDialogue(st, it, k) {
     return h('div', { class: 'bubble s' },
       h('span', { class: 'who-l' }, 'You'),
       h('p', { class: 's-hint', hidden: !shown }, l.t),
-      h('div', { class: 'bubble-row' }, micControl({ owner: lk, small: true, continuous: false, maxMs: 15000, label: '換你說', onDone: r => {
+      h('div', { class: 'bubble-row' }, micControl({ owner: lk, small: true, silenceMs: 2000, maxMs: 15000, label: '換你說', onDone: r => {
         s.said[lk] = r.text;
         const e = evalLine(l, r.text);
         s.evals[lk] = e;
@@ -1425,7 +1513,7 @@ function renderPanel(st, it, k) {
         h('div', { class: 'kw' }, it.keywords.map(w => h('span', { class: 'kw-chip' + (hits.has(w) ? ' hit' : '') }, w))),
         h('div', { class: 'tools' }, speakBtn(it.prompt, '聽題目'), model.btn),
         model.content,
-        micControl({ owner: k, continuous: true, maxMs: 45000, onDone: r => { handleSpeech(k, r.text, r.alts, t => evalPanel(it, t)); paintStage(); } }),
+        micControl({ owner: k, silenceMs: 3000, maxMs: 45000, onDone: r => { handleSpeech(k, r.text, r.alts, t => evalPanel(it, t)); paintStage(); } }),
         resultBox(k))));
 }
 
