@@ -1183,7 +1183,7 @@ ${lines.join('\n')}
    ========================================================== */
 const FIREBASE_CONFIG = null;
 const EMU = /[?&]emu=1/.test(location.search);
-const TEACHERS = EMU ? ['teacher@example.com'] : ['johannetsai@gmail.com', 'taffydavid7177@gmail.com'];
+const TEACHERS = EMU ? ['teacher@example.com'] : ['johannetsai@gmail.com'];
 const FB_VER = '10.12.2';
 const dayKey = (ts = Date.now()) => { const d = new Date(ts); return 'd' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()); };
 const plain = o => JSON.parse(JSON.stringify(o));
