@@ -66,11 +66,16 @@ const candyRow = n => h('span', { class: 'rb-c' }, Array.from({ length: n }, () 
    這段在做什麼：把資料存在這台電腦的瀏覽器裡
    （同一台電腦、同一個瀏覽器打開，資料都會在）
    ========================================================== */
+/* 這段在做什麼：測試版（網址有 /beta/）的瀏覽器資料跟正式版分開存，音檔共用正式版那一份 */
+const IS_BETA = /\/beta\//.test(location.pathname);
+const LS_PREFIX = IS_BETA ? 'isle-beta:' : 'isle:';
+const ASSET_BASE = IS_BETA ? '../' : '';
 const LS = {
   ok: true,
-  get(k, d) { try { const v = localStorage.getItem('isle:' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem('isle:' + k, JSON.stringify(v)); return true; } catch (e) { LS.ok = false; return false; } },
-  del(k) { try { localStorage.removeItem('isle:' + k); } catch (e) { /* 忽略 */ } }
+  get(k, d) { try { const v = localStorage.getItem(LS_PREFIX + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  getLive(k, d) { try { const v = localStorage.getItem('isle:' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(LS_PREFIX + k, JSON.stringify(v)); return true; } catch (e) { LS.ok = false; return false; } },
+  del(k) { try { localStorage.removeItem(LS_PREFIX + k); } catch (e) { /* 忽略 */ } }
 };
 (function testStorage() { try { localStorage.setItem('isle:test', '1'); localStorage.removeItem('isle:test'); } catch (e) { LS.ok = false; } })();
 
@@ -81,7 +86,7 @@ const state = {
   students: [], student: null, view: 'loading', tab: null, error: '',
   session: null, stageIdx: 0, itemIdx: 0,
   practice: null,                 // 學生練習中：{ kind, hwId, title, list: [{stageId, itemId}], idx }
-  reportSession: null, drawer: false, lastDone: null, unsubs: [],
+  reportSession: null, drawer: false, lastDone: null, unsubs: [], zoneOpen: 'festival',
   detail: { sid: null, loaded: false, sessions: [], homework: [], practice: [], logs: [] },
   me: { student: null, sessions: [], homework: [], practice: {} }
 };
@@ -126,7 +131,7 @@ const VOICE = {
   manifest: {}, audio: null,
   key: (role, text) => role + '|' + text,
   async load() {
-    try { const r = await fetch('audio/manifest.json', { cache: 'no-cache' }); if (r.ok) this.manifest = await r.json(); }
+    try { const r = await fetch(ASSET_BASE + 'audio/manifest.json', { cache: 'no-cache' }); if (r.ok) this.manifest = await r.json(); }
     catch (e) { /* 直接打開檔案時讀不到音檔清單，就用電腦語音 */ }
   },
   stop() {
@@ -138,7 +143,7 @@ const VOICE = {
     const file = this.manifest[this.key(role || 'teacher', text)];
     if (!file) { TTS.say(text); return; }
     const a = this.audio || (this.audio = new Audio());
-    a.src = file;
+    a.src = ASSET_BASE + file;
     a.preservesPitch = true;
     a.defaultPlaybackRate = a.playbackRate = state.settings.slow ? 0.8 : 1;
     a.play().catch(() => TTS.say(text));
@@ -547,7 +552,7 @@ function islandMap(interactive) {
     const label = h('span', { class: 'label' }, z.zh, h('small', null, z.name));
     const attrs = { class: 'pin' + (z.open ? ' open' : ''), style: `left:${z.x}%;top:${z.y}%` };
     if (interactive) {
-      map.append(h('button', Object.assign(attrs, { type: 'button', 'aria-pressed': String(state.zoneOpen === z.id), onclick: () => go('shome', z.action === 'history' ? 'report' : 'class') }), h('span', { class: 'dot' }), label));
+      map.append(h('button', Object.assign(attrs, { type: 'button', 'aria-pressed': String(state.zoneOpen === z.id), onclick: () => openZone(z) }), h('span', { class: 'dot' }), label));
     } else {
       map.append(h('span', attrs, h('span', { class: 'dot' }), label));
     }
@@ -601,7 +606,7 @@ function viewLesson() {
   return h('div', null,
     h('div', { class: 'lesson-head' },
       h('div', { class: 'lh-left' },
-        h('button', { class: 'btn small ghost', type: 'button', onclick: () => { saveDraft(); openStudent(state.student.id, 'start'); } }, '← 回學生頁'),
+        h('button', { class: 'btn small ghost', type: 'button', onclick: () => { saveDraft(); go('map'); } }, '← 回島上'),
         h('div', null,
           h('p', { class: 'eyebrow' }, `${state.student.name}・${L.level}`),
           h('h1', { class: 'lesson-title' }, L.title + ' ', h('span', { class: 'zh' }, L.zh)))),
@@ -1323,7 +1328,7 @@ function render() {
   stopTimer();
   Speech.abort();
   const V = {
-    loading: viewLoading, setup: viewSetup, error: viewError, tsignin: viewSignIn, dash: viewDash, tstudent: viewTStudent,
+    loading: viewLoading, setup: viewSetup, error: viewError, tsignin: viewSignIn, pick: viewPick, map: viewMap, dash: viewDash, tstudent: viewTStudent,
     lesson: viewLesson, report: viewReport, shome: viewSHome, sreport: viewReport, practice: viewPractice, pdone: viewPracticeDone
   };
   const view = (V[state.view] || viewLoading)();
@@ -1334,17 +1339,27 @@ function render() {
 }
 function topbar() {
   const right = [], busy = state.view === 'lesson' || state.view === 'practice';
+  const tbtn = (label, fn) => h('button', { class: 'btn small ghost', type: 'button', onclick: fn }, label);
   if (state.mode === 'teacher' && Cloud.isTeacher) {
-    if (!busy && state.view !== 'dash') right.push(h('button', { class: 'btn small ghost', type: 'button', onclick: () => go('dash') }, '學生總覽'));
+    const backstage = state.view === 'dash' || state.view === 'tstudent';
+    if (state.student && !backstage && state.view !== 'pick') right.push(h('span', { class: 'who' }, h('span', { class: 'who-dot' }), state.student.name));
+    if (!busy) {
+      if (backstage) right.push(tbtn('回到島上', () => go(state.student ? 'map' : 'pick')));
+      else right.push(tbtn('後台', () => go('dash')));
+      if (state.student && (state.view === 'map' || state.view === 'report')) right.push(tbtn('換學生', () => { state.student = null; go('pick'); }));
+    }
     right.push(h('span', { class: 'muted sm' }, Cloud.user.email));
-    if (!busy) right.push(h('button', { class: 'btn small ghost', type: 'button', onclick: async () => { await Cloud.signOut(); go('tsignin'); } }, '登出'));
+    if (!busy) right.push(tbtn('登出', async () => { await Cloud.signOut(); state.student = null; go('tsignin'); }));
   }
   if (state.mode === 'student' && state.student) right.push(h('span', { class: 'who' }, h('span', { class: 'who-dot' }), state.student.name));
   return h('header', { class: 'topbar' },
     h('button', { class: 'brand', type: 'button', 'aria-label': '回首頁', onclick: () => {
       if (busy) return;
-      go(state.mode === 'student' ? 'shome' : (Cloud.isTeacher ? 'dash' : 'tsignin'));
-    } }, svg(ICON.mark), h('span', null, 'English Isle'), h('small', null, state.mode === 'student' ? '英語島' : '英語島・老師後台')),
+      if (state.mode === 'student') go('shome');
+      else if (Cloud.isTeacher) go(state.student ? 'map' : 'pick');
+      else go('tsignin');
+    } }, svg(ICON.mark), h('span', null, 'English Isle'), h('small', null, '英語島'),
+      IS_BETA ? h('span', { class: 'beta-badge' }, '測試版') : null),
     h('div', { class: 'tb-right' }, right));
 }
 function warnings() {
@@ -1377,9 +1392,9 @@ function viewSignIn() {
   const wrong = Cloud.user && !Cloud.user.isAnonymous && !Cloud.isTeacher;
   return h('div', { class: 'login' },
     h('div', null,
-      h('p', { class: 'eyebrow' }, 'English Isle・老師後台'),
+      h('p', { class: 'eyebrow' }, 'English Isle・老師'),
       h('h1', null, '老師請登入'),
-      h('p', { class: 'lede' }, '登入後可以新增學生、上課評分、派回家任務，也能看到每位學生的練習紀錄。'),
+      h('p', { class: 'lede' }, '登入後選學生、進到島上就能上課。右上角的「後台」可以派回家任務、看學生的練習紀錄。'),
       wrong ? h('p', { class: 'banner' }, h('b', null, '沒有權限'), h('span', null, `${Cloud.user.email} 不是老師帳號。請換一個帳號登入。`)) : null,
       h('div', { class: 'field' }, btn), msg,
       h('p', { class: 'muted sm', style: 'margin-top:18px' }, '學生不用登入，請用老師給的專屬連結打開。')),
@@ -1394,11 +1409,76 @@ async function startTeacher() {
     state.unsubs.push(Cloud.watchStudents(list => {
       state.students = list;
       if (first) { first = false; res(); return; }
-      if (state.view === 'dash') render();
+      if (state.view === 'dash' || state.view === 'pick') render();
     }, e => { state.error = '讀不到學生名單：' + errText(e); go('error'); res(); }));
   });
   state.unsubs.push(Cloud.watchConfig(cfg => applyConfig(cfg)));
-  if (state.view !== 'error') go('dash');
+  if (state.view !== 'error') go('pick');
+}
+
+/* ==========================================================
+   這段在做什麼：前台・選學生 → 島嶼地圖 → 節慶廣場 → 上課（跟舊版一樣的流程）
+   ========================================================== */
+function viewPick() {
+  const active = state.students.filter(s => !s.archived).sort((a, b) => a.name.localeCompare(b.name));
+  const input = h('input', { id: 'student-name', type: 'text', placeholder: '學生英文名，例如 Amy', maxlength: '30', autocomplete: 'off' });
+  const msg = h('p', { class: 'form-msg', 'aria-live': 'polite' });
+  const btn = h('button', { class: 'btn primary', type: 'button' }, '上島');
+  const go1 = async () => {
+    const name = input.value.trim();
+    if (!name) { input.focus(); return; }
+    const found = active.find(s => s.name.toLowerCase() === name.toLowerCase());
+    if (found) { pickStudent(found); return; }
+    btn.disabled = true;
+    try { const sid = await Cloud.addStudent(name); pickStudent({ id: sid, name }); }
+    catch (e) { msg.textContent = '新增失敗：' + errText(e); btn.disabled = false; }
+  };
+  btn.addEventListener('click', go1);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') go1(); });
+  return h('div', null,
+    migrateBanner(),
+    h('div', { class: 'login' },
+      h('div', null,
+        h('p', { class: 'eyebrow' }, 'English Isle・上課'),
+        h('h1', null, '今天誰要上島？'),
+        h('p', { class: 'lede' }, '點學生的名字開始上課。新學生輸入英文名字，按「上島」。'),
+        h('div', { class: 'field' }, input, btn), msg,
+        active.length ? h('div', { class: 'roster' },
+          h('p', { class: 'label' }, '學生'),
+          h('div', { class: 'chips' }, active.map(s => h('button', { class: 'chip-btn', type: 'button', onclick: () => pickStudent(s) }, s.name)))) : null,
+        micTestPanel()),
+      h('div', null, islandMap(false))));
+}
+function pickStudent(s) { state.student = { id: s.id, name: s.name }; state.zoneOpen = 'festival'; go('map'); }
+function openZone(z) {
+  if (state.mode === 'student') { go('shome', z.action === 'history' ? 'report' : 'class'); return; }
+  if (z.action === 'history') { openStudent(state.student.id, 'class'); return; }
+  state.zoneOpen = z.id; render();
+  const p = $('#zone-panel'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function viewMap() {
+  const z = ZONES.find(x => x.id === state.zoneOpen) || ZONES[0];
+  return h('div', null,
+    h('div', { class: 'page-head' },
+      h('div', null, h('p', { class: 'eyebrow' }, '島嶼地圖'), h('h1', { class: 'h1' }, `${state.student.name} 的英語島`)),
+      h('p', { class: 'muted' }, '點地圖上的區域。橘色的區域已經開放。')),
+    islandMap(true),
+    zonePanel(z),
+    h('div', { class: 'zones' }, ZONES.map(x => h('button', { class: 'zone-card', type: 'button', 'aria-pressed': String(x.id === z.id), onclick: () => openZone(x) },
+      h('span', { class: 'status' + (x.open ? ' on' : '') }, x.open ? '開放中' : '即將開放'),
+      h('b', null, x.zh), h('span', { class: 'muted sm' }, x.name + '・' + x.desc)))));
+}
+function zonePanel(z) {
+  const panel = h('section', { class: 'zone-panel', id: 'zone-panel' },
+    h('div', { class: 'zp-head' },
+      h('div', null, h('p', { class: 'eyebrow' }, z.name), h('h2', null, z.zh)),
+      h('span', { class: 'status' + (z.open ? ' on' : '') }, z.open ? '開放中' : '即將開放')),
+    h('p', { class: 'muted', style: 'margin-bottom:16px' }, z.desc));
+  if (z.lessons) z.lessons.forEach(id => panel.append(lessonCard(LESSONS[id])));
+  if (z.plan) panel.append(h('div', { style: 'margin-top:18px' },
+    h('p', { class: 'eyebrow' }, z.open ? '接下來的檔期' : '預計會有'),
+    h('ul', { class: 'plan-list' }, z.plan.map(p => h('li', null, p)))));
+  return panel;
 }
 
 /* ==========================================================
@@ -1443,7 +1523,8 @@ function studentRow(s) {
       : h('span', { class: 'muted sm' }, '沒有回家任務')),
     h('div', { class: 'srow-stat' }, h('span', { class: 'k' }, '上次上課'), h('b', null, s.lastClass ? `${fmtShort(s.lastClass.at)}・${s.lastClass.pct}%` : '—')),
     h('div', { class: 'srow-actions' },
-      h('button', { class: 'btn small primary', type: 'button', onclick: () => openStudent(s.id) }, '查看'),
+      h('button', { class: 'btn small primary', type: 'button', onclick: () => pickStudent(s) }, '上島上課'),
+      h('button', { class: 'btn small', type: 'button', onclick: () => openStudent(s.id) }, '查看'),
       copyBtn('複製連結', () => studentLink(s.id))));
 }
 function copyBtn(label, getText, done) {
@@ -1464,7 +1545,8 @@ function lineMessage(s, hw) {
 
 /* 這段在做什麼：把這台電腦上舊版（還沒有雲端時）的上課紀錄搬上雲端 */
 function migrateBanner() {
-  const local = LS.get('sessions', []), done = new Set(LS.get('migrated', []));
+  const seen = new Set(), local = [...LS.getLive('sessions', []), ...LS.get('sessions', [])].filter(x => x && x.id && !seen.has(x.id) && seen.add(x.id));
+  const done = new Set(LS.get('migrated', []));
   const todo = local.filter(s => !done.has(s.id));
   if (!todo.length) return null;
   const msg = h('span', { class: 'sm' });
@@ -1497,7 +1579,7 @@ function openStudent(sid, tab) {
   const s = state.students.find(x => x.id === sid);
   state.student = { id: sid, name: s ? s.name : '' };
   state.detail = { sid, loaded: false, sessions: [], homework: [], practice: [], logs: [] };
-  go('tstudent', tab || 'hw');
+  go('tstudent', tab && tab !== 'start' ? tab : 'hw');
   loadDetail(sid);
 }
 async function loadDetail(sid) {
@@ -1516,18 +1598,18 @@ function viewTStudent() {
   const s = state.students.find(x => x.id === state.student.id) || state.student;
   const D = state.detail, tab = state.tab || 'hw';
   const hwActive = s.homeworkActive;
-  const tabs = [['hw', '回家任務'], ['class', '課堂報告'], ['log', '練習時間軸'], ['start', '開始上課']];
+  const tabs = [['hw', '回家任務'], ['class', '課堂報告'], ['log', '練習時間軸']];
   let body;
   if (!D.loaded) body = h('div', { class: 'empty' }, '載入中…');
   else if (D.error) body = h('div', { class: 'empty' }, '讀取失敗：' + D.error);
   else if (tab === 'hw') body = tHomework(s);
   else if (tab === 'class') body = tClasses(s);
   else if (tab === 'log') body = tLog(s);
-  else body = h('div', { class: 'zone-panel' }, Object.values(LESSONS).map(lessonCard));
   return h('div', null,
     h('div', { class: 'page-head' },
       h('div', null, h('p', { class: 'eyebrow' }, '學生'), h('h1', { class: 'h1' }, s.name)),
       h('div', { class: 'tools', style: 'margin:0' },
+        h('button', { class: 'btn small primary', type: 'button', onclick: () => pickStudent(s) }, '帶這位學生上島上課'),
         copyBtn('複製學生連結', () => studentLink(s.id)),
         copyBtn('複製 LINE 訊息', () => lineMessage(s, hwActive)),
         h('a', { class: 'btn small ghost', href: studentLink(s.id), target: '_blank', rel: 'noopener' }, '用學生畫面打開'))),
@@ -1702,7 +1784,8 @@ function viewReport() {
   }
   return h('div', null,
     h('div', { class: 'report-tools' },
-      teacher ? h('button', { class: 'btn small ghost', type: 'button', onclick: () => { openStudent(s.studentId, 'class'); } }, '← 回學生頁')
+      teacher ? [h('button', { class: 'btn small ghost', type: 'button', onclick: () => { state.student = { id: s.studentId, name: s.studentName }; go('map'); } }, '← 回島上'),
+        h('button', { class: 'btn small ghost', type: 'button', onclick: () => openStudent(s.studentId, 'class') }, '看這位學生的後台')]
               : h('button', { class: 'btn small ghost', type: 'button', onclick: () => go('shome', 'report') }, '← 回我的島')),
     paper);
 }

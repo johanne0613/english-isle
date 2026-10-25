@@ -132,6 +132,7 @@ label{font-size:13px;color:var(--muted);font-weight:600}
 .zone-card{text-align:left;background:var(--sea-deep);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:grid;gap:6px;color:var(--ink)}
 .zone-card[aria-pressed="true"]{border-color:var(--pumpkin)}
 .zone-card b{font-family:var(--f-display);font-size:18px}
+.zone-card .status{justify-self:start}
 
 /* 這段在做什麼：上課畫面上方（課名、糖果數、計時） */
 .lesson-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
@@ -338,6 +339,7 @@ label{font-size:13px;color:var(--muted);font-weight:600}
 .backup{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:22px;padding-top:16px;border-top:1px dashed var(--line)}
 @media (max-width:700px){.hist-row{grid-template-columns:1fr}.hist-actions{justify-content:flex-start}}
 
+.beta-badge{font-family:var(--f-ui);font-size:12px;font-weight:700;background:var(--r2);color:var(--pumpkin-ink);border-radius:6px;padding:2px 8px}
 /* 這段在做什麼：老師後台（學生總覽、學生頁、時間軸） */
 :where(.rb-c){display:inline-flex;gap:2px;color:var(--pumpkin)}
 :where(.rb-c) svg{width:20px;height:13px}
