@@ -1,90 +1,120 @@
 // 這段在做什麼：用 Google AI Studio（Gemini TTS）把課程裡要唸的句子先錄成 mp3，放進 audio 資料夾
 // 用法：GEMINI_API_KEY=你的金鑰 node tools/make-audio.js
-// 已經錄好的會跳過，所以新增課程後再跑一次，只會錄新的句子。
-// 金鑰只從環境變數讀，不會寫進任何檔案。
+// 免費方案是限制「每天叫幾次」，所以一次請它唸很多句，錄好再依停頓切開。
+// 已經錄好的會跳過，新增課程後再跑一次，只會錄新的句子。金鑰只從環境變數讀，不會寫進任何檔案。
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
+const { execFileSync, spawnSync } = require('child_process');
 const { chromium } = require('playwright');
 
 const KEY = process.env.GEMINI_API_KEY;
 const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(ROOT, 'audio');
+const TMP = path.join(OUT, '.tmp');
 const API = 'https://generativelanguage.googleapis.com/v1beta';
+const MODELS = (process.env.TTS_MODELS || 'gemini-3.8-flash-tts,gemini-3.1-flash-tts-preview,gemini-2.5-flash-preview-tts').split(',');
+const BATCH = Number(process.env.TTS_BATCH || 10);
+const GAP_MS = Number(process.env.TTS_GAP_MS || 21000);
 
-// 這段在做什麼：每個角色用哪個聲音、用什麼語氣唸
+// 這段在做什麼：每個角色用哪個聲音、什麼語氣（寫成「導演筆記」，模型才不會把說明唸出來）
 const ROLES = {
-  teacher: { voice: 'Kore', style: 'Read this aloud clearly and warmly, like a friendly American English teacher talking to a 10-year-old learner, at a natural pace' },
-  word: { voice: 'Kore', style: 'Say this English word once, clearly and naturally, the way a teacher models pronunciation' },
-  green: { voice: 'Sulafat', style: 'Say this warmly and cheerfully, like a kind neighbor greeting a child in a costume on Halloween night' },
-  bones: { voice: 'Algenib', style: 'Say this like a playful, curious old grandpa teasing a trick-or-treater' },
-  haunted: { voice: 'Enceladus', style: 'Say this in a slow, spooky, whispery Halloween voice that is fun and not too scary for children' }
+  teacher: { voice: 'Kore', who: 'Ms. Kore, a friendly American English teacher.', style: 'warm, clear, natural pace, talking to a 10-year-old English learner.' },
+  word: { voice: 'Kore', who: 'Ms. Kore, a friendly American English teacher.', style: 'clear and natural, modeling the pronunciation of single words for a 10-year-old learner.' },
+  green: { voice: 'Sulafat', who: 'Mrs. Green, a kind neighbor greeting a child in a Halloween costume.', style: 'warm, cheerful and friendly.' },
+  bones: { voice: 'Algenib', who: 'Mr. Bones, a playful, curious old grandpa teasing a trick-or-treater.', style: 'playful, a little gravelly, amused.' },
+  haunted: { voice: 'Enceladus', who: 'The Haunted House, a spooky voice behind an old door.', style: 'slow, whispery and spooky, but fun and not too scary for children.' }
 };
 
-// 這段在做什麼：檔名用「角色＋句子」算出來的短代碼，句子改了就會重錄
 function fnv(str) {
   let h = 0x811c9dc5;
   for (const ch of Buffer.from(str, 'utf8')) { h ^= ch; h = Math.imul(h, 0x01000193) >>> 0; }
   return h.toString(16).padStart(8, '0');
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const relOf = c => `audio/${c.role}-${fnv(c.role + '|' + c.text)}.mp3`;
+const ff = args => execFileSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', ...args]);
+const dur = f => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f]).toString().trim());
 
-async function api(url, body) {
-  const res = await fetch(url, {
-    method: body ? 'POST' : 'GET',
-    headers: { 'x-goog-api-key': KEY, 'content-type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined
-  });
-  const json = await res.json().catch(() => ({}));
-  return { status: res.status, json };
-}
-
-// 這段在做什麼：找出目前可以用的 TTS 模型（名字裡有 tts 的）
-async function pickModel() {
-  if (process.env.TTS_MODEL) return process.env.TTS_MODEL;
-  const { status, json } = await api(`${API}/models?pageSize=1000`);
-  if (status !== 200) throw new Error('讀不到模型清單：' + JSON.stringify(json).slice(0, 300));
-  const names = (json.models || []).map(m => m.name.replace('models/', '')).filter(n => /tts/i.test(n));
-  console.log('可用的 TTS 模型：', names.join(', ') || '（沒有）');
-  const pick = names.find(n => /flash/.test(n) && !/preview/.test(n)) || names.find(n => /flash/.test(n)) || names[0];
-  if (!pick) throw new Error('這把金鑰沒有可用的 TTS 模型');
-  return pick;
-}
-
-// 這段在做什麼：錄一句。Google 回傳的是原始聲音資料，用 ffmpeg 轉成 mp3、修掉前後空白
-async function record(model, role, text, file) {
+function prompt(role, lines) {
   const r = ROLES[role] || ROLES.teacher;
-  const body = {
-    contents: [{ parts: [{ text: `${r.style}: ${text}` }] }],
-    generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: r.voice } } } }
-  };
-  for (let attempt = 1; attempt <= 6; attempt++) {
-    const { status, json } = await api(`${API}/models/${model}:generateContent`, body);
-    if (status === 200) {
-      const part = (json.candidates?.[0]?.content?.parts || []).find(p => p.inlineData);
-      if (!part) throw new Error('沒有拿到聲音：' + JSON.stringify(json).slice(0, 200));
-      const mime = part.inlineData.mimeType || '';
-      const rate = (mime.match(/rate=(\d+)/) || [])[1] || '24000';
-      const pcm = file.replace(/\.mp3$/, '.pcm');
-      fs.writeFileSync(pcm, Buffer.from(part.inlineData.data, 'base64'));
-      execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 's16le', '-ar', rate, '-ac', '1', '-i', pcm,
-        '-af', 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,adelay=120',
-        '-codec:a', 'libmp3lame', '-b:a', '64k', file]);
-      fs.unlinkSync(pcm);
-      return;
+  return `# AUDIO PROFILE: ${r.who}
+### DIRECTOR'S NOTES
+Style: ${r.style}
+The transcript has ${lines.length} separate lines. Read each line exactly as written, as its own separate utterance.
+After each line, stay completely silent for two full seconds before starting the next line.
+Do not read these notes, any numbers, or any labels aloud.
+#### TRANSCRIPT
+${lines.join('\n')}`;
+}
+
+// 這段在做什麼：呼叫 Google。遇到「每分鐘太多次」就等；「今天額度用完」就換下一個模型
+let modelIdx = 0;
+async function speak(role, lines) {
+  const r = ROLES[role] || ROLES.teacher;
+  while (modelIdx < MODELS.length) {
+    const model = MODELS[modelIdx];
+    const res = await fetch(`${API}/models/${model}:generateContent`, {
+      method: 'POST', headers: { 'x-goog-api-key': KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt(role, lines) }] }],
+        generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: r.voice } } } } })
+    });
+    const j = await res.json().catch(() => ({}));
+    if (res.status === 200) {
+      const part = (j.candidates?.[0]?.content?.parts || []).find(p => p.inlineData);
+      if (!part) throw new Error('沒有拿到聲音：' + JSON.stringify(j).slice(0, 200));
+      return { buf: Buffer.from(part.inlineData.data, 'base64'), mime: part.inlineData.mimeType || '', model };
     }
-    if (status === 429 || status >= 500) {
-      const retry = JSON.stringify(json).match(/"retryDelay":\s*"(\d+)s"/);
-      const wait = retry ? Number(retry[1]) * 1000 + 1000 : 15000 * attempt;
-      const daily = /PerDay|per day/i.test(JSON.stringify(json));
-      if (daily) throw Object.assign(new Error('今天的免費額度用完了'), { daily: true });
-      console.log(`  太快了，等 ${Math.round(wait / 1000)} 秒再試（第 ${attempt} 次）`);
-      await sleep(wait);
-      continue;
-    }
-    throw new Error(`錄音失敗（${status}）：` + JSON.stringify(json).slice(0, 300));
+    const quota = (j.error?.details || []).flatMap(d => d.violations || []).map(v => v.quotaId || '').join(',');
+    if (res.status === 429 && /PerDay/i.test(quota)) { console.log(`  ${model} 今天額度用完，換下一個模型`); modelIdx++; continue; }
+    if (res.status === 429 || res.status >= 500) { console.log(`  太快了（${res.status}），等 30 秒`); await sleep(30000); continue; }
+    if (res.status === 404 || res.status === 400) { console.log(`  ${model} 不能用（${res.status}），換下一個`); modelIdx++; continue; }
+    throw new Error(`錄音失敗（${res.status}）：` + JSON.stringify(j).slice(0, 300));
   }
-  throw new Error('重試太多次，先停下來');
+  throw Object.assign(new Error('所有模型今天的額度都用完了'), { exhausted: true });
+}
+
+// 這段在做什麼：把一整段錄音，依「最長的幾段停頓」切成一句一句
+function splitWav(wav, n) {
+  const total = dur(wav);
+  const log = spawnSync('ffmpeg', ['-hide_banner', '-i', wav, '-af', 'silencedetect=noise=-42dB:d=0.3', '-f', 'null', '-']).stderr.toString();
+  const sil = [];
+  let start = null;
+  for (const line of log.split('\n')) {
+    const s = line.match(/silence_start: ([\d.]+)/); if (s) start = Number(s[1]);
+    const e = line.match(/silence_end: ([\d.]+)/); if (e && start != null) { sil.push({ a: start, b: Number(e[1]) }); start = null; }
+  }
+  const inner = sil.filter(x => x.a > 0.05 && x.b < total - 0.05);
+  if (inner.length < n - 1) return null;
+  const cuts = inner.sort((x, y) => (y.b - y.a) - (x.b - x.a)).slice(0, n - 1).map(x => (x.a + x.b) / 2).sort((x, y) => x - y);
+  const bounds = [0, ...cuts, total];
+  return bounds.slice(0, -1).map((a, i) => ({ a, b: bounds[i + 1] }));
+}
+function saveClip(wav, seg, file) {
+  ff(['-ss', seg.a.toFixed(3), '-to', seg.b.toFixed(3), '-i', wav,
+    '-af', 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,apad=pad_dur=0.25',
+    '-codec:a', 'libmp3lame', '-b:a', '64k', file]);
+}
+
+async function recordBatch(role, items, manifest, manifestPath) {
+  const { buf, mime, model } = await speak(role, items.map(c => c.text));
+  fs.mkdirSync(TMP, { recursive: true });
+  const raw = path.join(TMP, 'batch.raw'), wav = path.join(TMP, 'batch.wav');
+  fs.writeFileSync(raw, buf);
+  if (/wav/i.test(mime) || buf.slice(0, 4).toString() === 'RIFF') ff(['-i', raw, '-ac', '1', wav]);
+  else ff(['-f', 's16le', '-ar', (mime.match(/rate=(\d+)/) || [])[1] || '24000', '-ac', '1', '-i', raw, wav]);
+  const segs = splitWav(wav, items.length);
+  if (!segs) return { ok: false, model };
+  items.forEach((c, i) => {
+    const rel = relOf(c);
+    saveClip(wav, segs[i], path.join(ROOT, rel));
+    const d = dur(path.join(ROOT, rel)), words = c.text.split(/\s+/).length;
+    const expect = words * 0.36 + 0.5;
+    const flag = d < expect * 0.4 || d > expect * 2.6 ? '  ← 長度怪怪的，請試聽' : '';
+    console.log(`    ${d.toFixed(1)}s  ${c.text.slice(0, 60)}${flag}`);
+    manifest[c.role + '|' + c.text] = rel;
+  });
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 1));
+  return { ok: true, model };
 }
 
 (async () => {
@@ -101,32 +131,36 @@ async function record(model, role, text, file) {
 
   const manifestPath = path.join(OUT, 'manifest.json');
   const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : {};
-  const todo = catalog.filter(c => {
-    const rel = `audio/${c.role}-${fnv(c.role + '|' + c.text)}.mp3`;
-    return !(manifest[c.role + '|' + c.text] === rel && fs.existsSync(path.join(ROOT, rel)));
-  });
+  const todo = catalog.filter(c => !(manifest[c.role + '|' + c.text] === relOf(c) && fs.existsSync(path.join(ROOT, relOf(c)))));
   console.log(`共 ${catalog.length} 句，要錄 ${todo.length} 句`);
-  if (!todo.length) return;
 
-  const model = await pickModel();
-  console.log('使用模型：', model);
-  let done = 0;
+  // 這段在做什麼：同一個角色的句子分組，一組一次錄
+  const queue = [];
+  const byRole = {};
+  todo.forEach(c => (byRole[c.role] = byRole[c.role] || []).push(c));
+  Object.entries(byRole).forEach(([role, list]) => { for (let i = 0; i < list.length; i += BATCH) queue.push({ role, items: list.slice(i, i + BATCH) }); });
+
+  let first = true;
   try {
-    for (const c of todo) {
-      const rel = `audio/${c.role}-${fnv(c.role + '|' + c.text)}.mp3`;
-      process.stdout.write(`[${++done}/${todo.length}] ${c.role}：${c.text.slice(0, 50)}\n`);
-      await record(model, c.role, c.text, path.join(ROOT, rel));
-      manifest[c.role + '|' + c.text] = rel;
-      fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 1));
-      await sleep(Number(process.env.TTS_GAP_MS || 2500));
+    while (queue.length) {
+      const job = queue.shift();
+      if (!first) await sleep(GAP_MS);
+      first = false;
+      console.log(`[${job.role}] 一次錄 ${job.items.length} 句（剩 ${queue.length} 組）`);
+      const r = await recordBatch(job.role, job.items, manifest, manifestPath);
+      if (r.ok) { console.log(`  完成（${r.model}）`); continue; }
+      if (job.items.length === 1) { console.log('  切不開，跳過這句'); continue; }
+      const half = Math.ceil(job.items.length / 2);
+      console.log('  停頓不夠清楚、切不開，分成兩半重錄');
+      queue.unshift({ role: job.role, items: job.items.slice(half) }, ); queue.unshift({ role: job.role, items: job.items.slice(0, half) });
     }
   } catch (e) {
     console.error('\n停下來了：' + e.message);
-    console.error(`已錄好 ${Object.keys(manifest).length} 句，之後再跑一次會接著錄。`);
     process.exitCode = 2;
   }
-  // 這段在做什麼：清掉已經不用的舊音檔紀錄
   const valid = new Set(catalog.map(c => c.role + '|' + c.text));
   Object.keys(manifest).forEach(k => { if (!valid.has(k)) delete manifest[k]; });
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 1));
+  fs.rmSync(TMP, { recursive: true, force: true });
+  console.log(`\n已錄好 ${Object.keys(manifest).length} / ${catalog.length} 句`);
 })();
