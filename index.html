@@ -1,0 +1,1837 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>English Isle 英語島</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Grandstander:wght@500;700;800&display=swap">
+<style>
+/* 這段在做什麼：整體配色與字體（想換顏色，改這一區就好） */
+/* 版面概念：夜裡的小島地圖當首頁；上課頁上半給學生看、下半是老師評分區；報告是一張可以截圖給家長的紙卡 */
+:root{
+  --sea:#0f2b39; --sea-deep:#0a202c; --sea-line:#24536a;
+  --card:#15384a; --card-2:#1c4558; --line:#2e5d72;
+  --ink:#f6f0e4; --muted:#a9c0c8;
+  --sand:#ecd09b; --grass:#4c875a; --grass-2:#3a6e48;
+  --pumpkin:#ff8a3d; --pumpkin-ink:#2b1405; --moon:#ffe6a1;
+  --r1:#ff9d8b; --r2:#ffd166; --r3:#7fd6a0; --rec:#ff5d5d;
+  --paper:#fffaf0; --paper-ink:#25313a; --paper-muted:#65737c; --paper-line:#eadfc9; --paper-soft:#f7efdf;
+  --f-display:"Grandstander","PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-learn:"Andika","Segoe UI","PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-ui:system-ui,-apple-system,"Segoe UI","PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--sea);color:var(--ink)}
+body{font-family:var(--f-ui);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1160px;margin:0 auto;padding:18px max(16px,env(safe-area-inset-right,0px)) 64px max(16px,env(safe-area-inset-left,0px))}
+h1,h2,h3{margin:0;text-wrap:balance;line-height:1.2}
+p{margin:0}
+ul,ol{margin:0;padding-left:1.2em}
+a{color:var(--moon)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.45}
+:focus-visible{outline:3px solid var(--moon);outline-offset:2px}
+[hidden]{display:none!important}
+.muted{color:var(--muted)}
+.sm{font-size:14px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:650}
+.spacer{flex:1 1 auto}
+
+/* 這段在做什麼：按鈕和輸入框的共同樣式 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:9px 16px;border-radius:12px;border:1px solid var(--line);background:var(--card-2);font-weight:650;text-decoration:none;color:var(--ink);white-space:nowrap}
+.btn:hover:not(:disabled){border-color:var(--muted)}
+.btn.primary{background:var(--pumpkin);color:var(--pumpkin-ink);border-color:transparent}
+.btn.ghost{background:transparent}
+.btn.small{min-height:36px;padding:6px 12px;font-size:14px}
+.btn.armed{background:var(--rec);color:var(--pumpkin-ink);border-color:transparent}
+.btn svg{width:18px;height:18px;flex:none}
+.linkish{background:none;border:0;padding:0;color:var(--moon);text-decoration:underline;cursor:pointer;font-size:14px}
+input[type=text],input[type=url],select,textarea{background:var(--sea-deep);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;width:100%}
+textarea{min-height:90px;resize:vertical;line-height:1.5}
+label{font-size:13px;color:var(--muted);font-weight:600}
+
+/* 這段在做什麼：最上面那一條（島名、學生、存檔狀態） */
+.topbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;font-family:var(--f-display);font-weight:800;font-size:22px;color:var(--ink)}
+.brand small{font-family:var(--f-ui);font-weight:500;font-size:13px;color:var(--muted)}
+.brand svg{width:34px;height:34px}
+.tb-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.who{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-weight:700}
+.who-dot{width:10px;height:10px;border-radius:50%;background:var(--pumpkin)}
+.banner{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--r2);border-radius:14px;padding:12px 16px;margin-bottom:16px;font-size:15px}
+.banner b{color:var(--r2)}
+
+/* 這段在做什麼：登入畫面 */
+.login{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:32px;align-items:center;min-height:60vh}
+.login h1{font-family:var(--f-display);font-size:clamp(34px,5vw,54px);font-weight:800;margin:6px 0 10px}
+.lede{font-size:17px;color:var(--muted);max-width:34em;margin-bottom:20px}
+.field{display:flex;gap:10px;flex-wrap:wrap}
+.field input{flex:1 1 220px;min-width:0;font-size:18px}
+.roster{margin-top:22px}
+.roster .label{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip-btn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:700;font-size:16px}
+.chip-btn:hover{border-color:var(--pumpkin)}
+.mic-test{margin-top:26px;padding-top:18px;border-top:1px dashed var(--line);display:grid;gap:10px}
+.mic-test .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+@media (max-width:820px){.login{grid-template-columns:1fr;min-height:0}}
+
+/* 這段在做什麼：島嶼地圖 */
+.map{position:relative;aspect-ratio:1000/620;width:100%;max-width:100%;border-radius:22px;overflow:hidden;border:1px solid var(--line);background:var(--sea-deep)}
+.map svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.f-sea{fill:var(--sea-deep)} .f-moon{fill:var(--moon)} .stop-moon{stop-color:var(--moon)}
+.island{fill:var(--grass);stroke:var(--sand);stroke-width:30;stroke-linejoin:round;paint-order:stroke}
+.s-wave{fill:none;stroke:var(--sea-line);stroke-width:3;stroke-linecap:round}
+.f-lagoon{fill:var(--sea);stroke:var(--sand);stroke-width:8}
+.f-tree{fill:var(--grass-2)} .f-sandc{fill:var(--sand)} .f-mtn{fill:var(--grass-2)} .f-snow{fill:var(--ink)}
+.f-light{fill:var(--ink)} .f-stripe{fill:var(--pumpkin)} .f-beam{fill:var(--moon);opacity:.16}
+.f-pumpkin{fill:var(--pumpkin)} .s-path{fill:none;stroke:var(--sand);stroke-width:4;stroke-dasharray:2 12;stroke-linecap:round;opacity:.75}
+.pin{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:6px;color:var(--ink)}
+.pin .dot{width:20px;height:20px;border-radius:50%;background:var(--muted);border:3px solid var(--sea-deep)}
+.pin.open .dot{background:var(--pumpkin)}
+.pin .label{font-family:var(--f-display);font-weight:700;font-size:15px;line-height:1.15;background:color-mix(in srgb,var(--sea-deep) 82%,transparent);padding:4px 10px;border-radius:10px;white-space:nowrap;text-align:center}
+.pin .label small{display:block;font-family:var(--f-ui);font-size:11px;font-weight:600;color:var(--muted)}
+.pin[aria-pressed="true"] .label{background:var(--pumpkin);color:var(--pumpkin-ink)}
+.pin[aria-pressed="true"] .label small{color:var(--pumpkin-ink)}
+.pin.open .dot{animation:pulse 2.4s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--pumpkin) 60%,transparent)}100%{box-shadow:0 0 0 16px transparent}}
+@media (max-width:620px){.pin .label{font-size:12px;padding:2px 6px}.pin .label small{display:none}.pin .dot{width:14px;height:14px}}
+.map.static .pin{pointer-events:none}
+
+.page-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
+.h1{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,3.6vw,38px)}
+
+/* 這段在做什麼：地圖下方的區域介紹與課程卡 */
+.zone-panel{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:clamp(18px,3vw,28px)}
+.zp-head{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.zp-head h2{font-family:var(--f-display);font-size:26px}
+.status{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.status.on{background:var(--pumpkin);border-color:transparent;color:var(--pumpkin-ink)}
+.lesson-card{display:grid;gap:18px}
+.lc-title{font-family:var(--f-display);font-size:clamp(24px,3vw,32px);font-weight:800}
+.lc-title span{font-family:var(--f-ui);font-size:.6em;font-weight:600;color:var(--muted);margin-left:8px}
+.lc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.lc-grid>div{background:var(--sea-deep);border-radius:14px;padding:14px 16px;min-width:0}
+.lc-grid h3{font-size:14px;color:var(--moon);margin-bottom:8px;letter-spacing:.04em}
+.lc-grid li{margin-bottom:4px}
+.flow li span{color:var(--muted);font-size:13px}
+.lc-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.plan-list{display:grid;gap:6px;margin-top:6px}
+.zones{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:18px}
+.zone-card{text-align:left;background:var(--sea-deep);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:grid;gap:6px;color:var(--ink)}
+.zone-card[aria-pressed="true"]{border-color:var(--pumpkin)}
+.zone-card b{font-family:var(--f-display);font-size:18px}
+
+/* 這段在做什麼：上課畫面上方（課名、糖果數、計時） */
+.lesson-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.lh-left{display:flex;gap:14px;align-items:center;min-width:0}
+.lh-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lesson-title{font-family:var(--f-display);font-size:clamp(22px,3vw,30px);font-weight:800}
+.lesson-title .zh{font-family:var(--f-ui);font-size:.6em;color:var(--muted);font-weight:600}
+.counter{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 16px 4px 10px;font-family:var(--f-display);font-weight:800;font-size:24px;color:var(--pumpkin);font-variant-numeric:tabular-nums}
+.counter svg{width:34px;height:22px}
+.counter.pop{animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+.timer{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700;min-width:54px;text-align:center}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;margin:16px 0 12px;scrollbar-width:thin}
+.tab{flex:0 0 auto;display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:8px 14px 8px 10px;text-align:left;color:var(--ink)}
+.tab-n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--sea-deep);font-weight:800;font-size:13px}
+.tab-t{display:grid;line-height:1.25}
+.tab-t b{font-size:15px}
+.tab .prog{font-size:12px;color:var(--muted)}
+.tab[aria-current="true"]{background:var(--pumpkin);color:var(--pumpkin-ink);border-color:transparent}
+.tab[aria-current="true"] .prog{color:var(--pumpkin-ink)}
+.tab[aria-current="true"] .tab-n{background:var(--pumpkin-ink);color:var(--pumpkin)}
+.tab.done .tab-n{background:var(--r3);color:var(--pumpkin-ink)}
+
+/* 這段在做什麼：給學生看的題目卡 */
+.stage{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:clamp(18px,3vw,30px)}
+.stage-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:18px}
+.stage-title{font-family:var(--f-display);font-size:24px;font-weight:800;margin:2px 0 4px}
+.stage-intro{color:var(--muted);font-family:var(--f-learn);font-size:17px}
+.dots{display:flex;flex-wrap:wrap;gap:6px;max-width:100%}
+.dotb{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--sea-deep);font-weight:700;font-size:13px;color:var(--muted)}
+.dotb.r1{background:var(--r1);color:var(--pumpkin-ink);border-color:transparent}
+.dotb.r2{background:var(--r2);color:var(--pumpkin-ink);border-color:transparent}
+.dotb.r3{background:var(--r3);color:var(--pumpkin-ink);border-color:transparent}
+.dotb[aria-current="true"]{outline:3px solid var(--ink);outline-offset:1px}
+.prompt{font-family:var(--f-learn);font-size:clamp(25px,3.4vw,36px);line-height:1.3;font-weight:700;margin:6px 0 14px;text-wrap:balance}
+.prompt.sm{font-size:clamp(21px,2.6vw,28px)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.hint{font-family:var(--f-learn);font-size:20px;background:var(--sea-deep);border:1px dashed var(--line);border-radius:12px;padding:10px 14px;margin-bottom:12px}
+.follow{font-size:15px;color:var(--muted);margin-top:4px}
+.tag{display:inline-block;font-size:12px;font-weight:700;background:var(--sea-deep);border:1px solid var(--line);border-radius:6px;padding:1px 8px;margin-right:8px;color:var(--moon)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+
+/* 這段在做什麼：看圖說說的街景（用 emoji 拼成） */
+.scene{position:relative;aspect-ratio:16/9;width:100%;max-width:100%;border-radius:16px;overflow:hidden;background:linear-gradient(var(--sea-deep),var(--card-2));border:1px solid var(--line);container-type:inline-size}
+.scene .moon{position:absolute;right:20%;top:8%;width:10%;aspect-ratio:1;border-radius:50%;background:var(--moon);box-shadow:0 0 40px color-mix(in srgb,var(--moon) 55%,transparent)}
+.scene .ground{position:absolute;left:0;right:0;bottom:0;height:24%;background:var(--grass-2)}
+.se{position:absolute;transform:translate(-50%,-50%);line-height:1;z-index:1}
+.se.s{font-size:22px;font-size:6cqw} .se.m{font-size:30px;font-size:8cqw} .se.l{font-size:38px;font-size:10cqw} .se.xl{font-size:60px;font-size:17cqw}
+
+/* 這段在做什麼：單字卡 */
+.word{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:24px;align-items:start}
+.word-pic{font-size:clamp(80px,12vw,140px);line-height:1;text-align:center;background:var(--sea-deep);border-radius:20px;padding:20px 10px}
+.word-w{font-family:var(--f-learn);font-size:clamp(36px,5vw,56px);font-weight:700;line-height:1.1;margin:4px 0 8px}
+.word-def{font-family:var(--f-learn);font-size:20px;margin-bottom:12px}
+.zh-gloss{font-size:22px;font-weight:700;color:var(--moon);margin-bottom:12px}
+.task{font-family:var(--f-learn);font-size:18px;color:var(--moon);margin:4px 0 10px}
+@media (max-width:620px){.word{grid-template-columns:1fr}.word-pic{padding:12px}}
+
+/* 這段在做什麼：麥克風按鈕和電腦聽到的結果 */
+.mic{display:grid;gap:10px;margin-top:6px}
+.mic-btn{display:inline-flex;align-items:center;gap:12px;justify-self:start;min-height:56px;padding:10px 22px 10px 14px;border-radius:999px;border:0;background:var(--pumpkin);color:var(--pumpkin-ink);font-size:18px;font-weight:800}
+.mic-btn .mi{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--pumpkin-ink);color:var(--pumpkin)}
+.mic-btn .mi svg{width:20px;height:20px}
+.mic-btn.on{background:var(--rec)}
+.mic-btn.on .mi{animation:breathe 1.2s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.15)}}
+.mic-btn.sm{min-height:40px;font-size:14px;padding:6px 14px 6px 8px}
+.mic-btn.sm .mi{width:26px;height:26px}
+.mic-btn.sm .mi svg{width:15px;height:15px}
+.live{font-family:var(--f-learn);font-size:20px;color:var(--muted);min-height:1.5em}
+.mic-err{font-size:15px;color:var(--r1)}
+.result{background:var(--sea-deep);border-radius:16px;padding:14px 16px;display:grid;gap:10px;margin-top:4px}
+.result .heard{font-family:var(--f-learn);font-size:22px;line-height:1.4}
+.result .heard-label{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.06em}
+.checks{display:flex;flex-wrap:wrap;gap:6px}
+.ck{font-size:14px;border-radius:8px;padding:3px 10px;border:1px solid var(--line)}
+.ck.ok{background:color-mix(in srgb,var(--r3) 22%,transparent);border-color:var(--r3)}
+.ck.no{background:color-mix(in srgb,var(--r2) 14%,transparent);border-color:var(--r2)}
+.earn{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:800;font-size:20px;color:var(--pumpkin)}
+.earn svg{width:30px;height:20px}
+.diff{font-family:var(--f-learn);font-size:24px;line-height:1.5}
+.diff .w{padding:0 3px;border-radius:4px}
+.diff .w.hit{color:var(--r3)}
+.diff .w.miss{color:var(--r1);text-decoration:underline wavy;text-underline-offset:5px}
+
+/* 這段在做什麼：影片練習（抓單字、跟讀） */
+.video-card{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;background:var(--sea-deep);border-radius:16px;padding:14px 18px;margin-bottom:16px}
+.video-card b{font-family:var(--f-display);font-size:20px}
+.catch{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.catch button{min-height:64px;border-radius:14px;border:2px dashed var(--line);background:var(--sea-deep);font-family:var(--f-learn);font-size:20px;font-weight:700;color:var(--ink)}
+.catch button[aria-pressed="true"]{border-style:solid;border-color:var(--r3);background:color-mix(in srgb,var(--r3) 24%,var(--sea-deep))}
+.shadow-text{font-family:var(--f-learn);font-size:clamp(24px,3vw,32px);line-height:1.4;font-weight:700;margin:6px 0 14px}
+.add-lines{display:grid;gap:8px;margin-top:18px;padding-top:14px;border-top:1px dashed var(--line)}
+
+/* 這段在做什麼：角色扮演的對話泡泡 */
+.door-head{display:flex;gap:16px;align-items:center;margin-bottom:14px}
+.door-pic{font-size:64px;line-height:1;background:var(--sea-deep);border-radius:18px;padding:10px 14px}
+.door-who{font-family:var(--f-display);font-size:26px;font-weight:800}
+.chat{display:grid;gap:12px}
+.bubble{max-width:min(640px,92%);border-radius:18px;padding:12px 16px;display:grid;gap:8px}
+.bubble .who-l{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.bubble.n{background:var(--card-2);justify-self:start;border-bottom-left-radius:6px}
+.bubble.n p{font-family:var(--f-learn);font-size:21px}
+.bubble.s{background:var(--sea-deep);border:2px solid var(--pumpkin);justify-self:end;border-bottom-right-radius:6px}
+.bubble .s-hint{font-family:var(--f-learn);font-size:19px;color:var(--moon)}
+.bubble .line-res{font-family:var(--f-learn);font-size:18px}
+.bubble .line-res.ok{color:var(--r3)}
+.bubble .line-res.no{color:var(--r2)}
+.bubble-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* 這段在做什麼：說故事的四格圖 */
+.story-title{font-family:var(--f-display);font-size:20px;color:var(--moon);margin-bottom:10px}
+.strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.panel-mini{position:relative;border:1px solid var(--line);background:var(--sea-deep);border-radius:14px;padding:16px 6px;font-size:clamp(22px,3.4vw,36px);line-height:1;color:var(--ink)}
+.panel-mini[aria-current="true"]{border:2px solid var(--pumpkin)}
+.pm-n{position:absolute;top:6px;left:8px;font-size:12px;font-weight:800;color:var(--muted)}
+.panel-big{display:grid;grid-template-columns:minmax(140px,240px) minmax(0,1fr);gap:22px;align-items:start}
+.pb-scene{font-size:clamp(46px,7vw,76px);line-height:1.2;text-align:center;background:var(--sea-deep);border-radius:18px;padding:20px 8px;word-break:break-all}
+.kw{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.kw-chip{font-family:var(--f-learn);font-size:18px;border:1px solid var(--line);border-radius:999px;padding:4px 14px}
+.kw-chip.hit{background:var(--r3);color:var(--pumpkin-ink);border-color:transparent}
+@media (max-width:620px){.strip{grid-template-columns:repeat(2,minmax(0,1fr))}.panel-big{grid-template-columns:1fr}}
+
+/* 這段在做什麼：老師評分區 */
+.tutor{margin-top:16px;background:var(--sea-deep);border:1px dashed var(--line);border-radius:22px;padding:18px clamp(16px,3vw,26px);display:grid;gap:14px}
+.tutor-head{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between}
+.tutor-head h2{font-size:16px;letter-spacing:.06em;color:var(--moon)}
+.suggest{font-size:14px;color:var(--muted)}
+.rate{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.rate-btn{display:grid;gap:2px;justify-items:center;border-radius:14px;padding:10px 6px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+.rate-btn .rb-zh{font-size:18px;font-weight:800}
+.rate-btn .rb-en{font-size:12px;color:var(--muted)}
+.rate-btn .rb-c{display:flex;gap:2px;color:var(--pumpkin)}
+.rate-btn .rb-c svg{width:20px;height:13px}
+.rate-btn.r1[aria-pressed="true"]{background:var(--r1);border-color:var(--r1);color:var(--pumpkin-ink)}
+.rate-btn.r2[aria-pressed="true"]{background:var(--r2);border-color:var(--r2);color:var(--pumpkin-ink)}
+.rate-btn.r3[aria-pressed="true"]{background:var(--r3);border-color:var(--r3);color:var(--pumpkin-ink)}
+.rate-btn[aria-pressed="true"] .rb-en,.rate-btn[aria-pressed="true"] .rb-c{color:var(--pumpkin-ink)}
+.flags{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.flags .label{font-size:13px;color:var(--muted);font-weight:700;margin-right:4px}
+.flag{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 14px;font-size:14px;font-weight:650;color:var(--ink)}
+.flag[aria-pressed="true"]{background:var(--r2);border-color:var(--r2);color:var(--pumpkin-ink)}
+.tnav{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pill{font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--card);border:1px solid var(--line);color:var(--muted)}
+
+/* 這段在做什麼：右側滑出的「教材」面板 */
+.drawer{position:fixed;inset:0;z-index:50;display:flex;justify-content:flex-end}
+.drawer-bg{position:absolute;inset:0;background:color-mix(in srgb,var(--sea-deep) 70%,transparent)}
+.drawer-panel{position:relative;width:min(460px,100%);height:100%;overflow-y:auto;background:var(--card);border-left:1px solid var(--line);padding:20px max(18px,env(safe-area-inset-right,0px)) 40px 20px;display:grid;gap:16px;align-content:start}
+.dp-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.dp-head h2{font-family:var(--f-display);font-size:24px}
+.mats{list-style:none;padding:0;display:grid;gap:10px}
+.mat{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;background:var(--sea-deep);border-radius:14px;padding:12px 14px}
+.mat-kind{font-size:12px;font-weight:800;border-radius:6px;padding:2px 8px;background:var(--card-2);color:var(--moon);white-space:nowrap}
+.mat a{font-weight:700;font-size:16px;word-break:break-word}
+.mat-form{display:grid;gap:8px;background:var(--sea-deep);border-radius:14px;padding:14px}
+.form-msg{font-size:14px;color:var(--r1);min-height:1.2em}
+
+/* 這段在做什麼：下課報告（淺色紙卡，方便截圖給家長） */
+.report-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.paper{color-scheme:light;background:var(--paper);color:var(--paper-ink);border-radius:20px;padding:clamp(20px,4vw,40px);max-width:880px;margin:0 auto;display:grid;gap:26px}
+.paper .eyebrow{color:var(--paper-muted)}
+.paper h1{font-family:var(--f-display);font-size:clamp(26px,3.6vw,36px);font-weight:800}
+.paper h3{font-size:15px;letter-spacing:.06em;color:var(--paper-muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--paper-line)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--paper-muted);font-size:15px;margin-top:6px}
+.score{display:flex;flex-wrap:wrap;gap:20px 36px;align-items:center}
+.big{font-family:var(--f-display);font-weight:800;font-size:64px;line-height:1;color:var(--pumpkin);font-variant-numeric:tabular-nums}
+.big small{font-size:22px;color:var(--paper-muted);margin-left:6px}
+.badge{display:inline-block;background:var(--paper-ink);color:var(--paper);border-radius:999px;padding:6px 16px;font-family:var(--f-display);font-weight:700;font-size:18px}
+.score-meta{display:grid;gap:4px;font-size:15px;color:var(--paper-muted)}
+.bars{display:grid;gap:10px}
+.bar-row{display:grid;grid-template-columns:7.5em minmax(0,1fr) 3em;gap:12px;align-items:center;font-size:15px}
+.bar{height:12px;border-radius:6px;background:var(--paper-line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--pumpkin);border-radius:6px}
+.bar-row b{font-variant-numeric:tabular-nums;text-align:right}
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--paper-line)}
+.tbl th{font-size:12px;color:var(--paper-muted);letter-spacing:.06em}
+.tbl td.num,.tbl th.num{text-align:right}
+.list{list-style:none;padding:0;display:grid;gap:10px}
+.list li{background:var(--paper-soft);border-radius:12px;padding:10px 14px}
+.list .said{font-family:var(--f-learn);font-size:17px;margin-top:2px}
+.list .fl{display:inline-block;font-size:12px;font-weight:700;background:var(--r2);border-radius:6px;padding:1px 8px;margin-left:6px}
+.paper textarea{background:var(--paper-soft);border-color:var(--paper-line);color:var(--paper-ink)}
+.paper .btn{background:var(--paper-soft);border-color:var(--paper-line);color:var(--paper-ink)}
+.paper .btn.primary{background:var(--pumpkin);color:var(--pumpkin-ink);border-color:transparent}
+.copy-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.copy-status{font-size:14px;color:var(--paper-muted)}
+.copy-fallback{min-height:160px;font-size:13px}
+.empty-note{color:var(--paper-muted);font-size:15px}
+
+/* 這段在做什麼：成績港（所有報告列表） */
+.hist{display:grid;gap:10px}
+.hist-row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 16px}
+.hist-row b{font-family:var(--f-display);font-size:18px}
+.hist-pct{display:grid;gap:4px;font-variant-numeric:tabular-nums;font-size:14px}
+.hist-pct .bar{background:var(--sea-deep)}
+.hist-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:16px;padding:28px;text-align:center;color:var(--muted)}
+.backup{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:22px;padding-top:16px;border-top:1px dashed var(--line)}
+@media (max-width:700px){.hist-row{grid-template-columns:1fr}.hist-actions{justify-content:flex-start}}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app" class="wrap"></div>
+
+<script>
+'use strict';
+
+/* ==========================================================
+   這段在做什麼：課程內容
+   之後要加新課程，就照 halloween 的格式再加一份。
+   kind 決定題目長怎樣：question 開放回答、word 單字、catch 抓單字、
+   shadow 跟讀、dialogue 角色扮演、panel 看圖說故事
+   ========================================================== */
+const LESSONS = {
+  halloween: {
+    id: 'halloween', zone: 'festival',
+    title: 'Halloween Night', zh: '萬聖夜口說課',
+    level: 'CEFR A2・Cambridge Flyers', minutes: 60,
+    goals: [
+      '用 12 個萬聖節單字說出完整句子',
+      '看懂一支英文影片，說出 3 個重點',
+      '用 be going to 和過去式談計畫與經驗',
+      '在 trick-or-treat 情境裡主動回應',
+      '比較中元節和萬聖節的不同'
+    ],
+    assess: '學生按麥克風說話，電腦聽寫並給建議分數，老師可以改。每題 1–3 顆糖，下課自動算出六項能力分數。',
+    aiPoint: '語音辨識即時聽寫學生的話，檢查單字、關鍵字和句型。下課後一鍵複製報告給 Claude，寫出家長評語。',
+    video: {
+      title: 'The history of Halloween',
+      source: 'British Council LearnEnglish Kids',
+      url: 'https://learnenglishkids.britishcouncil.org/listen-watch/video-zone/history-halloween'
+    },
+    stages: [
+      {
+        id: 'picture', kind: 'question', title: 'Picture Talk', zh: '看圖說說', minutes: 5,
+        skills: ['ideas', 'fluency'], scene: true,
+        intro: 'Look at the picture. Answer in full sentences.',
+        items: [
+          { id: 'p1', prompt: 'What can you see in the picture? Tell me three things.',
+            hint: 'I can see a … / There is a … / There are some …',
+            follow: 'Where is the bat? What is the cat doing?',
+            expect: { minWords: 10, keywords: ['house','pumpkin','jack o lantern','bat','ghost','cat','moon','witch','vampire','spider','web','tree','candy'], needHits: 3 } },
+          { id: 'p2', prompt: 'What are the children wearing?',
+            hint: 'The girl is wearing a … costume. The boy is dressed as …',
+            follow: 'Which costume do you like best? Why?',
+            expect: { minWords: 8, keywords: ['witch','vampire','costume','hat','cape','wearing','dressed'], needHits: 2 } },
+          { id: 'p3', prompt: 'How do you think the children feel? Why?',
+            hint: 'I think they feel … because …',
+            follow: 'Would you go into that house? Why or why not?',
+            expect: { minWords: 8, because: true, keywords: ['happy','excited','scared','afraid','nervous','brave','fun','surprised'], needHits: 1 } }
+        ]
+      },
+      {
+        id: 'words', kind: 'word', title: 'Word Lab', zh: '單字實驗室', minutes: 10,
+        skills: ['vocab', 'pron'],
+        intro: 'Press the mic. Say the word, then make your own sentence.',
+        items: [
+          { id: 'costume', word: 'costume', pic: '🦸', pos: 'noun', zh: '變裝服', def: 'Clothes you wear to look like a different person or thing.', ex: "I'm wearing a superhero costume tonight." },
+          { id: 'jack', word: "jack-o'-lantern", alt: ['jack o lantern','jackolantern','jack lantern'], pic: '🎃', pos: 'noun', zh: '南瓜燈', def: 'A pumpkin with a face cut into it and a light inside.', ex: "We put a jack-o'-lantern next to the front door." },
+          { id: 'skeleton', word: 'skeleton', pic: '💀', pos: 'noun', zh: '骷髏、骨架', def: 'All the bones inside a body.', ex: "There's a plastic skeleton hanging on the door." },
+          { id: 'witch', word: 'witch', pic: '🧙‍♀️', pos: 'noun', zh: '女巫', def: 'A woman in stories who can do magic.', ex: 'The witch flew over the moon on her broom.' },
+          { id: 'broom', word: 'broom', pic: '🧹', pos: 'noun', zh: '掃帚', def: 'A brush with a long handle for cleaning the floor.', ex: 'Witches in stories ride on brooms.' },
+          { id: 'vampire', word: 'vampire', pic: '🧛', pos: 'noun', zh: '吸血鬼', def: 'A monster in stories that sleeps in the day and wakes up at night.', ex: 'My brother dressed up as a vampire with long teeth.' },
+          { id: 'bat', word: 'bat', pic: '🦇', pos: 'noun', zh: '蝙蝠', def: 'A small animal with wings that flies at night.', ex: 'Bats sleep upside down.' },
+          { id: 'web', word: 'spider web', alt: ['spiderweb','cobweb'], pic: '🕸️', pos: 'noun', zh: '蜘蛛網', def: 'The thin net that a spider makes.', ex: "There's a big spider web in the corner." },
+          { id: 'haunted', word: 'haunted house', alt: ['haunted'], pic: '🏚️', pos: 'noun', zh: '鬼屋', def: 'A house where people think ghosts live.', ex: 'Nobody wants to go into the haunted house.' },
+          { id: 'spooky', word: 'spooky', pic: '👻', pos: 'adjective', zh: '陰森的、有點恐怖的', def: 'A little bit scary, often in a fun way.', ex: 'The music in this movie is so spooky!' },
+          { id: 'decorate', word: 'decorate', pic: '🎀', pos: 'verb', zh: '裝飾', def: 'To make a place look pretty or special.', ex: 'We decorate our classroom with paper bats.' },
+          { id: 'scream', word: 'scream', pic: '😱', pos: 'verb', zh: '尖叫', def: 'To shout very loudly because you are scared or excited.', ex: 'Everyone screamed when the lights went out.' }
+        ]
+      },
+      {
+        id: 'video', kind: 'question', title: 'Watch & Talk', zh: '影片練習', minutes: 15,
+        skills: ['listening', 'ideas'], video: true,
+        intro: 'Watch the video. Catch the words, then talk about it.',
+        items: [
+          { id: 'v1', prompt: 'This video is about the history of Halloween. What do you think you will learn?',
+            hint: 'I think I will learn about … / Maybe Halloween started in …',
+            follow: '看影片前問。猜錯沒關係，看完再對照。',
+            expect: { minWords: 8, keywords: ['think','maybe','learn','started','began','ghosts','costumes','pumpkins','old','long ago'], needHits: 1 } },
+          { id: 'v2', kind: 'catch', title: 'Word Catch 抓單字',
+            prompt: 'While you watch, tap the words you hear.',
+            words: ['Celts','Samhain','ghosts','fire','costumes','turnips','pumpkins','trick or treat','America','October'] },
+          { id: 'v3', prompt: 'Where did Halloween start? How long ago?',
+            hint: 'It started in … more than … years ago.',
+            follow: '答案通常是：Celts、Samhain、兩千多年前。以影片內容為準。',
+            expect: { minWords: 8, keywords: ['celts','celtic','samhain','ireland','britain','scotland','europe','two thousand','years ago','long ago'], needHits: 2 } },
+          { id: 'v4', prompt: 'Why did people wear costumes a long time ago?',
+            hint: 'They wore costumes because they thought …',
+            follow: '可以追問：Do people wear costumes for the same reason today?',
+            expect: { minWords: 8, because: true, past: true, keywords: ['ghost','ghosts','spirit','spirits','scare','scary','hide','afraid','recognize','dead'], needHits: 1 } },
+          { id: 'v5', prompt: 'What did people use before pumpkins? Why did that change?',
+            hint: 'Before pumpkins, people used … In America, …',
+            follow: '常見答案：turnips 蕪菁；移民到美國後改用南瓜。以影片內容為準。',
+            expect: { minWords: 8, keywords: ['turnip','potato','beetroot','vegetable','america','pumpkin','bigger','easier'], needHits: 2 } },
+          { id: 'v6', kind: 'shadow', text: 'Halloween started more than two thousand years ago.', skills: ['pron', 'listening'] },
+          { id: 'v7', kind: 'shadow', text: 'People thought that ghosts came back on that night.', skills: ['pron', 'listening'] },
+          { id: 'v8', kind: 'shadow', text: 'They wore costumes so the ghosts could not find them.', skills: ['pron', 'listening'] },
+          { id: 'v9', prompt: 'Tell me three things you learned from the video.',
+            hint: 'First, … Also, … Finally, …',
+            follow: '鼓勵用 First / Also / Finally 串起來。',
+            expect: { minWords: 15, past: true, keywords: ['celts','samhain','ghosts','spirits','fire','bonfire','costumes','turnips','pumpkins','america','candy','trick or treat','two thousand','october'], needHits: 3 } }
+        ]
+      },
+      {
+        id: 'street', kind: 'dialogue', title: 'Trick-or-Treat Street', zh: '不給糖就搗蛋街', minutes: 10,
+        skills: ['fluency', 'pron'],
+        intro: 'Knock on the doors. The teacher plays the neighbor. You play the trick-or-treater.',
+        items: [
+          { id: 'door1', who: 'Mrs. Green', pic: '🏡', mood: 'A friendly neighbor',
+            lines: [
+              { s: 'n', t: 'Hello there! Wow, look at you! What are you dressed as?' },
+              { s: 's', t: "Trick or treat! I'm dressed as a ___.", expect: [['trick or treat'], ['im','i am','dressed']] },
+              { s: 'n', t: "That's amazing! Did you make it yourself?" },
+              { s: 's', t: 'Yes, I did. / No, my ___ made it for me.', expect: [['yes','no','did','made']] },
+              { s: 'n', t: 'Would you like chocolate or gummy bears?' },
+              { s: 's', t: '___, please. Thank you! Happy Halloween!', expect: [['please'], ['thank','thanks'], ['happy halloween']] }
+            ] },
+          { id: 'door2', who: 'Mr. Bones', pic: '💀', mood: 'A curious grandpa',
+            lines: [
+              { s: 'n', t: 'Trick or treat, eh? Answer my questions first! How many houses have you been to tonight?' },
+              { s: 's', t: "We've been to ___ houses.", expect: [['been to','visited','went to','houses','house']] },
+              { s: 'n', t: "And what's the best treat you've got so far?" },
+              { s: 's', t: 'The best one is ___ because ___.', expect: [['best'], ['because','so']] },
+              { s: 'n', t: "Don't eat it all tonight! Here you are." },
+              { s: 's', t: "Thanks, Mr. Bones! I won't. Good night!", expect: [['thank','thanks'], ['wont','will not','good night']] }
+            ] },
+          { id: 'door3', who: 'The Haunted House', pic: '🏚️', mood: 'A spooky voice behind the door',
+            lines: [
+              { s: 'n', t: 'Whooo is knocking on my door? No candy, unless you answer my riddle! What has a face and two hands, but no arms or legs?' },
+              { s: 's', t: "It's a clock!", expect: [['clock']] },
+              { s: 'n', t: 'Correct! Now YOU tell ME a Halloween joke.' },
+              { s: 's', t: "Why didn't the skeleton go to the party? Because he had no body to go with!", expect: [['skeleton'], ['party'], ['no body','nobody']] },
+              { s: 'n', t: "Ha ha ha! That's terrible! Take two candies." }
+            ] }
+        ]
+      },
+      {
+        id: 'interview', kind: 'question', title: 'Interview Time', zh: '訪問時間', minutes: 10,
+        skills: ['ideas', 'grammar'],
+        intro: 'Answer the questions. Give a reason every time.',
+        items: [
+          { id: 'i1', prompt: 'What are you going to be for Halloween this year? Why?',
+            hint: "I'm going to be a … because …", follow: 'Who will help you make your costume?',
+            expect: { minWords: 10, future: true, because: true } },
+          { id: 'i2', prompt: 'What did you do last Halloween?',
+            hint: 'Last Halloween, I went / wore / ate …', follow: 'Who were you with? Was it fun?',
+            expect: { minWords: 10, past: true } },
+          { id: 'i3', prompt: 'Do you like scary stories or movies? Why or why not?',
+            hint: "I like / don't like … because …", follow: "What's the scariest story you know?",
+            expect: { minWords: 10, because: true } },
+          { id: 'i4', prompt: 'If you could design a haunted house, what would you put inside?',
+            hint: 'I would put … in it, so people would …', follow: 'Would you let your friends in for free?',
+            expect: { minWords: 10, would: true } },
+          { id: 'i5', prompt: 'In Taiwan, we have Ghost Month. How is it different from Halloween?',
+            hint: 'During Ghost Month, people … On Halloween, people …', follow: 'Which one do you like better? Why?',
+            expect: { minWords: 15, keywords: ['ghost month','ghosts','food','burn','money','paper','pray','ancestors','swim','lanterns','costumes','candy','trick or treat','scary'], needHits: 2 } }
+        ]
+      },
+      {
+        id: 'story', kind: 'panel', title: 'Story Time', zh: '說故事', minutes: 10,
+        skills: ['grammar', 'fluency'], storyTitle: 'The House on Maple Street',
+        intro: 'Look at the pictures and tell the story. Use the past tense.',
+        items: [
+          { id: 's1', scene: '🌕 🧙‍♀️ 🧛‍♂️ 🐈‍⬛', prompt: 'What happened first?',
+            keywords: ['last halloween','wore','went','costumes','trick or treating'],
+            model: 'Last Halloween, Amy and Ben wore costumes and went trick-or-treating with their cat.' },
+          { id: 's2', scene: '🏚️ 🕸️ 🕯️', prompt: 'What did they see?',
+            keywords: ['saw','old','house','spider','light','window','there was'],
+            model: 'They saw an old house with spider webs. There was a light in the window.' },
+          { id: 's3', scene: '🚪 💀 😱', prompt: 'What happened next?',
+            keywords: ['knocked','opened','door','jumped','skeleton','screamed','suddenly'],
+            model: 'They knocked on the door. Suddenly, a skeleton jumped out and they screamed!' },
+          { id: 's4', scene: '👴 🍬 😂', prompt: 'How did the story end?',
+            keywords: ['it was','grandpa','laughed','ate','shared','candy'],
+            model: 'It was Grandpa in a skeleton costume! Everyone laughed and shared the candy.' }
+        ]
+      },
+      {
+        id: 'exit', kind: 'question', title: 'Exit Ticket', zh: '下課小任務', minutes: 3,
+        skills: ['vocab', 'ideas'],
+        intro: 'Two quick questions before you go!',
+        items: [
+          { id: 'e1', prompt: 'Tell me three new words you learned today.',
+            hint: 'Today I learned … , … and …',
+            expect: { minWords: 6, keywords: ['costume','jack o lantern','skeleton','witch','broom','vampire','bat','spider web','haunted','spooky','decorate','scream','celts','samhain','turnip'], needHits: 3 } },
+          { id: 'e2', prompt: "What was your favorite part of today's lesson? Why?",
+            hint: 'My favorite part was … because …',
+            expect: { minWords: 8, because: true } }
+        ]
+      }
+    ],
+    materials: [
+      { id: 'bc', kind: '影片', title: 'The history of Halloween（British Council）', url: 'https://learnenglishkids.britishcouncil.org/listen-watch/video-zone/history-halloween', note: '影片練習用這支。頁面上有逐字稿，可以複製句子到「跟讀」。' },
+      { id: 'hist', kind: '影片', title: "Bet You Didn't Know: Halloween（History Channel）", url: 'https://www.youtube.com/results?search_query=bet+you+didn%27t+know+halloween+history+channel', note: 'YouTube 搜尋結果。比較難，適合加深。' },
+      { id: 'broom', kind: '動畫', title: 'Room on the Broom（2012 動畫短片）', url: 'https://www.youtube.com/results?search_query=room+on+the+broom+magic+light+pictures', note: '說故事關的延伸。找 Magic Light Pictures 或 BBC 官方上傳的版本。' },
+      { id: 'ghost', kind: '影片', title: 'Ghost Month in Taiwan（英文介紹）', url: 'https://www.youtube.com/results?search_query=ghost+month+taiwan+explained+english', note: 'YouTube 搜尋結果。訪問第 5 題前可以先看。' },
+      { id: 'twwiki', kind: 'Twinkl', title: 'What is the History of Halloween?（Twinkl Teaching Wiki）', url: 'https://www.twinkl.com/teaching-wiki/history-of-halloween-for-children', note: '影片內容的文字版，可以當課後閱讀。' },
+      { id: 'tw', kind: 'Twinkl', title: 'Twinkl 台灣萬聖節教材', url: 'https://www.twinkl.com.tw/', note: '換成你要用的學習單頁面。' }
+    ]
+  }
+};
+
+/* 這段在做什麼：島上的區域（open: true 代表已開放） */
+const ZONES = [
+  { id: 'festival', name: 'Festival Plaza', zh: '節慶廣場', x: 58, y: 51.6, open: true,
+    desc: '跟著節日換主題，每個月一檔。這個月是萬聖節。', lessons: ['halloween'],
+    plan: ['11 月 Thanksgiving 感恩節', '12 月 Christmas 聖誕節', '1–2 月 Lunar New Year 農曆新年'] },
+  { id: 'speaking', name: 'Speaking Bay', zh: '口說海灣', x: 24, y: 58.1, open: false,
+    desc: '日常口說練習。', plan: ['情境角色扮演', 'Show and Tell 上台報告', '看圖說故事題庫'] },
+  { id: 'writing', name: 'Writing Woods', zh: '寫作森林', x: 40, y: 32.3, open: false,
+    desc: '從句子寫到小短文。', plan: ['句型重組', '看圖寫句子', '五句小短文（說完再寫）'] },
+  { id: 'exam', name: 'Exam Peak', zh: '英檢山', x: 70, y: 27.4, open: false,
+    desc: '準備考試的地方。', plan: ['Cambridge Flyers 口說四大題型', 'GEPT 初級聽讀模擬', '錯題本'] },
+  { id: 'reading', name: 'Reading Lighthouse', zh: '閱讀燈塔', x: 84, y: 59.7, open: false,
+    desc: '讀了再說。', plan: ['分級讀本朗讀', '讀後重述', 'Twinkl 閱讀理解學習單'] },
+  { id: 'harbor', name: 'Report Harbor', zh: '成績港', x: 42, y: 77.4, open: true,
+    desc: '每堂課的報告都停在這裡。', action: 'history' }
+];
+
+/* 這段在做什麼：評分、能力項目和老師可以標記的問題 */
+const RATINGS = [
+  { v: 1, zh: '再練練', en: 'Try again' },
+  { v: 2, zh: '不錯', en: 'Good' },
+  { v: 3, zh: '很棒', en: 'Excellent' }
+];
+const DIMS = [
+  { id: 'vocab', zh: '字彙', en: 'Vocabulary' },
+  { id: 'pron', zh: '發音', en: 'Pronunciation' },
+  { id: 'grammar', zh: '文法', en: 'Grammar' },
+  { id: 'fluency', zh: '流暢與互動', en: 'Fluency' },
+  { id: 'ideas', zh: '表達內容', en: 'Ideas' },
+  { id: 'listening', zh: '聽力理解', en: 'Listening' }
+];
+const FLAGS = {
+  pron: { zh: '發音', dim: 'pron' },
+  grammar: { zh: '文法', dim: 'grammar' },
+  word: { zh: '用字', dim: 'vocab' },
+  stuck: { zh: '卡住', dim: 'fluency' }
+};
+const MAT_KINDS = ['影片', '動畫', '繪本', 'Twinkl', '學習單', '遊戲', '其他'];
+
+/* ==========================================================
+   這段在做什麼：小工具
+   ========================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'value') el.value = v;
+    else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false) continue;
+    el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+  }
+  return el;
+}
+function svg(markup) { const t = document.createElement('template'); t.innerHTML = markup.trim(); return t.content.firstChild; }
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const pad = n => String(n).padStart(2, '0');
+const fmtDate = ts => { const d = new Date(ts); return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}（${'日一二三四五六'[d.getDay()]}）`; };
+const fmtTime = ts => { const d = new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const fmtClock = ms => { const s = Math.floor((ms || 0) / 1000); return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`; };
+const fmtMin = ms => Math.max(1, Math.round((ms || 0) / 60000)) + ' 分鐘';
+const ymd = () => { const d = new Date(); return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`; };
+const clip = (t, n) => (t.length > n ? t.slice(0, n - 1) + '…' : t);
+
+const ICON = {
+  candy: '<svg viewBox="0 0 34 22" aria-hidden="true"><path d="M9 11 1 4v14z" fill="currentColor"/><path d="M25 11l8-7v14z" fill="currentColor"/><circle cx="17" cy="11" r="9" fill="currentColor"/><path d="M12 7c3 2 7 6 10 8" stroke="var(--pumpkin-ink)" stroke-width="2" fill="none" opacity=".35"/></svg>',
+  mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="13" rx="4" fill="currentColor"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>',
+  speaker: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
+  play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg>',
+  mark: '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="var(--sea-deep)"/><path d="M6 25c3-9 10-13 16-12 7 1 12 5 12 11-4 5-24 6-28 1z" fill="var(--grass)" stroke="var(--sand)" stroke-width="3"/><circle cx="29" cy="11" r="4" fill="var(--moon)"/></svg>'
+};
+const candyRow = n => h('span', { class: 'rb-c' }, Array.from({ length: n }, () => svg(ICON.candy)));
+
+/* ==========================================================
+   這段在做什麼：把資料存在這台電腦的瀏覽器裡
+   （同一台電腦、同一個瀏覽器打開，資料都會在）
+   ========================================================== */
+const LS = {
+  ok: true,
+  get(k, d) { try { const v = localStorage.getItem('isle:' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('isle:' + k, JSON.stringify(v)); return true; } catch (e) { LS.ok = false; return false; } },
+  del(k) { try { localStorage.removeItem('isle:' + k); } catch (e) { /* 忽略 */ } }
+};
+(function testStorage() { try { localStorage.setItem('isle:test', '1'); localStorage.removeItem('isle:test'); } catch (e) { LS.ok = false; } })();
+
+/* 這段在做什麼：整個 App 目前的狀態 */
+const state = {
+  roster: LS.get('roster', []),
+  sessions: LS.get('sessions', []),
+  settings: Object.assign({ custom: {}, hidden: {}, shadow: {}, slow: false }, LS.get('settings', {})),
+  student: null, view: 'login', zoneOpen: 'festival',
+  session: null, stageIdx: 0, itemIdx: 0,
+  reportId: null, drawer: false, historyAll: false
+};
+const saveRoster = () => LS.set('roster', state.roster);
+const saveSessions = () => LS.set('sessions', state.sessions);
+const saveSettings = () => LS.set('settings', state.settings);
+function saveDraft() {
+  if (!state.session) return;
+  LS.set('draft:' + state.session.studentId, { session: state.session, stageIdx: state.stageIdx, itemIdx: state.itemIdx });
+}
+let draftTimer = null;
+function saveDraftSoon() { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 600); }
+
+/* ==========================================================
+   這段在做什麼：電腦語音（唸題目、示範句）
+   ========================================================== */
+const TTS = {
+  ok: 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined',
+  voice: null,
+  pick() {
+    try {
+      const vs = speechSynthesis.getVoices();
+      this.voice = vs.find(v => /en[-_]US/i.test(v.lang) && /Google US|Samantha|Aria|Jenny|Ava/i.test(v.name))
+        || vs.find(v => /en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
+    } catch (e) { this.voice = null; }
+  },
+  say(text) {
+    if (!this.ok) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(String(text).replace(/_{2,}/g, 'blank'));
+      if (!this.voice) this.pick();
+      if (this.voice) u.voice = this.voice;
+      u.lang = 'en-US';
+      u.rate = state.settings.slow ? 0.72 : 0.95;
+      speechSynthesis.speak(u);
+    } catch (e) { /* 忽略 */ }
+  }
+};
+if (TTS.ok) { try { speechSynthesis.onvoiceschanged = () => TTS.pick(); } catch (e) { /* 忽略 */ } }
+function speakBtn(text, label) {
+  if (!TTS.ok) return null;
+  return h('button', { class: 'btn small', type: 'button', onclick: () => TTS.say(text) }, svg(ICON.speaker), label || '聽');
+}
+
+/* ==========================================================
+   這段在做什麼：語音辨識（學生按麥克風說話，電腦把聲音轉成文字）
+   需要 Chrome 和網路。聲音會送到 Google 處理。
+   ========================================================== */
+const Speech = {
+  SR: window.SpeechRecognition || window.webkitSpeechRecognition || null,
+  rec: null, owner: null,
+  supported() { return !!this.SR; },
+  start(opts) {
+    this.abort();
+    let rec;
+    try { rec = new this.SR(); } catch (e) { opts.onError && opts.onError('start-failed'); return false; }
+    rec.lang = 'en-US';
+    rec.interimResults = true;
+    rec.maxAlternatives = 5;
+    rec.continuous = !!opts.continuous;
+    const finals = [], alts = [];
+    let interim = '', ended = false, errorCode = null;
+    rec.onresult = e => {
+      interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) { finals[i] = r[0].transcript; alts[i] = Array.from(r).map(a => a.transcript); }
+        else interim += r[0].transcript;
+      }
+      opts.onInterim && opts.onInterim([...finals.filter(Boolean), interim].join(' ').trim());
+    };
+    rec.onerror = e => { errorCode = e.error; };
+    rec.onend = () => {
+      if (ended) return;
+      ended = true;
+      clearTimeout(timer);
+      if (this.rec === rec) { this.rec = null; this.owner = null; }
+      const text = [...finals.filter(Boolean), interim].join(' ').replace(/\s+/g, ' ').trim();
+      if (text) opts.onDone && opts.onDone({ text, alts: alts.filter(Boolean) });
+      else if (errorCode !== 'aborted') opts.onError && opts.onError(errorCode || 'no-speech');
+      opts.onEnd && opts.onEnd();
+    };
+    const timer = setTimeout(() => { try { rec.stop(); } catch (e) { /* 忽略 */ } }, opts.maxMs || 20000);
+    try { rec.start(); } catch (e) { clearTimeout(timer); opts.onError && opts.onError('start-failed'); return false; }
+    this.rec = rec; this.owner = opts.owner || null;
+    return true;
+  },
+  stop() { if (this.rec) { try { this.rec.stop(); } catch (e) { /* 忽略 */ } } },
+  abort() { if (this.rec) { const r = this.rec; this.rec = null; this.owner = null; try { r.abort(); } catch (e) { /* 忽略 */ } } }
+};
+const MIC_ERRORS = {
+  'not-allowed': '麥克風被擋住了。點網址列左邊的圖示，把「麥克風」改成允許，再重新整理。',
+  'service-not-allowed': '瀏覽器不讓這個檔案用語音辨識。請改用 Chrome 打開。',
+  'no-speech': '沒聽到聲音。靠近麥克風一點，再按一次。',
+  'audio-capture': '找不到麥克風。檢查耳機或麥克風有沒有接好。',
+  'network': '語音辨識需要網路。檢查網路後再試一次。',
+  'language-not-supported': '這個瀏覽器不支援英文辨識，請改用 Chrome。',
+  'start-failed': '麥克風啟動失敗。等一秒再按一次。'
+};
+
+/* 這段在做什麼：做出一顆麥克風按鈕，說完會把文字交給 onDone */
+function micControl({ owner, continuous, maxMs, small, label, onDone }) {
+  const wrap = h('div', { class: 'mic' });
+  const live = h('p', { class: 'live', 'aria-live': 'polite' });
+  const err = h('p', { class: 'mic-err', 'aria-live': 'polite' });
+  const btn = h('button', { class: 'mic-btn' + (small ? ' sm' : ''), type: 'button', 'data-mic': owner });
+  const idleLabel = label || '按我開始說';
+  const setIdle = () => { btn.classList.remove('on'); btn.replaceChildren(h('span', { class: 'mi' }, svg(ICON.mic)), idleLabel); };
+  const setOn = () => { btn.classList.add('on'); btn.replaceChildren(h('span', { class: 'mi' }, svg(ICON.stop)), '聆聽中…說完按這裡'); };
+  setIdle();
+  if (!Speech.supported()) {
+    btn.disabled = true;
+    err.textContent = '這個瀏覽器不支援語音辨識。請用 Chrome 打開，或由老師直接評分。';
+    wrap.append(btn, err);
+    return wrap;
+  }
+  btn.addEventListener('click', () => {
+    if (Speech.rec && Speech.owner === owner) { Speech.stop(); return; }
+    err.textContent = '';
+    live.textContent = '';
+    try { speechSynthesis.cancel(); } catch (e) { /* 忽略 */ }
+    const ok = Speech.start({
+      owner, continuous, maxMs,
+      onInterim: t => { live.textContent = t; },
+      onDone: r => { live.textContent = ''; onDone(r); },
+      onError: code => { err.textContent = MIC_ERRORS[code] || '沒有辨識成功，再按一次試試。'; },
+      onEnd: () => { if (btn.isConnected) setIdle(); }
+    });
+    if (ok) setOn();
+  });
+  wrap.append(btn, live, err);
+  return wrap;
+}
+
+/* ==========================================================
+   這段在做什麼：比對學生說的話，給建議分數
+   ========================================================== */
+const ONES = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+const TENS = ['', '', 'twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+function numWords(n) {
+  if (n < 20) return ONES[n];
+  if (n < 100) return TENS[Math.floor(n / 10)] + (n % 10 ? ' ' + ONES[n % 10] : '');
+  if (n < 1000) return ONES[Math.floor(n / 100)] + ' hundred' + (n % 100 ? ' ' + numWords(n % 100) : '');
+  if (n < 10000) return ONES[Math.floor(n / 1000)] + ' thousand' + (n % 1000 ? ' ' + numWords(n % 1000) : '');
+  return String(n);
+}
+function norm(t) {
+  return String(t || '').toLowerCase()
+    .replace(/(\d),(\d)/g, '$1$2')
+    .replace(/\b(\d{1,4})(st|nd|rd|th)?\b/g, (m, d) => numWords(parseInt(d, 10)))
+    .replace(/[’‘`]/g, "'").replace(/'/g, '')
+    .replace(/[-–—]/g, ' ')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+const toks = t => { const n = norm(t); return n ? n.split(' ') : []; };
+function stem(w) {
+  if (w.length > 5 && w.endsWith('ing')) return w.slice(0, -3);
+  if (w.length > 4 && w.endsWith('ed')) return w.slice(0, -2);
+  if (w.length > 4 && w.endsWith('es')) return w.slice(0, -2);
+  if (w.length > 3 && w.endsWith('s')) return w.slice(0, -1);
+  return w;
+}
+function lev(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[n];
+}
+function wordMatch(a, b) {
+  if (a === b) return true;
+  if (a.length < 4 || b.length < 4) return stem(a) === stem(b);
+  const x = stem(a), y = stem(b);
+  return x === y || 1 - lev(x, y) / Math.max(x.length, y.length) >= 0.8;
+}
+function hasPhrase(t, phrase) {
+  const p = toks(phrase);
+  if (!p.length) return false;
+  if (p.join('').length >= 6 && t.join('').includes(p.join(''))) return true;
+  for (let i = 0; i + p.length <= t.length; i++) {
+    if (p.every((w, j) => wordMatch(w, t[i + j]))) return true;
+  }
+  return false;
+}
+const findHits = (t, list) => [...new Set(list.filter(w => hasPhrase(t, w)))];
+const hasAny = (t, list) => list.some(w => hasPhrase(t, w));
+const PAST_IRR = new Set('went wore ate saw had was were made got did came took gave ran found thought told said bought brought began became felt knew left met put sat won wrote heard flew fell drank sang swam threw caught taught kept slept built sent spent lost stood hid held could rode woke'.split(' '));
+const NOT_PAST = new Set('need feed seed speed bed red shed weed indeed hundred'.split(' '));
+const pastVerbs = t => [...new Set(t.filter(w => PAST_IRR.has(w) || (w.length >= 5 && w.endsWith('ed') && !NOT_PAST.has(w))))];
+const BECAUSE = ['because', 'cause', 'so', 'since'];
+const FUTURE = ['going to', 'gonna', 'will', 'ill', 'im going'];
+const WOULD = ['would', 'id'];
+
+function evalOpen(ex, text) {
+  const t = toks(text), wc = t.length, chips = [];
+  let pass = 0, total = 0;
+  const minW = ex.minWords || 8;
+  total++;
+  if (wc >= minW) { pass++; chips.push({ ok: true, text: `說了 ${wc} 個字` }); }
+  else chips.push({ ok: false, text: `說了 ${wc} 個字，試著說到 ${minW} 個以上` });
+  if (ex.keywords) {
+    const hits = findHits(t, ex.keywords), need = ex.needHits || 1;
+    total++;
+    if (hits.length >= need) { pass++; chips.push({ ok: true, text: '提到：' + hits.join('、') }); }
+    else if (hits.length) { pass += 0.5; chips.push({ ok: false, text: `提到：${hits.join('、')}（再多說 ${need - hits.length} 個重點）` }); }
+    else chips.push({ ok: false, text: '還沒說到重點' });
+  }
+  if (ex.because) { total++; if (hasAny(t, BECAUSE)) { pass++; chips.push({ ok: true, text: '有說原因（because / so）' }); } else chips.push({ ok: false, text: '加上 because 說原因' }); }
+  if (ex.past) { total++; const p = pastVerbs(t); if (p.length) { pass++; chips.push({ ok: true, text: '過去式：' + p.join('、') }); } else chips.push({ ok: false, text: '試著用過去式（went、saw、wore）' }); }
+  if (ex.future) { total++; if (hasAny(t, FUTURE)) { pass++; chips.push({ ok: true, text: '用了未來式（going to / will）' }); } else chips.push({ ok: false, text: "試著用 I'm going to …" }); }
+  if (ex.would) { total++; if (hasAny(t, WOULD)) { pass++; chips.push({ ok: true, text: '用了 would' }); } else chips.push({ ok: false, text: '試著用 I would …' }); }
+  const ratio = pass / total;
+  const rating = wc < 3 ? 1 : ratio >= 0.99 ? 3 : ratio >= 0.5 ? 2 : 1;
+  return { rating, chips, wc };
+}
+function evalWord(it, text, alts) {
+  const targets = [it.word, ...(it.alt || [])];
+  const cands = [text, ...(alts || []).flat()];
+  const found = cands.some(c => { const t = toks(c); return targets.some(w => hasPhrase(t, w)); });
+  const wc = toks(text).length, chips = [];
+  chips.push(found ? { ok: true, text: `聽到 ${it.word}` } : { ok: false, text: `沒聽到 ${it.word}，再唸清楚一點` });
+  const sentence = wc >= 5;
+  chips.push(sentence ? { ok: true, text: `造了一個 ${wc} 個字的句子` } : { ok: false, text: '再用這個字造一個句子' });
+  return { rating: found && sentence ? 3 : found ? 2 : 1, chips, wc };
+}
+function evalShadow(target, text) {
+  const words = target.split(/\s+/).filter(Boolean);
+  const T = [], owner = [];
+  words.forEach((w, i) => toks(w).forEach(tk => { T.push(tk); owner.push(i); }));
+  const S = toks(text), n = T.length, m = S.length;
+  const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--)
+    dp[i][j] = wordMatch(T[i], S[j]) ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const hit = new Array(n).fill(false);
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (wordMatch(T[i], S[j])) { hit[i] = true; i++; j++; }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) i++; else j++;
+  }
+  const pct = n ? Math.round(dp[0][0] / n * 100) : 0;
+  const diff = words.map((w, wi) => {
+    const idx = owner.map((o, k) => (o === wi ? k : -1)).filter(k => k >= 0);
+    return { w, hit: idx.length === 0 || idx.every(k => hit[k]) };
+  });
+  return { rating: pct >= 85 ? 3 : pct >= 60 ? 2 : 1, chips: [{ ok: pct >= 85, text: `跟讀相似度 ${pct}%` }], diff, pct, wc: m };
+}
+function evalLine(line, text) {
+  const t = toks(text), groups = line.expect || [];
+  if (!groups.length) return { ratio: t.length >= 2 ? 1 : 0, missing: [] };
+  const missing = groups.filter(g => !hasAny(t, g));
+  return { ratio: (groups.length - missing.length) / groups.length, missing: missing.map(g => g[0]) };
+}
+function evalPanel(it, text) {
+  const t = toks(text), wc = t.length, hits = findHits(t, it.keywords), p = pastVerbs(t), chips = [];
+  let pass = 0;
+  if (hits.length >= 2) { pass++; chips.push({ ok: true, text: '用到：' + hits.join('、') }); }
+  else chips.push({ ok: false, text: hits.length ? `用到：${hits.join('、')}（再多用一個關鍵字）` : '試著用上面的關鍵字' });
+  if (p.length) { pass++; chips.push({ ok: true, text: '過去式：' + p.join('、') }); } else chips.push({ ok: false, text: '故事要用過去式' });
+  if (wc >= 8) { pass++; chips.push({ ok: true, text: `說了 ${wc} 個字` }); } else chips.push({ ok: false, text: `說了 ${wc} 個字，再多說一點` });
+  return { rating: pass === 3 ? 3 : pass >= 2 ? 2 : 1, chips, wc, hits };
+}
+
+/* ==========================================================
+   這段在做什麼：取得目前的課、關卡、題目
+   ========================================================== */
+const kindOf = (st, it) => it.kind || st.kind;
+const keyOf = (st, it) => st.id + '__' + it.id;
+const lessonOf = s => LESSONS[s.lessonId];
+function itemsOf(st, s) {
+  if (!st.video || !s || !s.extra || !s.extra.length) return st.items;
+  const idx = st.items.findIndex(i => i.id === 'v9');
+  const extra = s.extra.map(x => ({ id: x.id, kind: 'shadow', text: x.text, custom: true, skills: ['pron', 'listening'] }));
+  return idx < 0 ? [...st.items, ...extra] : [...st.items.slice(0, idx), ...extra, ...st.items.slice(idx)];
+}
+const curStage = () => lessonOf(state.session).stages[state.stageIdx];
+const curItems = () => itemsOf(curStage(), state.session);
+const curItem = () => curItems()[state.itemIdx];
+const curKey = () => keyOf(curStage(), curItem());
+function itemLabel(st, it, idx) {
+  const k = kindOf(st, it);
+  if (k === 'word') return it.word;
+  if (k === 'shadow') return '跟讀：' + clip(it.text, 48);
+  if (k === 'dialogue') return '敲門：' + it.who;
+  if (k === 'panel') return `故事第 ${idx + 1} 格`;
+  if (k === 'catch') return '影片抓單字';
+  return clip(it.prompt, 60);
+}
+
+/* ==========================================================
+   這段在做什麼：畫面切換
+   ========================================================== */
+let timerId = null, lastTick = 0, tickCount = 0;
+function go(view) { state.view = view; render(); window.scrollTo(0, 0); }
+function render() {
+  stopTimer();
+  Speech.abort();
+  if (!state.student && state.view !== 'login') state.view = 'login';
+  let view;
+  if (state.view === 'login') view = viewLogin();
+  else if (state.view === 'map') view = viewMap();
+  else if (state.view === 'lesson') view = viewLesson();
+  else if (state.view === 'report') view = viewReport();
+  else view = viewHistory();
+  const app = $('#app');
+  app.replaceChildren(topbar(), warnings(), view);
+  if (state.view === 'lesson') { paintLesson(); startTimer(); }
+  paintDrawer();
+}
+function topbar() {
+  return h('header', { class: 'topbar' },
+    h('button', { class: 'brand', type: 'button', 'aria-label': '回到島嶼地圖', onclick: () => { if (state.student && state.view !== 'lesson') go('map'); } },
+      svg(ICON.mark), h('span', null, 'English Isle'), h('small', null, '英語島')),
+    h('div', { class: 'tb-right' },
+      state.student ? h('span', { class: 'who' }, h('span', { class: 'who-dot' }), state.student.name) : null,
+      state.student && state.view !== 'lesson' ? h('button', { class: 'btn small ghost', type: 'button', onclick: () => go('history') }, '成績港') : null,
+      state.student && state.view !== 'lesson' ? h('button', { class: 'btn small ghost', type: 'button', onclick: () => { state.student = null; go('login'); } }, '換學生') : null
+    ));
+}
+function warnings() {
+  const box = h('div');
+  if (!Speech.supported()) box.append(h('div', { class: 'banner', role: 'status' }, h('b', null, '注意'), h('span', null, '這個瀏覽器不能語音辨識。請用 Google Chrome 打開這個檔案。沒有麥克風也能上課，由老師評分。')));
+  if (!LS.ok) box.append(h('div', { class: 'banner', role: 'status' }, h('b', null, '注意'), h('span', null, '瀏覽器不能存資料（可能是無痕視窗）。下課前請到成績港按「匯出備份」。')));
+  return box;
+}
+
+/* ---------- 登入 ---------- */
+function viewLogin() {
+  const input = h('input', { id: 'student-name', type: 'text', placeholder: '學生英文名，例如 Amy', maxlength: '30', autocomplete: 'off' });
+  const go1 = () => {
+    const name = input.value.trim();
+    if (!name) { input.focus(); return; }
+    let s = state.roster.find(x => x.name.toLowerCase() === name.toLowerCase());
+    if (!s) { s = { id: 's_' + newId(), name, createdAt: Date.now() }; state.roster.push(s); saveRoster(); }
+    pickStudent(s);
+  };
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') go1(); });
+  const testRes = h('p', { class: 'live' });
+  return h('div', { class: 'login' },
+    h('div', null,
+      h('p', { class: 'eyebrow' }, 'English Isle・家教課'),
+      h('h1', null, '今天誰要上島？'),
+      h('p', { class: 'lede' }, '輸入學生名字就能開始上課。學生按麥克風說英文，電腦會聽寫、給建議分數。下課自動產生報告。'),
+      h('div', { class: 'field' }, input, h('button', { class: 'btn primary', type: 'button', onclick: go1 }, '上島')),
+      state.roster.length ? h('div', { class: 'roster' },
+        h('p', { class: 'label' }, '之前上過課的學生'),
+        h('div', { class: 'chips' }, state.roster.map(s => h('button', { class: 'chip-btn', type: 'button', onclick: () => pickStudent(s) }, s.name)))) : null,
+      h('div', { class: 'mic-test' },
+        h('p', { class: 'label' }, '上課前先測試麥克風：按下去，說「Happy Halloween」'),
+        micControl({ owner: 'test', continuous: false, maxMs: 8000, label: '測試麥克風', onDone: r => { testRes.textContent = '電腦聽到：' + r.text; } }),
+        testRes)
+    ),
+    h('div', null, islandMap(false))
+  );
+}
+function pickStudent(s) { state.student = s; state.zoneOpen = 'festival'; go('map'); }
+
+/* ---------- 島嶼地圖 ---------- */
+const ISLAND_SVG = `
+<svg viewBox="0 0 1000 620" aria-hidden="true">
+  <defs><radialGradient id="moonGlow"><stop offset="0" class="stop-moon" stop-opacity=".45"/><stop offset="1" class="stop-moon" stop-opacity="0"/></radialGradient></defs>
+  <rect class="f-sea" width="1000" height="620"/>
+  <circle cx="110" cy="92" r="120" fill="url(#moonGlow)"/>
+  <circle class="f-moon" cx="110" cy="92" r="36"/>
+  <circle class="f-sea" cx="126" cy="80" r="31"/>
+  <g class="f-moon" opacity=".75">
+    <circle cx="250" cy="58" r="2.2"/><circle cx="330" cy="96" r="1.6"/><circle cx="470" cy="44" r="2"/><circle cx="600" cy="62" r="1.5"/>
+    <circle cx="760" cy="40" r="2.2"/><circle cx="880" cy="88" r="1.7"/><circle cx="950" cy="30" r="1.5"/><circle cx="40" cy="200" r="1.6"/>
+  </g>
+  <g class="s-wave">
+    <path d="M50 530q20-12 40 0t40 0"/><path d="M860 560q20-12 40 0t40 0"/><path d="M640 595q20-12 40 0t40 0"/>
+    <path d="M60 300q20-12 40 0t40 0"/><path d="M905 170q20-12 40 0t40 0"/><path d="M230 585q20-12 40 0t40 0"/>
+  </g>
+  <path class="island" d="M170 330C150 220 260 140 400 150C470 100 600 90 690 140C800 130 900 210 880 320C930 400 860 500 740 500C640 560 480 560 380 510C250 520 140 450 170 330Z"/>
+  <path class="s-path" d="M240 360Q320 280 400 210M400 210Q540 230 580 320M580 320Q650 240 700 200M580 320Q720 360 838 372M580 320Q480 420 420 480"/>
+  <ellipse class="f-lagoon" cx="240" cy="362" rx="58" ry="38"/>
+  <g><rect class="f-sandc" x="366" y="214" width="6" height="16"/><circle class="f-tree" cx="369" cy="204" r="20"/>
+     <rect class="f-sandc" x="407" y="200" width="6" height="18"/><circle class="f-tree" cx="410" cy="186" r="25"/>
+     <rect class="f-sandc" x="442" y="222" width="6" height="14"/><circle class="f-tree" cx="445" cy="212" r="18"/>
+     <rect class="f-sandc" x="392" y="240" width="5" height="12"/><circle class="f-tree" cx="395" cy="232" r="15"/></g>
+  <path class="f-mtn" d="M610 236L700 104L790 236Z"/><path class="f-snow" d="M676 140L700 104L724 140L712 134L700 146L688 134Z"/>
+  <polygon class="f-beam" points="840,318 1000,270 1000,366"/>
+  <rect class="f-light" x="832" y="326" width="16" height="56"/><rect class="f-stripe" x="832" y="340" width="16" height="8"/><rect class="f-stripe" x="832" y="360" width="16" height="8"/>
+  <polygon class="f-stripe" points="826,327 854,327 840,308"/>
+  <circle class="f-sandc" cx="580" cy="320" r="48"/>
+  <g><circle class="f-pumpkin" cx="552" cy="300" r="10"/><circle class="f-pumpkin" cx="608" cy="300" r="10"/><circle class="f-pumpkin" cx="580" cy="352" r="10"/>
+     <rect class="f-tree" x="550" y="286" width="4" height="6"/><rect class="f-tree" x="606" y="286" width="4" height="6"/><rect class="f-tree" x="578" y="338" width="4" height="6"/></g>
+  <rect class="f-sandc" x="412" y="496" width="16" height="68"/>
+  <path class="f-light" d="M446 566h56l-10 14h-36z"/><polygon class="f-sandc" points="474,526 474,562 498,562"/>
+</svg>`;
+function islandMap(interactive) {
+  const map = h('div', { class: 'map' + (interactive ? '' : ' static'), role: interactive ? null : 'img', 'aria-label': interactive ? null : '英語島地圖' });
+  map.append(svg(ISLAND_SVG));
+  ZONES.forEach(z => {
+    const label = h('span', { class: 'label' }, z.zh, h('small', null, z.name));
+    const attrs = { class: 'pin' + (z.open ? ' open' : ''), style: `left:${z.x}%;top:${z.y}%` };
+    if (interactive) {
+      map.append(h('button', Object.assign(attrs, { type: 'button', 'aria-pressed': String(state.zoneOpen === z.id), onclick: () => openZone(z) }), h('span', { class: 'dot' }), label));
+    } else {
+      map.append(h('span', attrs, h('span', { class: 'dot' }), label));
+    }
+  });
+  return map;
+}
+function openZone(z) {
+  if (z.action === 'history') { go('history'); return; }
+  state.zoneOpen = z.id; render();
+  const p = $('#zone-panel'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function viewMap() {
+  const z = ZONES.find(x => x.id === state.zoneOpen) || ZONES[0];
+  return h('div', null,
+    h('div', { class: 'page-head' },
+      h('div', null, h('p', { class: 'eyebrow' }, '島嶼地圖'), h('h1', { class: 'h1' }, `${state.student.name} 的英語島`)),
+      h('p', { class: 'muted' }, '點地圖上的區域。橘色的區域已經開放。')),
+    islandMap(true),
+    zonePanel(z),
+    h('div', { class: 'zones' }, ZONES.map(x => h('button', { class: 'zone-card', type: 'button', 'aria-pressed': String(x.id === z.id), onclick: () => openZone(x) },
+      h('span', { class: 'status' + (x.open ? ' on' : '') }, x.open ? '開放中' : '即將開放'),
+      h('b', null, x.zh), h('span', { class: 'muted sm' }, x.name + '・' + x.desc))))
+  );
+}
+function zonePanel(z) {
+  const panel = h('section', { class: 'zone-panel', id: 'zone-panel' },
+    h('div', { class: 'zp-head' },
+      h('div', null, h('p', { class: 'eyebrow' }, z.name), h('h2', null, z.zh)),
+      h('span', { class: 'status' + (z.open ? ' on' : '') }, z.open ? '開放中' : '即將開放')),
+    h('p', { class: 'muted', style: 'margin-bottom:16px' }, z.desc));
+  if (z.lessons) z.lessons.forEach(id => panel.append(lessonCard(LESSONS[id])));
+  if (z.plan) panel.append(h('div', { style: 'margin-top:18px' },
+    h('p', { class: 'eyebrow' }, z.open ? '接下來的檔期' : '預計會有'),
+    h('ul', { class: 'plan-list' }, z.plan.map(p => h('li', null, p)))));
+  return panel;
+}
+function lessonCard(L) {
+  const draft = LS.get('draft:' + state.student.id, null);
+  const hasDraft = draft && draft.session && draft.session.lessonId === L.id;
+  const done = hasDraft ? Object.keys(draft.session.ratings || {}).length : 0;
+  return h('article', { class: 'lesson-card' },
+    h('div', null,
+      h('p', { class: 'eyebrow' }, `${L.level}・約 ${L.minutes} 分鐘`),
+      h('h3', { class: 'lc-title' }, L.title, h('span', null, L.zh))),
+    h('div', { class: 'lc-grid' },
+      h('div', null, h('h3', null, '學習目標'), h('ul', null, L.goals.map(g => h('li', null, g)))),
+      h('div', null, h('h3', null, '課程流程'), h('ol', { class: 'flow' }, L.stages.map(st => h('li', null, `${st.zh} ${st.title} `, h('span', null, `${st.minutes} 分`))))),
+      h('div', null, h('h3', null, '評量方式'), h('p', null, L.assess)),
+      h('div', null, h('h3', null, 'AI 整合點'), h('p', null, L.aiPoint))),
+    h('div', { class: 'lc-actions' },
+      hasDraft ? h('button', { class: 'btn primary', type: 'button', onclick: () => startLesson(L.id, true) }, `繼續上次的課（已評 ${done} 題）`) : null,
+      h('button', { class: hasDraft ? 'btn' : 'btn primary', type: 'button', onclick: () => startLesson(L.id, false) }, hasDraft ? '重新開始' : '開始上課'),
+      h('a', { class: 'btn ghost', href: L.video.url, target: '_blank', rel: 'noopener noreferrer' }, svg(ICON.play), '先看影片'))
+  );
+}
+
+/* ==========================================================
+   這段在做什麼：上課畫面
+   ========================================================== */
+function newSession(lessonId) {
+  return {
+    id: 'ses_' + newId(), studentId: state.student.id, studentName: state.student.name, lessonId,
+    startedAt: Date.now(), activeMs: 0,
+    ratings: {}, manual: {}, bonus: {}, flags: {}, notes: {}, hints: {}, said: {}, evals: {}, caught: {},
+    extra: (state.settings.shadow[lessonId] || []).map(x => ({ id: x.id, text: x.text })),
+    stats: { attempts: 0, words: 0 }, teacherNote: ''
+  };
+}
+function startLesson(lessonId, resume) {
+  const d = LS.get('draft:' + state.student.id, null);
+  if (resume && d && d.session && d.session.lessonId === lessonId) {
+    state.session = Object.assign(newSession(lessonId), d.session);
+    state.stageIdx = d.stageIdx || 0; state.itemIdx = d.itemIdx || 0;
+  } else {
+    state.session = newSession(lessonId); state.stageIdx = 0; state.itemIdx = 0;
+  }
+  saveDraft(); go('lesson');
+}
+function viewLesson() {
+  const L = lessonOf(state.session);
+  return h('div', null,
+    h('div', { class: 'lesson-head' },
+      h('div', { class: 'lh-left' },
+        h('button', { class: 'btn small ghost', type: 'button', onclick: () => { saveDraft(); go('map'); } }, '← 回島上'),
+        h('div', null,
+          h('p', { class: 'eyebrow' }, `${state.student.name}・${L.level}`),
+          h('h1', { class: 'lesson-title' }, L.title + ' ', h('span', { class: 'zh' }, L.zh)))),
+      h('div', { class: 'lh-right' },
+        h('div', { class: 'counter', id: 'counter', 'aria-label': '糖果數' }, svg(ICON.candy), h('span', { id: 'candy-n' }, '0')),
+        h('span', { class: 'timer', id: 'timer', title: '上課時間' }, '00:00'),
+        TTS.ok ? h('button', { class: 'btn small', type: 'button', id: 'slow-btn', 'aria-pressed': String(!!state.settings.slow), onclick: toggleSlow }, state.settings.slow ? '慢速語音：開' : '慢速語音：關') : null,
+        h('button', { class: 'btn small', type: 'button', onclick: () => { state.drawer = true; paintDrawer(); } }, '教材'),
+        confirmBtn('結束課程', '確定結束？產生報告', 'btn small', endLesson))),
+    h('nav', { class: 'tabs', id: 'tabs', 'aria-label': '課程關卡' }),
+    h('section', { class: 'stage', id: 'stage' }),
+    h('section', { class: 'tutor', id: 'tutor', 'aria-label': '老師評分區' }));
+}
+function toggleSlow() {
+  state.settings.slow = !state.settings.slow; saveSettings();
+  const b = $('#slow-btn'); if (b) { b.textContent = state.settings.slow ? '慢速語音：開' : '慢速語音：關'; b.setAttribute('aria-pressed', String(state.settings.slow)); }
+}
+function paintLesson() { paintCounter(false); paintTabs(); paintStage(); paintTutor(); }
+function candyTotal(s) {
+  return Object.values(s.ratings).reduce((a, b) => a + (b || 0), 0) + Object.values(s.bonus).reduce((a, b) => a + (b || 0), 0);
+}
+function paintCounter(pop) {
+  const n = $('#candy-n'); if (!n) return;
+  n.textContent = candyTotal(state.session);
+  if (pop) { const c = $('#counter'); c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); }
+}
+function paintTabs() {
+  const el = $('#tabs'); if (!el) return;
+  const s = state.session;
+  el.replaceChildren(...lessonOf(s).stages.map((st, i) => {
+    const its = itemsOf(st, s);
+    const done = its.filter(it => s.ratings[keyOf(st, it)]).length;
+    return h('button', { class: 'tab' + (done === its.length ? ' done' : ''), type: 'button', 'aria-current': String(i === state.stageIdx),
+      onclick: () => { state.stageIdx = i; state.itemIdx = 0; Speech.abort(); saveDraft(); paintTabs(); paintStage(); paintTutor(); } },
+      h('span', { class: 'tab-n' }, String(i + 1)),
+      h('span', { class: 'tab-t' }, h('b', null, st.zh), h('span', { class: 'prog' }, `${st.title}・${done}/${its.length}`)));
+  }));
+  const cur = el.children[state.stageIdx]; if (cur) el.scrollLeft = Math.max(0, cur.offsetLeft - el.offsetLeft - 16);
+}
+function paintDots() {
+  const el = $('#dots'); if (!el) return;
+  const st = curStage(), s = state.session;
+  el.replaceChildren(...curItems().map((x, i) => {
+    const r = s.ratings[keyOf(st, x)] || 0;
+    return h('button', { class: 'dotb r' + r, type: 'button', 'aria-current': String(i === state.itemIdx), 'aria-label': `第 ${i + 1} 題`, onclick: () => goItem(i) }, String(i + 1));
+  }));
+}
+function goItem(i) { state.itemIdx = i; Speech.abort(); saveDraft(); paintStage(); paintTutor(); }
+function paintStage() {
+  const st = curStage(), it = curItem(), k = keyOf(st, it), kind = kindOf(st, it);
+  const head = h('div', { class: 'stage-head' },
+    h('div', null,
+      h('p', { class: 'eyebrow' }, `Stage ${state.stageIdx + 1}・${st.title}・${st.minutes} min`),
+      h('h2', { class: 'stage-title' }, st.zh),
+      h('p', { class: 'stage-intro' }, st.intro)),
+    h('div', { class: 'dots', id: 'dots' }));
+  let body;
+  if (kind === 'word') body = renderWord(st, it, k);
+  else if (kind === 'catch') body = renderCatch(st, it, k);
+  else if (kind === 'shadow') body = renderShadow(st, it, k);
+  else if (kind === 'dialogue') body = renderDialogue(st, it, k);
+  else if (kind === 'panel') body = renderPanel(st, it, k);
+  else body = renderQuestion(st, it, k);
+  const parts = [head];
+  if (st.video && kind !== 'catch') parts.push(videoCard(lessonOf(state.session)));
+  parts.push(body);
+  $('#stage').replaceChildren(...parts);
+  paintDots();
+}
+
+/* 這段在做什麼：點了才顯示的提示（點了會記錄「有看提示」） */
+function reveal(label, content, k) {
+  content.hidden = true;
+  const btn = h('button', { class: 'btn small', type: 'button', 'aria-expanded': 'false' }, label);
+  btn.addEventListener('click', () => {
+    content.hidden = !content.hidden;
+    btn.setAttribute('aria-expanded', String(!content.hidden));
+    if (!content.hidden && k && !state.session.hints[k]) { state.session.hints[k] = true; saveDraft(); paintTutor(); }
+  });
+  return { btn, content };
+}
+
+/* 這段在做什麼：電腦聽完之後，顯示結果、自動給糖 */
+function handleSpeech(k, text, alts, evaluate) {
+  const s = state.session;
+  const r = evaluate(text, alts);
+  s.said[k] = text;
+  s.evals[k] = r;
+  s.stats.attempts++; s.stats.words += r.wc || 0;
+  applyRating(k, r.rating);
+}
+function applyRating(k, rating) {
+  const s = state.session, before = s.ratings[k] || 0;
+  if (!s.manual[k]) s.ratings[k] = rating;
+  saveDraft();
+  paintCounter((s.ratings[k] || 0) > before);
+  paintTabs(); paintDots(); paintTutor();
+  const box = $('#res-' + CSS.escape(k)); if (box) box.replaceWith(resultBox(k));
+}
+function resultBox(k, opts = {}) {
+  const s = state.session, said = s.said[k], ev = s.evals[k];
+  const box = h('div', { class: 'result', id: 'res-' + k, hidden: !said && !opts.alwaysShow });
+  if (!said || !ev) return box;
+  box.append(h('p', { class: 'heard-label' }, '電腦聽到'));
+  if (ev.diff) box.append(h('p', { class: 'diff' }, ev.diff.map(d => [h('span', { class: 'w ' + (d.hit ? 'hit' : 'miss') }, d.w), ' '])));
+  else box.append(h('p', { class: 'heard' }, said));
+  box.append(h('div', { class: 'checks' }, ev.chips.map(c => h('span', { class: 'ck ' + (c.ok ? 'ok' : 'no') }, (c.ok ? '✓ ' : '△ ') + c.text))));
+  const r = s.ratings[k] || 0;
+  if (r) box.append(h('p', { class: 'earn' }, candyRow(r), r === 3 ? 'Excellent! 拿到 3 顆糖' : r === 2 ? 'Good job! 拿到 2 顆糖' : 'Nice try! 再試一次可以拿更多'));
+  return box;
+}
+
+/* ---------- 開放題 ---------- */
+function renderQuestion(st, it, k) {
+  const hint = reveal('看句型提示', h('p', { class: 'hint' }, it.hint), k);
+  const main = h('div', null,
+    h('p', { class: 'eyebrow' }, `Question ${state.itemIdx + 1} of ${curItems().length}`),
+    h('p', { class: 'prompt' }, it.prompt),
+    h('div', { class: 'tools' }, speakBtn(it.prompt, '聽題目'), hint.btn),
+    hint.content,
+    micControl({ owner: k, continuous: true, maxMs: 45000, onDone: r => handleSpeech(k, r.text, r.alts, t => evalOpen(it.expect || {}, t)) }),
+    resultBox(k),
+    it.follow ? h('p', { class: 'follow' }, h('span', { class: 'tag' }, '老師'), it.follow) : null);
+  if (!st.scene) return main;
+  return h('div', { class: 'two' }, scene(), main);
+}
+function scene() {
+  const items = [['🏚️', 18, 44, 'xl'], ['👻', 22, 38, 's'], ['🕸️', 5, 14, 'm'], ['🦇', 42, 14, 'm'], ['🦇', 54, 24, 's'],
+    ['🎃', 34, 74, 'm'], ['🎃', 8, 80, 's'], ['🧙‍♀️', 58, 62, 'l'], ['🧛‍♂️', 72, 62, 'l'], ['🐈‍⬛', 88, 80, 'm'], ['🍬', 64, 86, 's'], ['🌳', 92, 44, 'l']];
+  return h('div', { class: 'scene', role: 'img', 'aria-label': '萬聖夜街景：月亮、老房子、南瓜燈、蝙蝠、穿變裝的兩個小孩和一隻黑貓' },
+    h('span', { class: 'moon' }), h('span', { class: 'ground' }),
+    items.map(([e, x, y, sz]) => h('span', { class: 'se ' + sz, style: `left:${x}%;top:${y}%` }, e)));
+}
+
+/* ---------- 單字 ---------- */
+function renderWord(st, it, k) {
+  const ex = reveal('看例句', h('p', { class: 'hint' }, it.ex, ' ', speakBtn(it.ex, '聽例句')), k);
+  const zh = reveal('看中文', h('p', { class: 'zh-gloss' }, it.zh), k);
+  return h('div', { class: 'word' },
+    h('div', { class: 'word-pic', 'aria-hidden': 'true' }, it.pic),
+    h('div', null,
+      h('p', { class: 'eyebrow' }, `Word ${state.itemIdx + 1} of ${curItems().length}・${it.pos}`),
+      h('h3', { class: 'word-w' }, it.word),
+      h('p', { class: 'word-def' }, it.def),
+      h('div', { class: 'tools' }, speakBtn(it.word, '聽發音'), ex.btn, zh.btn),
+      ex.content, zh.content,
+      h('p', { class: 'task' }, 'Say the word. Then make your own sentence.'),
+      micControl({ owner: k, continuous: false, maxMs: 15000, onDone: r => handleSpeech(k, r.text, r.alts, (t, a) => evalWord(it, t, a)) }),
+      resultBox(k)));
+}
+
+/* ---------- 影片卡（影片練習每一題上方都會出現） ---------- */
+function videoCard(L) {
+  return h('div', { class: 'video-card' },
+    h('div', null, h('p', { class: 'eyebrow' }, L.video.source), h('b', null, L.video.title)),
+    h('div', { class: 'tools', style: 'margin:0' },
+      h('a', { class: 'btn primary', href: L.video.url, target: '_blank', rel: 'noopener noreferrer' }, svg(ICON.play), '在新分頁播放影片'),
+      h('button', { class: 'btn small ghost', type: 'button', onclick: () => { state.drawer = true; paintDrawer(); } }, '換一支影片')));
+}
+
+/* ---------- 抓單字 ---------- */
+function renderCatch(st, it, k) {
+  const s = state.session;
+  const caught = new Set(s.caught[k] || []);
+  const status = h('p', { class: 'earn' });
+  const paintStatus = () => {
+    const r = s.ratings[k] || 0;
+    status.replaceChildren(`抓到 ${caught.size} / ${it.words.length} 個字`, r ? candyRow(r) : '');
+  };
+  const grid = h('div', { class: 'catch' }, it.words.map((w, i) => {
+    const b = h('button', { type: 'button', 'aria-pressed': String(caught.has(i)) }, w);
+    b.addEventListener('click', () => {
+      if (caught.has(i)) caught.delete(i); else caught.add(i);
+      b.setAttribute('aria-pressed', String(caught.has(i)));
+      s.caught[k] = [...caught];
+      const ratio = caught.size / it.words.length;
+      s.evals[k] = { rating: ratio >= 0.7 ? 3 : ratio >= 0.4 ? 2 : 1, chips: [{ ok: ratio >= 0.7, text: `抓到 ${caught.size} / ${it.words.length} 個字` }], wc: 0 };
+      if (caught.size) applyRating(k, s.evals[k].rating);
+      else { if (!s.manual[k]) delete s.ratings[k]; saveDraft(); paintCounter(false); paintTabs(); paintDots(); paintTutor(); }
+      paintStatus();
+    });
+    return b;
+  }));
+  paintStatus();
+  return h('div', null,
+    videoCard(lessonOf(s)),
+    h('p', { class: 'eyebrow' }, it.title),
+    h('p', { class: 'prompt sm' }, it.prompt),
+    grid, status,
+    h('p', { class: 'follow' }, h('span', { class: 'tag' }, '老師'), '影片裡沒出現的字可以跳過。抓到 7 個以上就是 3 顆糖。'));
+}
+
+/* ---------- 跟讀 ---------- */
+function renderShadow(st, it, k) {
+  const add = h('textarea', { id: 'shadow-add', placeholder: '從影片逐字稿複製句子貼在這裡，一行一句' });
+  const addMsg = h('p', { class: 'form-msg' });
+  const addBox = h('div', { class: 'add-lines', hidden: true },
+    h('label', { for: 'shadow-add' }, '加入影片裡的句子（會存起來，下次上這課也會出現）'), add,
+    h('div', { class: 'tools' }, h('button', { class: 'btn small primary', type: 'button', onclick: () => addShadowLines(add.value, addMsg) }, '加入跟讀'), addMsg));
+  return h('div', null,
+    h('p', { class: 'eyebrow' }, `Shadowing 跟讀${it.custom ? '・影片句子' : '・示範句'}`),
+    h('p', { class: 'shadow-text' }, it.text),
+    h('div', { class: 'tools' },
+      speakBtn(it.text, '聽一次'),
+      h('span', { class: 'muted sm' }, '先聽，再跟著說一次。也可以回影片重播這一句。')),
+    micControl({ owner: k, continuous: false, maxMs: 15000, label: '按我開始跟讀', onDone: r => handleSpeech(k, r.text, r.alts, t => evalShadow(it.text, t)) }),
+    resultBox(k),
+    h('div', { class: 'tools', style: 'margin-top:14px' },
+      h('button', { class: 'linkish', type: 'button', onclick: () => { addBox.hidden = !addBox.hidden; if (!addBox.hidden) add.focus(); } }, '＋ 貼上影片逐字稿的句子'),
+      it.custom ? h('button', { class: 'linkish', type: 'button', onclick: () => removeShadowLine(it.id) }, '刪掉這一句') : null),
+    addBox);
+}
+function addShadowLines(raw, msg) {
+  const lines = String(raw || '').split(/\n+/).map(x => x.trim()).filter(x => x.length >= 3);
+  if (!lines.length) { msg.textContent = '請先貼上句子。'; return; }
+  const s = state.session, lid = s.lessonId;
+  const store = state.settings.shadow[lid] || (state.settings.shadow[lid] = []);
+  const firstNew = s.extra.length;
+  lines.forEach(t => {
+    if (s.extra.some(x => x.text === t)) return;
+    const x = { id: 'x_' + newId(), text: t };
+    s.extra.push(x);
+    if (!store.some(y => y.text === t)) store.push({ id: x.id, text: t });
+  });
+  saveSettings(); saveDraft();
+  const its = curItems();
+  const idx = its.findIndex(i => s.extra[firstNew] && i.id === s.extra[firstNew].id);
+  if (idx >= 0) state.itemIdx = idx;
+  paintTabs(); paintStage(); paintTutor();
+}
+function removeShadowLine(id) {
+  const s = state.session, lid = s.lessonId;
+  s.extra = s.extra.filter(x => x.id !== id);
+  state.settings.shadow[lid] = (state.settings.shadow[lid] || []).filter(x => x.id !== id);
+  Object.keys(s.ratings).forEach(k => { if (k.endsWith('__' + id)) delete s.ratings[k]; });
+  saveSettings(); saveDraft();
+  state.itemIdx = Math.min(state.itemIdx, curItems().length - 1);
+  paintLesson();
+}
+
+/* ---------- 角色扮演 ---------- */
+function doorRating(it, k) {
+  const s = state.session, lines = it.lines.map((l, i) => ({ l, i })).filter(x => x.l.s === 's');
+  const tried = lines.filter(x => s.said[k + '#' + x.i]);
+  if (!tried.length) return 0;
+  const avg = tried.reduce((a, x) => a + (s.evals[k + '#' + x.i]?.ratio || 0), 0) / tried.length;
+  return avg >= 0.85 && tried.length === lines.length ? 3 : avg >= 0.5 ? 2 : 1;
+}
+function renderDialogue(st, it, k) {
+  const s = state.session;
+  const shown = !!s.hints[k];
+  const hintBtn = h('button', { class: 'btn small', type: 'button', disabled: shown }, shown ? '已顯示學生台詞' : '顯示學生台詞提示');
+  hintBtn.addEventListener('click', () => {
+    s.hints[k] = true; saveDraft();
+    $$('.s-hint').forEach(n => { n.hidden = false; });
+    hintBtn.disabled = true; hintBtn.textContent = '已顯示學生台詞'; paintTutor();
+  });
+  const lines = it.lines.map((l, i) => {
+    if (l.s === 'n') return h('div', { class: 'bubble n' }, h('span', { class: 'who-l' }, it.who), h('p', null, l.t), h('div', { class: 'bubble-row' }, speakBtn(l.t, '播放')));
+    const lk = k + '#' + i;
+    const res = h('p', { class: 'line-res', id: 'line-' + lk });
+    const paintRes = () => {
+      const said = s.said[lk], ev = s.evals[lk];
+      res.className = 'line-res' + (ev ? (ev.ratio >= 0.99 ? ' ok' : ' no') : '');
+      res.textContent = said ? `${ev && ev.ratio >= 0.99 ? '✓' : '△'} 「${said}」${ev && ev.missing.length ? `（還少：${ev.missing.join('、')}）` : ''}` : '';
+    };
+    paintRes();
+    return h('div', { class: 'bubble s' },
+      h('span', { class: 'who-l' }, 'You'),
+      h('p', { class: 's-hint', hidden: !shown }, l.t),
+      h('div', { class: 'bubble-row' }, micControl({ owner: lk, small: true, continuous: false, maxMs: 15000, label: '換你說', onDone: r => {
+        s.said[lk] = r.text;
+        const e = evalLine(l, r.text);
+        s.evals[lk] = e;
+        s.stats.attempts++; s.stats.words += toks(r.text).length;
+        s.said[k] = r.text;
+        s.evals[k] = { rating: doorRating(it, k), chips: [], wc: 0 };
+        paintRes();
+        applyRating(k, doorRating(it, k));
+      } })),
+      res);
+  });
+  return h('div', null,
+    h('div', { class: 'door-head' },
+      h('div', { class: 'door-pic', 'aria-hidden': 'true' }, it.pic),
+      h('div', null, h('p', { class: 'eyebrow' }, `Door ${state.itemIdx + 1} of ${curItems().length}`), h('h3', { class: 'door-who' }, it.who), h('p', { class: 'muted' }, it.mood))),
+    h('div', { class: 'tools' }, hintBtn, h('span', { class: 'muted sm' }, '老師唸鄰居的台詞，學生按「換你說」回答。')),
+    h('div', { class: 'chat' }, lines));
+}
+
+/* ---------- 說故事 ---------- */
+function renderPanel(st, it, k) {
+  const s = state.session;
+  const hits = new Set((s.evals[k] && s.evals[k].hits) || []);
+  const model = reveal('看示範句', h('p', { class: 'hint' }, it.model, ' ', speakBtn(it.model, '聽示範')), k);
+  return h('div', null,
+    h('p', { class: 'story-title' }, st.storyTitle),
+    h('div', { class: 'strip' }, curItems().map((p, i) => h('button', { class: 'panel-mini', type: 'button', 'aria-current': String(i === state.itemIdx), onclick: () => goItem(i), 'aria-label': `第 ${i + 1} 格` },
+      h('span', { class: 'pm-n' }, String(i + 1)), h('span', { 'aria-hidden': 'true' }, p.scene)))),
+    h('div', { class: 'panel-big' },
+      h('div', { class: 'pb-scene', 'aria-hidden': 'true' }, it.scene),
+      h('div', null,
+        h('p', { class: 'eyebrow' }, `Picture ${state.itemIdx + 1} of ${curItems().length}`),
+        h('p', { class: 'prompt sm' }, it.prompt),
+        h('div', { class: 'kw' }, it.keywords.map(w => h('span', { class: 'kw-chip' + (hits.has(w) ? ' hit' : '') }, w))),
+        h('div', { class: 'tools' }, speakBtn(it.prompt, '聽題目'), model.btn),
+        model.content,
+        micControl({ owner: k, continuous: true, maxMs: 45000, onDone: r => { handleSpeech(k, r.text, r.alts, t => evalPanel(it, t)); paintStage(); } }),
+        resultBox(k))));
+}
+
+/* ---------- 老師評分區 ---------- */
+function paintTutor() {
+  const el = $('#tutor'); if (!el) return;
+  const st = curStage(), it = curItem(), k = keyOf(st, it), s = state.session;
+  const r = s.ratings[k] || 0, fl = s.flags[k] || [], b = s.bonus[k] || 0;
+  const ev = s.evals[k];
+  const note = h('input', { id: 'note-input', type: 'text', placeholder: '老師筆記：學生的好句子或常犯的錯（選填，會放進報告）', value: s.notes[k] || '' });
+  note.addEventListener('input', () => { s.notes[k] = note.value; saveDraftSoon(); });
+  const items = curItems(), last = state.stageIdx === lessonOf(s).stages.length - 1 && state.itemIdx === items.length - 1;
+  const first = state.stageIdx === 0 && state.itemIdx === 0;
+  el.replaceChildren(
+    h('div', { class: 'tutor-head' },
+      h('h2', null, '老師評分區'),
+      h('span', { class: 'suggest' },
+        ev && ev.rating ? (s.manual[k] ? `電腦建議 ${ev.rating} 顆，已用老師的分數` : `目前是電腦建議的分數，按下面可以改`) : '學生說完會自動給建議分數；也可以直接按',
+        '・鍵盤：1 / 2 / 3 評分、M 開麥克風、← → 換題')),
+    h('div', { class: 'rate' }, RATINGS.map(R => h('button', { class: 'rate-btn r' + R.v, type: 'button', 'aria-pressed': String(r === R.v), onclick: () => setManual(k, R.v) },
+      h('span', { class: 'rb-zh' }, R.zh), h('span', { class: 'rb-en' }, `${R.en}・按 ${R.v}`), candyRow(R.v)))),
+    h('div', { class: 'flags' }, h('span', { class: 'label' }, '要加強'),
+      Object.entries(FLAGS).map(([id, F]) => h('button', { class: 'flag', type: 'button', 'aria-pressed': String(fl.includes(id)), onclick: () => toggleFlag(k, id) }, F.zh))),
+    note,
+    h('div', { class: 'tnav' },
+      h('button', { class: 'btn small', type: 'button', onclick: () => addBonus(k) }, b ? `+1 加分（已加 ${b}）` : '+1 加分'),
+      s.hints[k] ? h('span', { class: 'pill' }, '有看提示') : null,
+      h('span', { class: 'spacer' }),
+      h('button', { class: 'btn small', type: 'button', disabled: first, onclick: prevItem }, '← 上一題'),
+      last ? confirmBtn('完成，產生報告', '確定結束？', 'btn primary', endLesson)
+           : h('button', { class: 'btn primary', type: 'button', onclick: nextItem }, '下一題 →')));
+}
+function setManual(k, v) {
+  const s = state.session, before = s.ratings[k] || 0;
+  if (s.ratings[k] === v && s.manual[k]) { delete s.ratings[k]; delete s.manual[k]; }
+  else { s.ratings[k] = v; s.manual[k] = true; }
+  saveDraft(); paintCounter((s.ratings[k] || 0) > before); paintTabs(); paintDots(); paintTutor();
+  const box = $('#res-' + CSS.escape(k)); if (box) box.replaceWith(resultBox(k));
+}
+function toggleFlag(k, id) {
+  const s = state.session, fl = new Set(s.flags[k] || []);
+  if (fl.has(id)) fl.delete(id); else fl.add(id);
+  s.flags[k] = [...fl]; if (!fl.size) delete s.flags[k];
+  saveDraft(); paintTutor();
+}
+function addBonus(k) {
+  const s = state.session; s.bonus[k] = Math.min(3, (s.bonus[k] || 0) + 1);
+  saveDraft(); paintCounter(true); paintTutor();
+}
+function nextItem() {
+  const items = curItems(), stages = lessonOf(state.session).stages;
+  if (state.itemIdx < items.length - 1) state.itemIdx++;
+  else if (state.stageIdx < stages.length - 1) { state.stageIdx++; state.itemIdx = 0; }
+  else return;
+  Speech.abort(); saveDraft(); paintTabs(); paintStage(); paintTutor(); $('#stage').scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+function prevItem() {
+  if (state.itemIdx > 0) state.itemIdx--;
+  else if (state.stageIdx > 0) { state.stageIdx--; state.itemIdx = curItems().length - 1; }
+  else return;
+  Speech.abort(); saveDraft(); paintTabs(); paintStage(); paintTutor();
+}
+function confirmBtn(label, armedLabel, cls, onConfirm) {
+  const b = h('button', { class: cls, type: 'button' }, label);
+  let armed = false, t = null;
+  b.addEventListener('click', () => {
+    if (!armed) {
+      armed = true; b.textContent = armedLabel; b.classList.add('armed');
+      t = setTimeout(() => { armed = false; b.textContent = label; b.classList.remove('armed'); }, 4000);
+    } else { clearTimeout(t); onConfirm(); }
+  });
+  return b;
+}
+
+/* 這段在做什麼：上課計時（只算畫面開著的時間） */
+function startTimer() { stopTimer(); lastTick = Date.now(); timerId = setInterval(tick, 1000); tick(); }
+function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+function tick() {
+  const now = Date.now(), dt = now - lastTick; lastTick = now;
+  if (state.session && dt < 60000) state.session.activeMs = (state.session.activeMs || 0) + dt;
+  const t = $('#timer'); if (t && state.session) t.textContent = fmtClock(state.session.activeMs);
+  if (++tickCount % 15 === 0) saveDraft();
+}
+
+/* 這段在做什麼：鍵盤快捷鍵（方便老師用筆電操作） */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && state.drawer) { state.drawer = false; paintDrawer(); return; }
+  if (state.view !== 'lesson' || state.drawer) return;
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (['1', '2', '3'].includes(e.key)) { setManual(curKey(), Number(e.key)); e.preventDefault(); }
+  else if (e.key === 'ArrowRight') { nextItem(); e.preventDefault(); }
+  else if (e.key === 'ArrowLeft') { prevItem(); e.preventDefault(); }
+  else if (e.key === 'm' || e.key === 'M') { const b = $('#stage .mic-btn:not(:disabled)'); if (b) { b.click(); e.preventDefault(); } }
+});
+
+/* ==========================================================
+   這段在做什麼：教材面板（影片、Twinkl、自己加的連結）
+   ========================================================== */
+function lessonMaterials(lid) {
+  const L = LESSONS[lid], hidden = new Set(state.settings.hidden[lid] || []);
+  return [
+    ...L.materials.filter(m => !hidden.has(m.id)).map(m => Object.assign({ builtin: true }, m)),
+    ...(state.settings.custom[lid] || []).map(m => Object.assign({ builtin: false }, m))
+  ];
+}
+function paintDrawer() {
+  const old = $('#drawer'); if (old) old.remove();
+  if (!state.drawer || state.view !== 'lesson' || !state.session) return;
+  const lid = state.session.lessonId, L = LESSONS[lid], list = lessonMaterials(lid);
+  const hiddenN = (state.settings.hidden[lid] || []).length;
+  const kind = h('select', { id: 'mat-kind' }, MAT_KINDS.map(k => h('option', { value: k }, k)));
+  const title = h('input', { id: 'mat-title', type: 'text', placeholder: '例如：Room on the Broom 動畫' });
+  const url = h('input', { id: 'mat-url', type: 'url', placeholder: 'https://' });
+  const msg = h('p', { class: 'form-msg', 'aria-live': 'polite' });
+  const add = () => {
+    const t = title.value.trim(), u = url.value.trim();
+    if (!t) { msg.textContent = '請填標題。'; title.focus(); return; }
+    if (!/^https?:\/\/\S+$/i.test(u)) { msg.textContent = '網址要以 https:// 開頭。'; url.focus(); return; }
+    (state.settings.custom[lid] || (state.settings.custom[lid] = [])).push({ id: 'c_' + newId(), kind: kind.value, title: t, url: u, note: '' });
+    saveSettings(); paintDrawer();
+  };
+  const remove = m => {
+    if (m.builtin) (state.settings.hidden[lid] || (state.settings.hidden[lid] = [])).push(m.id);
+    else state.settings.custom[lid] = (state.settings.custom[lid] || []).filter(x => x.id !== m.id);
+    saveSettings(); paintDrawer();
+  };
+  const useAsVideo = m => { L.video = { title: m.title, source: m.kind, url: m.url }; state.settings.video = state.settings.video || {}; state.settings.video[lid] = L.video; saveSettings(); state.drawer = false; paintDrawer(); paintStage(); };
+  const panel = h('aside', { class: 'drawer-panel', role: 'dialog', 'aria-modal': 'true', 'aria-label': '上課教材' },
+    h('div', { class: 'dp-head' }, h('h2', null, '上課教材'), h('button', { class: 'btn small ghost', type: 'button', onclick: () => { state.drawer = false; paintDrawer(); } }, '關閉')),
+    h('p', { class: 'muted sm' }, `${L.title}：點標題會在新分頁打開。按「設為影片練習」可以換掉影片練習用的影片。`),
+    h('ul', { class: 'mats' }, list.map(m => h('li', { class: 'mat' },
+      h('span', { class: 'mat-kind' }, m.kind),
+      h('div', null,
+        h('a', { href: m.url, target: '_blank', rel: 'noopener noreferrer' }, m.title),
+        m.note ? h('p', { class: 'muted sm' }, m.note) : null,
+        /影片|動畫/.test(m.kind) ? h('button', { class: 'linkish', type: 'button', onclick: () => useAsVideo(m) }, L.video.url === m.url ? '目前的影片練習' : '設為影片練習') : null),
+      h('button', { class: 'btn small ghost', type: 'button', 'aria-label': `移除 ${m.title}`, onclick: () => remove(m) }, '移除')))),
+    hiddenN ? h('button', { class: 'linkish', type: 'button', onclick: () => { state.settings.hidden[lid] = []; saveSettings(); paintDrawer(); } }, `還原 ${hiddenN} 個預設教材`) : null,
+    h('div', { class: 'mat-form' },
+      h('p', { class: 'eyebrow' }, '新增教材'),
+      h('label', { for: 'mat-kind' }, '類型'), kind,
+      h('label', { for: 'mat-title' }, '標題'), title,
+      h('label', { for: 'mat-url' }, '網址'), url,
+      h('button', { class: 'btn primary', type: 'button', onclick: add }, '加入'), msg));
+  document.body.append(h('div', { class: 'drawer', id: 'drawer' }, h('div', { class: 'drawer-bg', onclick: () => { state.drawer = false; paintDrawer(); } }), panel));
+  title.focus();
+}
+
+/* ==========================================================
+   這段在做什麼：下課，算分數、產生報告
+   ========================================================== */
+function endLesson() {
+  const s = state.session; if (!s) return;
+  Speech.abort();
+  s.endedAt = Date.now();
+  s.summary = summarize(s);
+  s.updatedAt = Date.now();
+  state.sessions = state.sessions.filter(x => x.id !== s.id).concat([s]);
+  saveSessions();
+  LS.del('draft:' + s.studentId);
+  state.reportId = s.id; state.session = null; state.drawer = false;
+  go('report');
+}
+function levelTitle(pct, rated) {
+  if (!rated) return '尚未評分';
+  if (pct >= 90) return 'Halloween Legend 萬聖傳奇';
+  if (pct >= 75) return 'Spooky Star 驚喜之星';
+  if (pct >= 60) return 'Brave Explorer 勇敢探險家';
+  return 'Little Ghost 小幽靈，繼續加油';
+}
+function computeReport(s) {
+  const L = lessonOf(s), dims = {};
+  DIMS.forEach(d => { dims[d.id] = { sum: 0, n: 0 }; });
+  let earned = 0, max = 0, bonus = 0, rated = 0, total = 0, hints = 0;
+  const highlights = [], work = [];
+  const stages = L.stages.map(st => {
+    let e = 0, m = 0, b = 0, r = 0;
+    const its = itemsOf(st, s);
+    its.forEach((it, idx) => {
+      total++;
+      const k = keyOf(st, it), v = s.ratings[k], fl = s.flags[k] || [];
+      b += s.bonus[k] || 0;
+      if (s.hints[k]) hints++;
+      const skills = it.skills || st.skills;
+      if (v) { e += v; m += 3; r++; skills.forEach(d => { dims[d].sum += v; dims[d].n++; }); }
+      fl.forEach(f => { const d = FLAGS[f].dim; dims[d].sum += 1; dims[d].n++; });
+      const entry = { label: itemLabel(st, it, idx), stage: st.zh, said: s.said[k] || '', note: (s.notes[k] || '').trim(), flags: fl.map(f => FLAGS[f].zh) };
+      if (v === 3) highlights.push(entry);
+      if (v === 1 || fl.length) work.push(entry);
+    });
+    earned += e; max += m; bonus += b; rated += r;
+    return { id: st.id, title: st.title, zh: st.zh, earned: e, max: m, bonus: b, rated: r, count: its.length };
+  });
+  const pct = max ? Math.round(earned / max * 100) : 0;
+  return {
+    earned, max, bonus, candies: earned + bonus, pct, rated, total, hints, stages, highlights, work,
+    dims: DIMS.map(d => ({ id: d.id, zh: d.zh, en: d.en, score: dims[d.id].n ? Math.round(dims[d.id].sum / dims[d.id].n / 3 * 50) / 10 : null })),
+    title: levelTitle(pct, rated),
+    attempts: (s.stats && s.stats.attempts) || 0, words: (s.stats && s.stats.words) || 0
+  };
+}
+function summarize(s) { const R = computeReport(s); return { pct: R.pct, candies: R.earned, bonus: R.bonus, max: R.max, title: R.title, rated: R.rated, total: R.total }; }
+
+function viewReport() {
+  const s = state.sessions.find(x => x.id === state.reportId);
+  if (!s) { state.view = 'history'; return viewHistory(); }
+  const L = lessonOf(s), R = computeReport(s);
+  const note = h('textarea', { id: 'teacher-note', placeholder: '寫給家長的話。也可以按下面「複製給 Claude 寫評語」，再把 Claude 寫好的貼回來。', value: s.teacherNote || '' });
+  note.addEventListener('change', () => { s.teacherNote = note.value; s.updatedAt = Date.now(); saveSessions(); });
+  note.addEventListener('input', () => { s.teacherNote = note.value; });
+  const status = h('p', { class: 'copy-status', 'aria-live': 'polite' });
+  const fallback = h('div');
+  const nextNote = h('textarea', { id: 'next-note', placeholder: '下次上課要練什麼（選填）', value: s.nextNote || '' });
+  nextNote.addEventListener('change', () => { s.nextNote = nextNote.value; s.updatedAt = Date.now(); saveSessions(); });
+  nextNote.addEventListener('input', () => { s.nextNote = nextNote.value; });
+  return h('div', null,
+    h('div', { class: 'report-tools' },
+      h('button', { class: 'btn small ghost', type: 'button', onclick: () => go('map') }, '← 回島上'),
+      h('button', { class: 'btn small ghost', type: 'button', onclick: () => go('history') }, '所有報告')),
+    h('article', { class: 'paper' },
+      h('header', null,
+        h('p', { class: 'eyebrow' }, 'English Isle 上課報告'),
+        h('h1', null, `${s.studentName}・${L.title} ${L.zh}`),
+        h('div', { class: 'meta' },
+          h('span', null, fmtDate(s.startedAt) + ' ' + fmtTime(s.startedAt)),
+          h('span', null, '上課 ' + fmtMin(s.activeMs)),
+          h('span', null, L.level))),
+      h('section', { class: 'score' },
+        h('p', { class: 'big' }, String(R.earned), h('small', null, `/ ${R.max} 顆糖`)),
+        h('div', { class: 'score-meta' },
+          h('span', { class: 'badge' }, R.title),
+          h('span', null, `得分率 ${R.pct}%・完成 ${R.rated} / ${R.total} 題・加分 ${R.bonus} 顆`),
+          h('span', null, `開口說了 ${R.attempts} 次，共 ${R.words} 個英文字・看提示 ${R.hints} 次`))),
+      h('section', null, h('h3', null, '能力分數（滿分 5）'),
+        h('div', { class: 'bars' }, R.dims.map(d => h('div', { class: 'bar-row' },
+          h('span', null, d.zh),
+          h('span', { class: 'bar' }, h('i', { style: `width:${d.score ? d.score / 5 * 100 : 0}%` })),
+          h('b', null, d.score == null ? '—' : d.score.toFixed(1)))))),
+      h('section', null, h('h3', null, '各關卡'),
+        h('div', { class: 'tbl-wrap' }, h('table', { class: 'tbl' },
+          h('thead', null, h('tr', null, h('th', null, '關卡'), h('th', { class: 'num' }, '完成'), h('th', { class: 'num' }, '得分'), h('th', { class: 'num' }, '加分'))),
+          h('tbody', null, R.stages.map(x => h('tr', null,
+            h('td', null, `${x.zh} ${x.title}`),
+            h('td', { class: 'num' }, `${x.rated} / ${x.count}`),
+            h('td', { class: 'num' }, x.max ? `${x.earned} / ${x.max}` : '—'),
+            h('td', { class: 'num' }, x.bonus ? '+' + x.bonus : '—'))))))),
+      h('section', null, h('h3', null, '做得好的地方'),
+        R.highlights.length ? h('ul', { class: 'list' }, R.highlights.slice(0, 6).map(x => h('li', null,
+          h('b', null, x.label), h('span', { class: 'empty-note' }, '・' + x.stage),
+          x.said ? h('p', { class: 'said' }, '「' + x.said + '」') : null,
+          x.note ? h('p', { class: 'empty-note' }, '老師筆記：' + x.note) : null)))
+          : h('p', { class: 'empty-note' }, '這堂課還沒有 3 顆糖的題目。')),
+      h('section', null, h('h3', null, '下次要加強'),
+        R.work.length ? h('ul', { class: 'list' }, R.work.slice(0, 8).map(x => h('li', null,
+          h('b', null, x.label), x.flags.map(f => h('span', { class: 'fl' }, f)),
+          x.said ? h('p', { class: 'said' }, '電腦聽到：「' + x.said + '」') : null,
+          x.note ? h('p', { class: 'empty-note' }, '老師筆記：' + x.note) : null)))
+          : h('p', { class: 'empty-note' }, '沒有需要特別加強的題目。')),
+      h('section', null, h('h3', null, '老師評語'), note),
+      h('section', null, h('h3', null, '下次上課'), nextNote),
+      h('section', { class: 'copy-row' },
+        h('button', { class: 'btn primary', type: 'button', onclick: () => copyText(reportText(s, R), status, fallback, '已複製，可以直接貼到 LINE。') }, '複製給家長（LINE）'),
+        h('button', { class: 'btn', type: 'button', onclick: () => copyText(claudePrompt(s, R), status, fallback, '已複製。打開 Claude 貼上，把它寫的評語貼回「老師評語」。') }, '複製給 Claude 寫評語'),
+        status),
+      fallback));
+}
+async function copyText(text, statusEl, host, okMsg) {
+  try { await navigator.clipboard.writeText(text); statusEl.textContent = okMsg; host.replaceChildren(); }
+  catch (e) {
+    const ta = h('textarea', { class: 'copy-fallback', id: 'copy-fallback', readonly: true }); ta.value = text;
+    host.replaceChildren(ta); ta.focus(); ta.select();
+    statusEl.textContent = '沒辦法自動複製。文字已經選好了，請按 Ctrl+C（Mac 按 ⌘C）。';
+  }
+}
+function reportText(s, R) {
+  const L = lessonOf(s);
+  const out = [
+    `【English Isle 上課報告】`,
+    `${s.studentName}｜${fmtDate(s.startedAt)}｜${L.title} ${L.zh}｜${fmtMin(s.activeMs)}`,
+    '',
+    `糖果：${R.earned} / ${R.max}（${R.pct}%）${R.bonus ? `＋加分 ${R.bonus} 顆` : ''}・${R.title}`,
+    `開口說了 ${R.attempts} 次，共 ${R.words} 個英文字`,
+    '',
+    '能力分數（滿分 5）',
+    R.dims.filter(d => d.score != null).map(d => `${d.zh} ${d.score.toFixed(1)}`).join('｜')
+  ];
+  if (R.highlights.length) { out.push('', '做得好'); R.highlights.slice(0, 4).forEach(x => out.push(`・${x.label}${x.said ? `：「${x.said}」` : ''}`)); }
+  if (R.work.length) { out.push('', '下次加強'); R.work.slice(0, 4).forEach(x => out.push(`・${x.label}${x.flags.length ? `（${x.flags.join('、')}）` : ''}`)); }
+  if ((s.teacherNote || '').trim()) out.push('', '老師的話', s.teacherNote.trim());
+  if ((s.nextNote || '').trim()) out.push('', '下次上課', s.nextNote.trim());
+  return out.join('\n');
+}
+function claudePrompt(s, R) {
+  const L = lessonOf(s), lines = [];
+  L.stages.forEach(st => {
+    lines.push(`## ${st.title}（${st.zh}）`);
+    itemsOf(st, s).forEach((it, idx) => {
+      const k = keyOf(st, it), r = s.ratings[k], fl = s.flags[k] || [], said = s.said[k], note = (s.notes[k] || '').trim();
+      if (!r && !said && !note && !fl.length) return;
+      lines.push(`- ${itemLabel(st, it, idx)}｜分數 ${r || '未評'}${fl.length ? `｜要加強：${fl.map(f => FLAGS[f].zh).join('、')}` : ''}${s.hints[k] ? '｜看了提示' : ''}${said ? `｜學生說：「${said}」` : ''}${note ? `｜老師筆記：${note}` : ''}`);
+    });
+  });
+  return `<role>你是台灣的英語家教助理，幫老師寫下課後給家長的評語。</role>
+
+<task>根據下面的上課紀錄，寫三段文字：給家長的中文評語、給學生的英文鼓勵、下次上課建議。</task>
+
+<context>
+學生：${s.studentName}，小學五年級，程度中上（有上全英文補習班）。
+課程：${L.title}（${L.zh}），口說課，程度 ${L.level}，上課 ${fmtMin(s.activeMs)}。
+分數：每題 1–3 顆糖（1 再練練、2 不錯、3 很棒）。學生說的話是電腦語音辨識聽寫的，可能有辨識錯誤。
+總分：${R.earned} / ${R.max}（${R.pct}%），完成 ${R.rated} / ${R.total} 題，看提示 ${R.hints} 次，開口 ${R.attempts} 次、共 ${R.words} 個英文字。
+能力分數（滿分 5）：${R.dims.map(d => `${d.zh} ${d.score ?? '無資料'}`).join('、')}
+老師已經寫的評語：${(s.teacherNote || '').trim() || '（無）'}
+
+上課紀錄：
+${lines.join('\n')}
+</context>
+
+<constraint>
+- 中文用繁體、台灣用語，語氣溫暖專業，不浮誇，不要堆驚嘆號。
+- 要具體：引用 1–2 句學生真的說過的英文。
+- 只提 1 個最重要的改進點，不要列一長串缺點。
+- 電腦聽寫可能有誤，不要因為單一個字辨識錯就判斷發音有問題。
+</constraint>
+
+<output_format>
+【給家長】90–140 字
+【To ${s.studentName}】2–3 句簡單英文（A2 程度）
+【下次上課】3 點，每點 25 字以內
+</output_format>`;
+}
+
+/* ==========================================================
+   這段在做什麼：成績港（所有報告、備份）
+   ========================================================== */
+function viewHistory() {
+  const mine = state.student ? state.sessions.filter(x => x.studentId === state.student.id) : state.sessions;
+  const list = (state.historyAll ? state.sessions : mine).slice().sort((a, b) => b.startedAt - a.startedAt);
+  const fileIn = h('input', { type: 'file', id: 'import-file', accept: 'application/json,.json', hidden: true });
+  const msg = h('p', { class: 'muted sm', 'aria-live': 'polite' });
+  fileIn.addEventListener('change', () => importBackup(fileIn.files && fileIn.files[0], msg));
+  return h('div', null,
+    h('div', { class: 'page-head' },
+      h('div', null, h('p', { class: 'eyebrow' }, 'Report Harbor'), h('h1', { class: 'h1' }, '成績港')),
+      state.student ? h('label', { class: 'muted', style: 'display:flex;gap:8px;align-items:center;font-size:15px' },
+        h('input', { type: 'checkbox', id: 'show-all', checked: state.historyAll, onchange: e => { state.historyAll = e.target.checked; render(); } }), '顯示所有學生') : null),
+    list.length ? h('div', { class: 'hist' }, list.map(s => {
+      const L = LESSONS[s.lessonId], sm = s.summary || summarize(s);
+      return h('div', { class: 'hist-row' },
+        h('div', null, h('b', null, `${s.studentName}・${L ? L.title : s.lessonId}`), h('p', { class: 'muted sm' }, `${fmtDate(s.startedAt)} ${fmtTime(s.startedAt)}・${fmtMin(s.activeMs)}・${sm.title}`)),
+        h('div', { class: 'hist-pct' }, h('span', null, `${sm.candies} / ${sm.max} 顆糖・${sm.pct}%`), h('span', { class: 'bar' }, h('i', { style: `width:${sm.pct}%;display:block;height:100%;background:var(--pumpkin)` }))),
+        h('div', { class: 'hist-actions' },
+          h('button', { class: 'btn small primary', type: 'button', onclick: () => { state.reportId = s.id; go('report'); } }, '看報告'),
+          confirmBtn('刪除', '確定刪除？', 'btn small ghost', () => { state.sessions = state.sessions.filter(x => x.id !== s.id); saveSessions(); render(); })));
+    })) : h('div', { class: 'empty' }, '還沒有報告。上完第一堂課，報告會出現在這裡。'),
+    h('div', { class: 'backup' },
+      h('button', { class: 'btn small', type: 'button', onclick: exportBackup }, '匯出備份'),
+      h('button', { class: 'btn small ghost', type: 'button', onclick: () => fileIn.click() }, '匯入備份'),
+      fileIn,
+      h('span', { class: 'muted sm' }, '資料只存在這台電腦的 Chrome。換電腦前先匯出，到新電腦再匯入。'),
+      msg));
+}
+function exportBackup() {
+  const data = { app: 'english-isle', version: 1, exportedAt: new Date().toISOString(), roster: state.roster, sessions: state.sessions, settings: state.settings };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = h('a', { href: URL.createObjectURL(blob), download: `english-isle-backup-${ymd()}.json` });
+  document.body.append(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+function importBackup(file, msg) {
+  if (!file) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const d = JSON.parse(fr.result);
+      if (d.app !== 'english-isle') throw new Error('not ours');
+      const merge = (a, b) => { const m = new Map(); [...a, ...b].forEach(x => { if (x && x.id) { const c = m.get(x.id); if (!c || (x.updatedAt || 0) >= (c.updatedAt || 0)) m.set(x.id, x); } }); return [...m.values()]; };
+      state.roster = merge(state.roster, d.roster || []);
+      state.sessions = merge(state.sessions, d.sessions || []);
+      if (d.settings) state.settings = Object.assign({}, d.settings, state.settings);
+      saveRoster(); saveSessions(); saveSettings();
+      render();
+      const m2 = $('[aria-live]', $('.backup')); if (m2) m2.textContent = `匯入完成：${(d.sessions || []).length} 份報告。`;
+    } catch (e) { msg.textContent = '這個檔案不是英語島的備份。'; }
+  };
+  fr.readAsText(file);
+}
+
+/* 這段在做什麼：開始 */
+(function boot() {
+  const v = state.settings.video && state.settings.video.halloween;
+  if (v && v.url) LESSONS.halloween.video = v;
+  render();
+})();
+
+/* 測試用：模擬學生說了一句話（不影響正常使用） */
+window.isleDebug = {
+  state,
+  say(text) {
+    const st = curStage(), it = curItem(), k = keyOf(st, it), kind = kindOf(st, it);
+    const ev = kind === 'word' ? (t, a) => evalWord(it, t, a) : kind === 'shadow' ? t => evalShadow(it.text, t) : kind === 'panel' ? t => evalPanel(it, t) : t => evalOpen(it.expect || {}, t);
+    handleSpeech(k, text, [], ev); if (kind === 'panel') paintStage();
+  }
+};
+</script>
+</body>
+</html>
