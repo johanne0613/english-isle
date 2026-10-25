@@ -449,7 +449,7 @@ const LESSONS = {
         skills: ['fluency', 'pron'],
         intro: 'Knock on the doors. The teacher plays the neighbor. You play the trick-or-treater.',
         items: [
-          { id: 'door1', who: 'Mrs. Green', pic: '🏡', mood: 'A friendly neighbor',
+          { id: 'door1', who: 'Mrs. Green', voice: 'green', pic: '🏡', mood: 'A friendly neighbor',
             lines: [
               { s: 'n', t: 'Hello there! Wow, look at you! What are you dressed as?' },
               { s: 's', t: "Trick or treat! I'm dressed as a ___.", expect: [['trick or treat'], ['im','i am','dressed']] },
@@ -458,7 +458,7 @@ const LESSONS = {
               { s: 'n', t: 'Would you like chocolate or gummy bears?' },
               { s: 's', t: '___, please. Thank you! Happy Halloween!', expect: [['please'], ['thank','thanks'], ['happy halloween']] }
             ] },
-          { id: 'door2', who: 'Mr. Bones', pic: '💀', mood: 'A curious grandpa',
+          { id: 'door2', who: 'Mr. Bones', voice: 'bones', pic: '💀', mood: 'A curious grandpa',
             lines: [
               { s: 'n', t: 'Trick or treat, eh? Answer my questions first! How many houses have you been to tonight?' },
               { s: 's', t: "We've been to ___ houses.", expect: [['been to','visited','went to','houses','house']] },
@@ -467,7 +467,7 @@ const LESSONS = {
               { s: 'n', t: "Don't eat it all tonight! Here you are." },
               { s: 's', t: "Thanks, Mr. Bones! I won't. Good night!", expect: [['thank','thanks'], ['wont','will not','good night']] }
             ] },
-          { id: 'door3', who: 'The Haunted House', pic: '🏚️', mood: 'A spooky voice behind the door',
+          { id: 'door3', who: 'The Haunted House', voice: 'haunted', pic: '🏚️', mood: 'A spooky voice behind the door',
             lines: [
               { s: 'n', t: 'Whooo is knocking on my door? No candy, unless you answer my riddle! What has a face and two hands, but no arms or legs?' },
               { s: 's', t: "It's a clock!", expect: [['clock']] },
@@ -680,9 +680,45 @@ const TTS = {
   }
 };
 if (TTS.ok) { try { speechSynthesis.onvoiceschanged = () => TTS.pick(); } catch (e) { /* 忽略 */ } }
-function speakBtn(text, label) {
-  if (!TTS.ok) return null;
-  return h('button', { class: 'btn small', type: 'button', onclick: () => TTS.say(text) }, svg(ICON.speaker), label || '聽');
+/* 這段在做什麼：播放語音。有預錄的 Google 語音（audio 資料夾）就播音檔，沒有才用電腦內建語音 */
+const VOICE = {
+  manifest: {}, audio: null,
+  key: (role, text) => role + '|' + text,
+  async load() {
+    try { const r = await fetch('audio/manifest.json', { cache: 'no-cache' }); if (r.ok) this.manifest = await r.json(); }
+    catch (e) { /* 直接打開檔案時讀不到音檔清單，就用電腦語音 */ }
+  },
+  stop() {
+    if (this.audio) { try { this.audio.pause(); } catch (e) { /* 忽略 */ } }
+    if (TTS.ok) { try { speechSynthesis.cancel(); } catch (e) { /* 忽略 */ } }
+  },
+  say(text, role) {
+    this.stop();
+    const file = this.manifest[this.key(role || 'teacher', text)];
+    if (!file) { TTS.say(text); return; }
+    const a = this.audio || (this.audio = new Audio());
+    a.src = file;
+    a.preservesPitch = true;
+    a.defaultPlaybackRate = a.playbackRate = state.settings.slow ? 0.8 : 1;
+    a.play().catch(() => TTS.say(text));
+  }
+};
+function speakBtn(text, label, role) {
+  return h('button', { class: 'btn small', type: 'button', onclick: () => VOICE.say(text, role) }, svg(ICON.speaker), label || '聽');
+}
+/* 這段在做什麼：列出所有要預錄的句子和角色（錄音程式 tools/make-audio.js 會用到） */
+function speechCatalog() {
+  const out = [], seen = new Set();
+  const add = (role, text) => { const k = role + '|' + text; if (text && !seen.has(k)) { seen.add(k); out.push({ role, text }); } };
+  Object.values(LESSONS).forEach(L => L.stages.forEach(st => st.items.forEach(it => {
+    const kind = it.kind || st.kind;
+    if (kind === 'question' || kind === 'panel') add('teacher', it.prompt);
+    if (kind === 'panel') add('teacher', it.model);
+    if (kind === 'word') { add('word', it.word); add('teacher', it.ex); }
+    if (kind === 'shadow') add('teacher', it.text);
+    if (kind === 'dialogue') it.lines.forEach(l => { if (l.s === 'n') add(it.voice || 'teacher', l.t); });
+  })));
+  return out;
 }
 
 /* ==========================================================
@@ -777,7 +813,7 @@ function micControl({ owner, silenceMs, maxMs, small, label, onDone, onReady, on
     if (Speech.rec && Speech.owner === owner) { Speech.stop(); return; }
     err.textContent = '';
     live.textContent = '';
-    try { speechSynthesis.cancel(); } catch (e) { /* 忽略 */ }
+    VOICE.stop();
     const ok = Speech.start({
       owner, silenceMs, maxMs,
       onReady: () => { if (btn.isConnected) setOn(); onReady && onReady(); },
@@ -1212,7 +1248,7 @@ function viewLesson() {
       h('div', { class: 'lh-right' },
         h('div', { class: 'counter', id: 'counter', 'aria-label': '糖果數' }, svg(ICON.candy), h('span', { id: 'candy-n' }, '0')),
         h('span', { class: 'timer', id: 'timer', title: '上課時間' }, '00:00'),
-        TTS.ok ? h('button', { class: 'btn small', type: 'button', id: 'slow-btn', 'aria-pressed': String(!!state.settings.slow), onclick: toggleSlow }, state.settings.slow ? '慢速語音：開' : '慢速語音：關') : null,
+        h('button', { class: 'btn small', type: 'button', id: 'slow-btn', 'aria-pressed': String(!!state.settings.slow), onclick: toggleSlow }, state.settings.slow ? '慢速語音：開' : '慢速語音：關'),
         h('button', { class: 'btn small', type: 'button', onclick: () => { state.drawer = true; paintDrawer(); } }, '教材'),
         confirmBtn('結束課程', '確定結束？產生報告', 'btn small', endLesson))),
     h('nav', { class: 'tabs', id: 'tabs', 'aria-label': '課程關卡' }),
@@ -1350,7 +1386,7 @@ function renderWord(st, it, k) {
       h('p', { class: 'eyebrow' }, `Word ${state.itemIdx + 1} of ${curItems().length}・${it.pos}`),
       h('h3', { class: 'word-w' }, it.word),
       h('p', { class: 'word-def' }, it.def),
-      h('div', { class: 'tools' }, speakBtn(it.word, '聽發音'), ex.btn, zh.btn),
+      h('div', { class: 'tools' }, speakBtn(it.word, '聽發音', 'word'), ex.btn, zh.btn),
       ex.content, zh.content,
       h('p', { class: 'task' }, 'Say the word. Then make your own sentence.'),
       micControl({ owner: k, silenceMs: 2000, maxMs: 15000, onDone: r => handleSpeech(k, r.text, r.alts, (t, a) => evalWord(it, t, a)) }),
@@ -1464,7 +1500,7 @@ function renderDialogue(st, it, k) {
     hintBtn.disabled = true; hintBtn.textContent = '已顯示學生台詞'; paintTutor();
   });
   const lines = it.lines.map((l, i) => {
-    if (l.s === 'n') return h('div', { class: 'bubble n' }, h('span', { class: 'who-l' }, it.who), h('p', null, l.t), h('div', { class: 'bubble-row' }, speakBtn(l.t, '播放')));
+    if (l.s === 'n') return h('div', { class: 'bubble n' }, h('span', { class: 'who-l' }, it.who), h('p', null, l.t), h('div', { class: 'bubble-row' }, speakBtn(l.t, '播放', it.voice)));
     const lk = k + '#' + i;
     const res = h('p', { class: 'line-res', id: 'line-' + lk });
     const paintRes = () => {
@@ -1909,6 +1945,7 @@ function importBackup(file, msg) {
   const v = state.settings.video && state.settings.video.halloween;
   if (v && v.url) LESSONS.halloween.video = v;
   render();
+  VOICE.load();
 })();
 
 /* 測試用：模擬學生說了一句話（不影響正常使用） */
