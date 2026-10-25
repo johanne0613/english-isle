@@ -8,7 +8,7 @@ service cloud.firestore {
     function isTeacher() {
       return signedIn()
         && request.auth.token.get('email_verified', false) == true
-        && request.auth.token.get('email', '').lower() in ['TEACHER_EMAIL_1', 'TEACHER_EMAIL_2'];
+        && request.auth.token.get('email', '').lower() in ['johannetsai@gmail.com', 'taffydavid7177@gmail.com'];
     }
     function studentExists(sid) { return exists(/databases/$(database)/documents/students/$(sid)); }
 
