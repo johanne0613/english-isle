@@ -12,7 +12,8 @@ const DIMS = [
   { id: 'grammar', zh: '文法', en: 'Grammar' },
   { id: 'fluency', zh: '流暢與互動', en: 'Fluency' },
   { id: 'ideas', zh: '表達內容', en: 'Ideas' },
-  { id: 'listening', zh: '聽力理解', en: 'Listening' }
+  { id: 'listening', zh: '聽力理解', en: 'Listening' },
+  { id: 'reading', zh: '閱讀理解', en: 'Reading' }
 ];
 const FLAGS = {
   pron: { zh: '發音', dim: 'pron' },
@@ -152,20 +153,7 @@ const VOICE = {
 function speakBtn(text, label, role) {
   return h('button', { class: 'btn small', type: 'button', onclick: () => VOICE.say(text, role) }, svg(ICON.speaker), label || '聽');
 }
-/* 這段在做什麼：列出所有要預錄的句子和角色（錄音程式 tools/make-audio.js 會用到） */
-function speechCatalog() {
-  const out = [], seen = new Set();
-  const add = (role, text) => { const k = role + '|' + text; if (text && !seen.has(k)) { seen.add(k); out.push({ role, text }); } };
-  Object.values(LESSONS).forEach(L => L.stages.forEach(st => st.items.forEach(it => {
-    const kind = it.kind || st.kind;
-    if (kind === 'question' || kind === 'panel') add('teacher', it.prompt);
-    if (kind === 'panel') add('teacher', it.model);
-    if (kind === 'word') { add('word', it.word); add('teacher', it.ex); }
-    if (kind === 'shadow') add('teacher', it.text);
-    if (kind === 'dialogue') it.lines.forEach(l => { if (l.s === 'n') add(it.voice || 'teacher', l.t); });
-  })));
-  return out;
-}
+/* 要預錄的句子清單（speechCatalog、audioRole）放在 lessons.js，錄音程式不用開瀏覽器就讀得到 */
 
 /* ==========================================================
    這段在做什麼：語音辨識（學生按麥克風說話，電腦把聲音轉成文字）
@@ -329,6 +317,13 @@ function hasPhrase(t, phrase) {
   }
   return false;
 }
+/* 一個字一個字比（不把字黏起來比），he 才不會被 she 算進去；exact 代表一字不差 */
+function hasSeq(t, phrase, exact) {
+  const p = toks(phrase);
+  for (let i = 0; p.length && i + p.length <= t.length; i++) if (p.every((w, j) => (exact ? w === t[i + j] : wordMatch(w, t[i + j])))) return true;
+  return false;
+}
+const hasExact = (t, phrase) => hasSeq(t, phrase, true);
 const findHits = (t, list) => [...new Set(list.filter(w => hasPhrase(t, w)))];
 const hasAny = (t, list) => list.some(w => hasPhrase(t, w));
 const PAST_IRR = new Set('went wore ate saw had was were made got did came took gave ran found thought told said bought brought began became felt knew left met put sat won wrote heard flew fell drank sang swam threw caught taught kept slept built sent spent lost stood hid held could rode woke'.split(' '));
@@ -356,8 +351,18 @@ function evalOpen(ex, text) {
   if (ex.past) { total++; const p = pastVerbs(t); if (p.length) { pass++; chips.push({ ok: true, text: '過去式：' + p.join('、') }); } else chips.push({ ok: false, text: '試著用過去式（went、saw、wore）' }); }
   if (ex.future) { total++; if (hasAny(t, FUTURE)) { pass++; chips.push({ ok: true, text: '用了未來式（going to / will）' }); } else chips.push({ ok: false, text: "試著用 I'm going to …" }); }
   if (ex.would) { total++; if (hasAny(t, WOULD)) { pass++; chips.push({ ok: true, text: '用了 would' }); } else chips.push({ ok: false, text: '試著用 I would …' }); }
+  // 這段在做什麼：段考句型——每一組都要說到（groups），常見錯誤要避開（avoid，一字不差才算）
+  (ex.groups || []).forEach(g => {
+    total++;
+    const hit = g.any.filter(p => hasSeq(t, p, g.exact));
+    if (hit.length) { pass++; chips.push({ ok: true, text: '說到：' + hit[0] }); }
+    else chips.push({ ok: false, text: g.miss || '試著說 ' + g.any[0] });
+  });
+  (ex.avoid || []).forEach(a => {
+    if (a.any.some(p => hasExact(t, p))) { total++; chips.push({ ok: false, text: a.tip }); }
+  });
   const ratio = pass / total;
-  const rating = wc < 3 ? 1 : ratio >= 0.99 ? 3 : ratio >= 0.5 ? 2 : 1;
+  const rating = wc < Math.min(3, minW) ? 1 : ratio >= 0.99 ? 3 : ratio >= 0.5 ? 2 : 1;
   return { rating, chips, wc };
 }
 function evalWord(it, text, alts) {
@@ -442,6 +447,9 @@ function itemLabel(st, it, idx) {
   if (k === 'dialogue') return '敲門：' + it.who;
   if (k === 'panel') return `故事第 ${idx + 1} 格`;
   if (k === 'catch') return '影片抓單字';
+  if (k === 'order') return '句子重組：' + it.zh;
+  if (k === 'spell') return '看圖拼字：' + it.zh;
+  if (k === 'choice') return it.show ? `${it.tag}：${it.show}` : it.audio ? `${it.tag} 第 ${idx + 1} 題` : `${it.tag}：${clip(it.prompt, 48)}`;
   return clip(it.prompt, 60);
 }
 
@@ -544,6 +552,13 @@ const ISLAND_SVG = `
      <rect class="f-tree" x="550" y="286" width="4" height="6"/><rect class="f-tree" x="606" y="286" width="4" height="6"/><rect class="f-tree" x="578" y="338" width="4" height="6"/></g>
   <rect class="f-sandc" x="412" y="496" width="16" height="68"/>
   <path class="f-light" d="M446 566h56l-10 14h-36z"/><polygon class="f-sandc" points="474,526 474,562 498,562"/>
+  <path class="s-path" d="M580 320Q670 380 716 424"/>
+  <g><rect class="f-sandc" x="700" y="426" width="40" height="30"/>
+     <rect class="f-sandc" x="700" y="420" width="7" height="8"/><rect class="f-sandc" x="716" y="420" width="8" height="8"/><rect class="f-sandc" x="733" y="420" width="7" height="8"/>
+     <rect class="f-sandc" x="688" y="412" width="16" height="44"/><rect class="f-sandc" x="736" y="412" width="16" height="44"/>
+     <polygon class="f-stripe" points="685,413 707,413 696,394"/><polygon class="f-stripe" points="733,413 755,413 744,394"/>
+     <path class="f-sea" d="M713 456v-11a7 7 0 0 1 14 0v11z"/>
+     <rect class="f-light" x="719" y="396" width="2" height="26"/><polygon class="f-stripe" points="721,396 734,401 721,406"/></g>
 </svg>`;
 function islandMap(interactive) {
   const map = h('div', { class: 'map' + (interactive ? '' : ' static'), role: interactive ? null : 'img', 'aria-label': interactive ? null : '英語島地圖' });
@@ -568,6 +583,7 @@ function lessonCard(L) {
       h('p', { class: 'eyebrow' }, `${L.level}・約 ${L.minutes} 分鐘`),
       h('h3', { class: 'lc-title' }, L.title, h('span', null, L.zh))),
     h('div', { class: 'lc-grid' },
+      L.scope ? h('div', null, h('h3', null, '段考範圍'), h('ul', null, L.scope.map(x => h('li', null, x)))) : null,
       h('div', null, h('h3', null, '學習目標'), h('ul', null, L.goals.map(g => h('li', null, g)))),
       h('div', null, h('h3', null, '課程流程'), h('ol', { class: 'flow' }, L.stages.map(st => h('li', null, `${st.zh} ${st.title} `, h('span', null, `${st.minutes} 分`))))),
       h('div', null, h('h3', null, '評量方式'), h('p', null, L.assess)),
@@ -575,7 +591,7 @@ function lessonCard(L) {
     h('div', { class: 'lc-actions' },
       hasDraft ? h('button', { class: 'btn primary', type: 'button', onclick: () => startLesson(L.id, true) }, `繼續上次的課（已評 ${done} 題）`) : null,
       h('button', { class: hasDraft ? 'btn' : 'btn primary', type: 'button', onclick: () => startLesson(L.id, false) }, hasDraft ? '重新開始' : '開始上課'),
-      h('a', { class: 'btn ghost', href: L.video.url, target: '_blank', rel: 'noopener noreferrer' }, svg(ICON.play), '先看影片'))
+      L.video && L.video.url ? h('a', { class: 'btn ghost', href: L.video.url, target: '_blank', rel: 'noopener noreferrer' }, svg(ICON.play), '先看影片') : null)
   );
 }
 
@@ -673,6 +689,9 @@ function paintStage() {
   else if (kind === 'shadow') body = renderShadow(st, it, k);
   else if (kind === 'dialogue') body = renderDialogue(st, it, k);
   else if (kind === 'panel') body = renderPanel(st, it, k);
+  else if (kind === 'choice') body = renderChoice(st, it, k);
+  else if (kind === 'order') body = renderOrder(st, it, k);
+  else if (kind === 'spell') body = renderSpell(st, it, k);
   else body = renderQuestion(st, it, k);
   const parts = [head];
   if (st.video && kind !== 'catch') parts.push(videoCard(lessonOf(state.session)));
@@ -729,6 +748,7 @@ function renderQuestion(st, it, k) {
   const hint = reveal('看句型提示', h('p', { class: 'hint' }, it.hint), k);
   const main = h('div', null,
     h('p', { class: 'eyebrow' }, `Question ${curPos() + 1} of ${curItems().length}`),
+    it.pic ? h('div', { class: 'q-cue' }, h('span', { class: 'q-pic', 'aria-hidden': 'true' }, it.pic), it.cue ? h('span', { class: 'q-cue-t' }, it.cue) : null) : null,
     h('p', { class: 'prompt' }, it.prompt),
     h('div', { class: 'tools' }, speakBtn(it.prompt, '聽題目'), hint.btn),
     hint.content,
@@ -923,6 +943,146 @@ function renderPanel(st, it, k) {
         resultBox(k))));
 }
 
+/* ==========================================================
+   這段在做什麼：段考題型（選擇、重組、拼字）
+   電腦直接改：第一次就對 3 顆糖，第二次對 2 顆，之後才對 1 顆
+   ========================================================== */
+const TEST_KINDS = ['choice', 'order', 'spell'];
+const triesRating = n => (n <= 1 ? 3 : n === 2 ? 2 : 1);
+/* 這段在做什麼：記下學生這次的答案；答對才給糖。s.said 記「答題過程」，例如 is → am → are */
+function testTry(k, answer, ok, gaveUp) {
+  const s = state.session, prev = s.evals[k] && !s.evals[k].solved ? s.evals[k] : null;
+  const tries = [...(prev ? prev.tries : []), String(answer)];
+  const ev = { tries, solved: ok, gaveUp: !!gaveUp, rating: 0, wc: 0, chips: [] };
+  s.said[k] = gaveUp ? `看了答案（之前答：${tries.slice(0, -1).join(' → ')}）` : tries.join(' → ');
+  s.evals[k] = ev;
+  if (ok) {
+    ev.rating = gaveUp ? 1 : triesRating(tries.length);
+    ev.chips = [{ ok: !gaveUp && tries.length === 1, text: gaveUp ? '看了答案' : tries.length === 1 ? '第一次就答對' : `第 ${tries.length} 次才答對` }];
+    applyRating(k, ev.rating);
+  } else {
+    ev.chips = [{ ok: false, text: `答錯 ${tries.length} 次` }];
+    saveDraft(); paintTutor();
+  }
+  paintStage();
+  const inp = $('#stage .spell-in:not(:disabled)'); if (inp) inp.focus();
+}
+function testRedo(k) {
+  const s = state.session;
+  delete s.evals[k]; delete s.said[k]; delete orderWork[k];
+  saveDraft(); paintStage();
+}
+function testResult(k, wrongMsg, solvedExtra) {
+  const s = state.session, ev = s.evals[k];
+  if (!ev) return null;
+  if (!ev.solved) return h('p', { class: 'mic-err', 'aria-live': 'polite' }, wrongMsg || '不是這個，再試一次！');
+  const r = s.ratings[k] || 0;
+  return h('div', { class: 'result', 'aria-live': 'polite' },
+    h('div', { class: 'checks' }, ev.chips.map(c => h('span', { class: 'ck ' + (c.ok ? 'ok' : 'no') }, (c.ok ? '✓ ' : '△ ') + c.text))),
+    solvedExtra,
+    r ? h('p', { class: 'earn' }, candyRow(r), r === 3 ? 'Excellent! 拿到 3 顆糖' : r === 2 ? 'Good job! 拿到 2 顆糖' : '拿到 1 顆糖，按「重做這題」可以再挑戰') : null,
+    h('div', null, h('button', { class: 'linkish', type: 'button', onclick: () => testRedo(k) }, '重做這題')));
+}
+const testHead = (it) => h('p', { class: 'eyebrow' }, `${it.tag || ''}・Question ${curPos() + 1} of ${curItems().length}`);
+
+/* ---------- 選擇題（聽力、文法、閱讀） ---------- */
+function renderChoice(st, it, k) {
+  const s = state.session, ev = s.evals[k], solved = !!(ev && ev.solved);
+  const picked = new Set((ev && ev.tries) || []);
+  const L = lessonOf(s), passage = it.passage && L.passages ? L.passages[it.passage] : null;
+  const opts = h('div', { class: 'opts', role: 'group', 'aria-label': '選項' }, it.options.map((o, i) => {
+    const right = i === it.answer;
+    return h('button', { class: 'opt' + (picked.has(o) && !right ? ' no' : '') + (solved && right ? ' ok' : ''), type: 'button',
+      disabled: solved || picked.has(o), onclick: () => testTry(k, o, right) },
+      h('span', { class: 'opt-n' }, 'ABCD'[i]), h('span', null, o));
+  }));
+  return h('div', null,
+    passage ? h('div', { class: 'passage' }, h('p', null, passage), h('div', { class: 'tools', style: 'margin:10px 0 0' }, speakBtn(passage, '聽文章'))) : null,
+    testHead(it),
+    it.audio ? h('div', { class: 'tools' },
+      h('button', { class: 'btn primary', type: 'button', onclick: () => VOICE.say(it.audio, audioRole(it.audio)) }, svg(ICON.play), '播放'),
+      h('span', { class: 'muted sm' }, '可以重聽。開了慢速語音會唸慢一點。')) : null,
+    it.show ? h('p', { class: 'mask' }, it.show) : null,
+    h('p', { class: 'prompt sm' }, it.prompt),
+    opts,
+    testResult(k, null, [
+      it.audio ? h('p', { class: 'heard' }, '播放的是：' + it.audio) : null,
+      it.explain ? h('p', { class: 'explain' }, it.explain) : null]));
+}
+
+/* ---------- 句子重組 ---------- */
+const orderWork = {};  // 正在排的字，換題再回來還在
+function shuffled(n, seed) {
+  let x = 7;
+  for (const ch of seed) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
+  const a = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) { x = (Math.imul(x, 1103515245) + 12345) >>> 0; const j = x % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  if (n > 1 && a.every((v, i) => v === i)) a.push(a.shift());
+  return a;
+}
+function renderOrder(st, it, k) {
+  const s = state.session, ev = s.evals[k], solved = !!(ev && ev.solved);
+  const m = it.answer.match(/^(.*?)([.?!]?)$/), body = m[1], end = m[2];
+  const words = body.split(' ');
+  const cur = solved ? words.map((_, i) => i) : (orderWork[k] || (orderWork[k] = []));
+  const full = cur.length === words.length;
+  const build = h('div', { class: 'build' + (solved ? ' ok' : ''), 'aria-label': '你排的句子' },
+    cur.length ? cur.map((wi, pos) => h('button', { class: 'tile', type: 'button', disabled: solved, 'aria-label': `拿掉 ${words[wi]}`,
+      onclick: () => { cur.splice(pos, 1); paintStage(); } }, words[wi])) : h('span', { class: 'build-ph' }, '點下面的字，排成一個句子'),
+    full ? h('span', { class: 'end' }, end) : null);
+  const bank = h('div', { class: 'tiles' }, shuffled(words.length, it.id + it.answer).map(wi =>
+    h('button', { class: 'tile' + (cur.includes(wi) ? ' used' : ''), type: 'button', disabled: solved || cur.includes(wi),
+      onclick: () => { cur.push(wi); paintStage(); } }, words[wi])));
+  const check = () => {
+    const built = cur.map(i => words[i]).join(' ');
+    testTry(k, built + end, built === body);
+  };
+  const tries = (ev && ev.tries) || [];
+  let wrongMsg = null;
+  if (ev && !ev.solved) {
+    const last = tries[tries.length - 1].replace(/[.?!]$/, '').split(' ');
+    let n = 0; while (n < words.length && last[n] === words[n]) n++;
+    wrongMsg = n ? `還不對。前 ${n} 個字排對了，後面再想想。` : '還不對。先想想第一個字是什麼，句子第一個字的字首是大寫。';
+  }
+  return h('div', null,
+    testHead(it),
+    h('p', { class: 'zh-gloss' }, it.zh),
+    build,
+    solved ? null : bank,
+    solved ? null : h('div', { class: 'tools' },
+      h('button', { class: 'btn primary', type: 'button', disabled: !full, onclick: check }, '檢查'),
+      cur.length ? h('button', { class: 'btn small ghost', type: 'button', onclick: () => { cur.length = 0; paintStage(); } }, '全部拿掉') : null,
+      tries.length >= 3 ? h('button', { class: 'linkish', type: 'button', onclick: () => { orderWork[k] = words.map((_, i) => i); testTry(k, '看答案', true, true); } }, '看答案') : null),
+    testResult(k, wrongMsg, h('div', { class: 'tools', style: 'margin:0' }, speakBtn(it.answer, '聽一次'), h('span', { class: 'muted sm' }, '聽完跟著唸一次。'))));
+}
+
+/* ---------- 看圖拼字 ---------- */
+function renderSpell(st, it, k) {
+  const s = state.session, ev = s.evals[k], solved = !!(ev && ev.solved);
+  const input = h('input', { type: 'text', class: 'spell-in', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false',
+    'aria-label': '拼出這個字', disabled: solved, value: solved ? it.word : '' });
+  const check = () => {
+    const v = input.value.trim().replace(/\s+/g, ' ');
+    if (!v) { input.focus(); return; }
+    testTry(k, v, it.caps ? v === it.word : v.toLowerCase() === it.word.toLowerCase());
+  };
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  const tries = (ev && ev.tries) || [];
+  const last = tries[tries.length - 1] || '';
+  const wrongMsg = last.toLowerCase() === it.word.toLowerCase() ? '字母都對了！國家名字的第一個字母要大寫。' : '還不對。按「聽發音」再聽一次，一個一個字母對對看。';
+  return h('div', { class: 'word' },
+    h('div', { class: 'word-pic', 'aria-hidden': 'true' }, it.pic),
+    h('div', null,
+      testHead(it),
+      h('p', { class: 'zh-gloss' }, it.zh),
+      h('p', { class: 'mask' }, solved ? it.word : it.show),
+      h('div', { class: 'tools' }, speakBtn(it.word, '聽發音', 'word')),
+      h('div', { class: 'spell-row' }, input,
+        h('button', { class: 'btn primary', type: 'button', disabled: solved, onclick: check }, '檢查'),
+        !solved && tries.length >= 3 ? h('button', { class: 'linkish', type: 'button', onclick: () => testTry(k, '看答案', true, true) }, '看答案') : null),
+      testResult(k, wrongMsg, null)));
+}
+
 /* ---------- 老師評分區 ---------- */
 function paintTutor() { if (inPractice()) paintStudentPanel(); else paintTutorPanel(); }
 function paintTutorPanel() {
@@ -1074,8 +1234,9 @@ function paintDrawer() {
 /* ==========================================================
    這段在做什麼：下課，算分數、產生報告
    ========================================================== */
-function levelTitle(pct, rated) {
+function levelTitle(pct, rated, L) {
   if (!rated) return '尚未評分';
+  if (L && L.ranks) return (L.ranks.find(([min]) => pct >= min) || L.ranks[L.ranks.length - 1])[1];
   if (pct >= 90) return 'Halloween Legend 萬聖傳奇';
   if (pct >= 75) return 'Spooky Star 驚喜之星';
   if (pct >= 60) return 'Brave Explorer 勇敢探險家';
@@ -1097,7 +1258,7 @@ function computeReport(s) {
       const skills = it.skills || st.skills;
       if (v) { e += v; m += 3; r++; skills.forEach(d => { dims[d].sum += v; dims[d].n++; }); }
       fl.forEach(f => { const d = FLAGS[f].dim; dims[d].sum += 1; dims[d].n++; });
-      const entry = { label: itemLabel(st, it, idx), stage: st.zh, said: s.said[k] || '', note: (s.notes[k] || '').trim(), flags: fl.map(f => FLAGS[f].zh) };
+      const entry = { label: itemLabel(st, it, idx), stage: st.zh, said: s.said[k] || '', note: (s.notes[k] || '').trim(), flags: fl.map(f => FLAGS[f].zh), test: TEST_KINDS.includes(kindOf(st, it)) };
       if (v === 3) highlights.push(entry);
       if (v === 1 || fl.length) work.push(entry);
     });
@@ -1108,7 +1269,7 @@ function computeReport(s) {
   return {
     earned, max, bonus, candies: earned + bonus, pct, rated, total, hints, stages, highlights, work,
     dims: DIMS.map(d => ({ id: d.id, zh: d.zh, en: d.en, score: dims[d.id].n ? Math.round(dims[d.id].sum / dims[d.id].n / 3 * 50) / 10 : null })),
-    title: levelTitle(pct, rated),
+    title: levelTitle(pct, rated, L),
     attempts: (s.stats && s.stats.attempts) || 0, words: (s.stats && s.stats.words) || 0
   };
 }
@@ -1147,7 +1308,8 @@ function claudePrompt(s, R) {
     itemsOf(st, s).forEach((it, idx) => {
       const k = keyOf(st, it), r = s.ratings[k], fl = s.flags[k] || [], said = s.said[k], note = (s.notes[k] || '').trim();
       if (!r && !said && !note && !fl.length) return;
-      lines.push(`- ${itemLabel(st, it, idx)}｜分數 ${r || '未評'}${fl.length ? `｜要加強：${fl.map(f => FLAGS[f].zh).join('、')}` : ''}${s.hints[k] ? '｜看了提示' : ''}${said ? `｜學生說：「${said}」` : ''}${note ? `｜老師筆記：${note}` : ''}`);
+      const saidLabel = TEST_KINDS.includes(kindOf(st, it)) ? '學生的答案' : '學生說';
+      lines.push(`- ${itemLabel(st, it, idx)}｜分數 ${r || '未評'}${fl.length ? `｜要加強：${fl.map(f => FLAGS[f].zh).join('、')}` : ''}${s.hints[k] ? '｜看了提示' : ''}${said ? `｜${saidLabel}：「${said}」` : ''}${note ? `｜老師筆記：${note}` : ''}`);
     });
   });
   return `<role>你是台灣的英語家教助理，幫老師寫下課後給家長的評語。</role>
@@ -1155,9 +1317,9 @@ function claudePrompt(s, R) {
 <task>根據下面的上課紀錄，寫三段文字：給家長的中文評語、給學生的英文鼓勵、下次上課建議。</task>
 
 <context>
-學生：${s.studentName}，小學五年級，程度中上（有上全英文補習班）。
-課程：${L.title}（${L.zh}），口說課，程度 ${L.level}，上課 ${fmtMin(s.activeMs)}。
-分數：每題 1–3 顆糖（1 再練練、2 不錯、3 很棒）。學生說的話是電腦語音辨識聽寫的，可能有辨識錯誤。
+學生：${s.studentName}，小學五年級，${L.audience || '程度中上（有上全英文補習班）。'}
+課程：${L.title}（${L.zh}），${L.format || '口說課'}，程度 ${L.level}，上課 ${fmtMin(s.activeMs)}。
+分數：每題 1–3 顆糖（1 再練練、2 不錯、3 很棒）。學生說的話是電腦語音辨識聽寫的，可能有辨識錯誤。${L.scope ? '\n選擇、重組、拼字題是電腦直接改的：第一次答對 3 顆、第二次 2 顆、之後 1 顆；「學生的答案」用 → 記下每一次的作答。' : ''}
 總分：${R.earned} / ${R.max}（${R.pct}%），完成 ${R.rated} / ${R.total} 題，看提示 ${R.hints} 次，開口 ${R.attempts} 次、共 ${R.words} 個英文字。
 能力分數（滿分 5）：${R.dims.map(d => `${d.zh} ${d.score ?? '無資料'}`).join('、')}
 老師已經寫的評語：${(s.teacherNote || '').trim() || '（無）'}
@@ -1733,7 +1895,8 @@ function viewReport() {
         h('span', null, `得分率 ${R.pct}%・完成 ${R.rated} / ${R.total} 題・加分 ${R.bonus} 顆`),
         h('span', null, `開口說了 ${R.attempts} 次，共 ${R.words} 個英文字・看提示 ${R.hints} 次`))),
     h('section', null, h('h3', null, '能力分數（滿分 5）'),
-      h('div', { class: 'bars' }, R.dims.map(d => h('div', { class: 'bar-row' },
+      R.rated ? null : h('p', { class: 'empty-note' }, '還沒有評分。'),
+      h('div', { class: 'bars' }, R.dims.filter(d => d.score != null).map(d => h('div', { class: 'bar-row' },
         h('span', null, d.zh),
         h('span', { class: 'bar' }, h('i', { style: `width:${d.score ? d.score / 5 * 100 : 0}%` })),
         h('b', null, d.score == null ? '—' : d.score.toFixed(1)))))),
@@ -1754,7 +1917,7 @@ function viewReport() {
     h('section', null, h('h3', null, '下次要加強'),
       R.work.length ? h('ul', { class: 'list' }, R.work.slice(0, 8).map(x => h('li', null,
         h('b', null, x.label), x.flags.map(f => h('span', { class: 'fl' }, f)),
-        x.said ? h('p', { class: 'said' }, '電腦聽到：「' + x.said + '」') : null,
+        x.said ? h('p', { class: 'said' }, (x.test ? '作答：「' : '電腦聽到：「') + x.said + '」') : null,
         x.note ? h('p', { class: 'empty-note' }, '老師筆記：' + x.note) : null)))
         : h('p', { class: 'empty-note' }, '沒有需要特別加強的題目。')));
   if (teacher) {
@@ -2034,7 +2197,9 @@ function paintStudentPanel() {
   el.replaceChildren(
     h('div', { class: 'tutor-head' },
       h('h2', null, `第 ${P.idx + 1} / ${P.list.length} 題`),
-      h('span', { class: 'suggest' }, r ? `這題拿到 ${r} 顆糖${r < 3 ? '。想拿更多，可以再說一次' : '，太棒了'}` : '先按「聽」，再按麥克風說說看，電腦會給你糖果')),
+      h('span', { class: 'suggest' }, TEST_KINDS.includes(kindOf(curStage(), curItem()))
+        ? (r ? `這題拿到 ${r} 顆糖${r < 3 ? '。想拿更多，可以按「重做這題」' : '，太棒了'}` : '作答之後，電腦會馬上改，答對就有糖果')
+        : (r ? `這題拿到 ${r} 顆糖${r < 3 ? '。想拿更多，可以再說一次' : '，太棒了'}` : '先按「聽」，再按麥克風說說看，電腦會給你糖果'))),
     h('div', { class: 'tnav' },
       h('button', { class: 'btn small', type: 'button', disabled: P.idx === 0, onclick: () => Practice.move(-1) }, '← 上一題'),
       h('span', { class: 'spacer' }),

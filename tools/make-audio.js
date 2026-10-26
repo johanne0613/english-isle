@@ -1,11 +1,12 @@
 // 這段在做什麼：用 Google AI Studio（Gemini TTS）把課程裡要唸的句子先錄成 mp3，放進 audio 資料夾
-// 用法：GEMINI_API_KEY=你的金鑰 node tools/make-audio.js
+// 用法：在 dashboard 分支執行 GEMINI_API_KEY=你的金鑰 node tools/make-audio.js（需要 Node 和 ffmpeg）
+// 錄好之後，把 audio 資料夾複製到 main 分支（正式版和測試版共用 main 的 audio）
 // 免費方案是限制「每天叫幾次」，所以一次請它唸很多句，錄好再依停頓切開。
 // 已經錄好的會跳過，新增課程後再跑一次，只會錄新的句子。金鑰只從環境變數讀，不會寫進任何檔案。
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 const { execFileSync, spawnSync } = require('child_process');
-const { chromium } = require('playwright');
 
 const KEY = process.env.GEMINI_API_KEY;
 const ROOT = path.resolve(__dirname, '..');
@@ -22,7 +23,12 @@ const ROLES = {
   word: { voice: 'Kore', who: 'Ms. Kore, a friendly American English teacher.', style: 'clear and natural, modeling the pronunciation of single words for a 10-year-old learner.' },
   green: { voice: 'Sulafat', who: 'Mrs. Green, a kind neighbor greeting a child in a Halloween costume.', style: 'warm, cheerful and friendly.' },
   bones: { voice: 'Algenib', who: 'Mr. Bones, a playful, curious old grandpa teasing a trick-or-treater.', style: 'playful, a little gravelly, amused.' },
-  haunted: { voice: 'Enceladus', who: 'The Haunted House, a spooky voice behind an old door.', style: 'slow, whispery and spooky, but fun and not too scary for children.' }
+  haunted: { voice: 'Enceladus', who: 'The Haunted House, a spooky voice behind an old door.', style: 'slow, whispery and spooky, but fun and not too scary for children.' },
+  // 段考城堡的情境對話
+  camp: { voice: 'Puck', who: 'Coach Max, a cheerful leader at an English summer camp.', style: 'upbeat, friendly and clear, welcoming a 10-year-old.' },
+  nurse: { voice: 'Achernar', who: 'Nurse Lin, a gentle school nurse.', style: 'calm, kind and caring, speaking slowly to a sick child.' },
+  waiter: { voice: 'Iapetus', who: 'A polite restaurant waiter.', style: 'polite, clear and friendly.' },
+  grandma: { voice: 'Gacrux', who: 'A loving grandma calling her grandchild on the phone.', style: 'warm, gentle and a little slow.' }
 };
 
 function fnv(str) {
@@ -118,21 +124,19 @@ async function recordBatch(role, items, manifest, manifestPath) {
 }
 
 (async () => {
-  if (!KEY) { console.error('請先設定 GEMINI_API_KEY'); process.exit(1); }
   fs.mkdirSync(OUT, { recursive: true });
 
-  // 這段在做什麼：打開網頁，拿到所有要唸的句子
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.route(/^https?:/, r => r.abort());
-  await page.goto('file://' + path.join(ROOT, 'index.html'));
-  const catalog = await page.evaluate(() => speechCatalog());
-  await browser.close();
+  // 這段在做什麼：讀課程檔 lessons.js，拿到所有要唸的句子（不用開瀏覽器）
+  if (!fs.existsSync(path.join(ROOT, 'lessons.js'))) { console.error('找不到 lessons.js。請切到 dashboard 分支再執行，錄好再把 audio 資料夾複製到 main。'); process.exit(1); }
+  const catalog =vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'lessons.js'), 'utf8') + '\n;speechCatalog();');
 
   const manifestPath = path.join(OUT, 'manifest.json');
   const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : {};
   const todo = catalog.filter(c => !(manifest[c.role + '|' + c.text] === relOf(c) && fs.existsSync(path.join(ROOT, relOf(c)))));
-  console.log(`共 ${catalog.length} 句，要錄 ${todo.length} 句`);
+  const batches = Object.values(todo.reduce((a, c) => { a[c.role] = (a[c.role] || 0) + 1; return a; }, {})).reduce((a, n) => a + Math.ceil(n / BATCH), 0);
+  console.log(`共 ${catalog.length} 句，要錄 ${todo.length} 句（大約要叫 Google ${batches} 次）`);
+  if (!todo.length) return;
+  if (!KEY) { console.error('請先設定 GEMINI_API_KEY'); process.exit(1); }
 
   // 這段在做什麼：同一個角色的句子分組，一組一次錄
   const queue = [];
