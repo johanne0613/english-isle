@@ -41,6 +41,8 @@
 - 會一次錄很多句再切開。免費額度一天大約 10 次請求；程式會自動換模型。沒錄完的話，隔天再跑一次，只會錄剩下的。
 - 新增課程後跑一次，只會錄新的句子。沒錄到的句子會用電腦內建語音，聽起來比較不自然。
 - 金鑰不要貼在對話或寫進檔案，要用環境變數。可以在終端機用 `read -rs GEMINI_API_KEY` 讓使用者自己貼。
+- 一次錄很多句再依停頓切開，有時會切錯（一句被切成兩段、或混到下一句）。現在含兩個以上短句的句子會單獨錄；錄完最好用 whisper 轉文字比對一次。使用者 Mac 上有 `whisper-cli` 和 `~/whisper-models/ggml-large-v3-turbo.bin`。
+- 切錯的句子：從 `audio/manifest.json` 刪掉那一行和 mp3，再跑一次錄音程式。剩很少句時用 `TTS_BATCH=1` 一句一句錄最穩。
 
 ## 學生和課程
 
@@ -60,11 +62,11 @@
 
 ## 上傳到 GitHub
 
-- 使用者的 Mac 上，git 還沒登入 GitHub（沒有 SSH 金鑰、沒有 gh）。在本機做完要推上去，需要使用者先登入一次。
+- 使用者的 Mac 已經用 GitHub 官方工具 gh 登入（帳號 johanne0613，2026-10-27），git push 可以直接用。
 
 ## 下一步
 
-1. 段考城堡的語音如果還沒錄完，在 `dashboard` 分支再跑一次錄音程式。
+1. 段考城堡還有 3 句語音沒錄（2026-10-27 免費額度用完）：I'd like some beef noodles, please.／We have sandwiches for breakfast.／Good. Sleep well, sweetie. Good night!（奶奶）。在 `dashboard` 分支用 `TTS_BATCH=1` 跑錄音程式，錄好複製 `audio/` 到 `main`。
 2. 使用者和 Taffy 測試 `beta/` 的段考城堡，修正回報的問題。
 3. 新版確認可以用之後，在非上課時段換上正式版。
 4. 下學期：Wonder World 8 的段考城堡。
