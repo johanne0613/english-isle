@@ -372,7 +372,8 @@ const LESSONS = {
       nina: "Hi! I'm Nina. I'm from Canada, but now I live in Taipei. Today I'm not at school. I have a cold and a sore throat. I don't have a fever. My friend Haruto is from Japan. He visits me after school. He has a book for me. Thank you, Haruto!"
     },
     materials: [
-      { id: 'knsh', kind: '其他', title: '康軒數位高手（WW7 電子書）', url: 'https://digitalmaster.knsh.com.tw/', note: '老師帳號登入後，電子書 → 英語 WW7，對照課本頁碼。' }
+      { id: 'knsh', kind: '其他', title: '康軒數位高手（WW7 電子書）', url: 'https://digitalmaster.knsh.com.tw/', note: '老師帳號登入後，電子書 → 英語 WW7，對照課本頁碼。' },
+      { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：五上康軒英語・期中考（第一次段考）', url: 'https://www.tcool.cc/mock/-23/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
     ]
   },
 
@@ -547,7 +548,8 @@ const LESSONS = {
       ruby: "Hi, I'm Ruby. On school days, I get up at six thirty. I have breakfast at seven. I go to school at seven twenty. At school, I have lunch at twelve. My favorite lunch is noodles and dumplings. I go home at four. I do my homework at five. I have dinner with my family at six thirty. I go to bed at nine thirty."
     },
     materials: [
-      { id: 'knsh', kind: '其他', title: '康軒數位高手（WW7 電子書）', url: 'https://digitalmaster.knsh.com.tw/', note: '老師帳號登入後，電子書 → 英語 WW7，對照課本頁碼。' }
+      { id: 'knsh', kind: '其他', title: '康軒數位高手（WW7 電子書）', url: 'https://digitalmaster.knsh.com.tw/', note: '老師帳號登入後，電子書 → 英語 WW7，對照課本頁碼。' },
+      { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：五上康軒英語・期末考（第二次段考）', url: 'https://www.tcool.cc/mock/-501/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
     ]
   }
 };

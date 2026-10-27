@@ -578,10 +578,16 @@ function lessonCard(L) {
   const draft = LS.get('draft:' + state.student.id, null);
   const hasDraft = draft && draft.session && draft.session.lessonId === L.id;
   const done = hasDraft ? Object.keys(draft.session.ratings || {}).length : 0;
+  // 這位學生上過這堂課的紀錄（雲端）
+  const D = state.detail, mine = D && D.loaded && D.sid === state.student.id ? D.sessions.filter(x => x.lessonId === L.id) : [];
+  const weak = mine.length ? computeReport(mine[0]).work.slice(0, 4).map(x => x.label) : [];
   return h('article', { class: 'lesson-card' },
     h('div', null,
       h('p', { class: 'eyebrow' }, `${L.level}・約 ${L.minutes} 分鐘`),
-      h('h3', { class: 'lc-title' }, L.title, h('span', null, L.zh))),
+      h('h3', { class: 'lc-title' }, L.title, h('span', null, L.zh)),
+      mine.length ? h('p', { class: 'lc-hist' }, `${state.student.name} 上過 ${mine.length} 次・最好 ${Math.max(...mine.map(x => sumOf(x).pct))}%・上次 ${fmtShort(mine[0].startedAt)} ${sumOf(mine[0]).pct}%`)
+        : D && D.loaded ? h('p', { class: 'lc-hist muted' }, `${state.student.name} 還沒上過這堂課`) : null,
+      weak.length ? h('p', { class: 'record-work' }, h('span', { class: 'tag' }, '上次要加強'), weak.join('、')) : null),
     h('div', { class: 'lc-grid' },
       L.scope ? h('div', null, h('h3', null, '段考範圍'), h('ul', null, L.scope.map(x => h('li', null, x)))) : null,
       h('div', null, h('h3', null, '學習目標'), h('ul', null, L.goals.map(g => h('li', null, g)))),
@@ -1094,12 +1100,18 @@ function paintTutorPanel() {
   note.addEventListener('input', () => { s.notes[k] = note.value; saveDraftSoon(); });
   const items = curItems(), last = state.stageIdx === lessonOf(s).stages.length - 1 && state.itemIdx === items.length - 1;
   const first = state.stageIdx === 0 && state.itemIdx === 0;
+  // 這段在做什麼：同一堂課上次上的時候，這一題拿幾顆糖、說了什麼
+  const D = state.detail, prev = D && D.loaded && D.sid === s.studentId ? D.sessions.find(x => x.lessonId === s.lessonId && x.id !== s.id) : null;
+  const pr = prev && prev.ratings && prev.ratings[k], psaid = prev && prev.said && prev.said[k];
   el.replaceChildren(
     h('div', { class: 'tutor-head' },
       h('h2', null, '老師評分區'),
       h('span', { class: 'suggest' },
         ev && ev.rating ? (s.manual[k] ? `電腦建議 ${ev.rating} 顆，已用老師的分數` : `目前是電腦建議的分數，按下面可以改`) : '學生說完會自動給建議分數；也可以直接按',
         '・鍵盤：1 / 2 / 3 評分、M 開麥克風、← → 換題')),
+    prev ? h('p', { class: 'prev-line' }, h('span', { class: 'tag' }, `上次 ${fmtShort(prev.startedAt)}`),
+      pr ? [candyRow(pr), `${pr} 顆糖`] : '這題沒做到',
+      psaid ? `・${TEST_KINDS.includes(kindOf(st, it)) ? '作答' : '說了'}「${clip(psaid, 70)}」` : '') : null,
     h('div', { class: 'rate' }, RATINGS.map(R => h('button', { class: 'rate-btn r' + R.v, type: 'button', 'aria-pressed': String(r === R.v), onclick: () => setManual(k, R.v) },
       h('span', { class: 'rb-zh' }, R.zh), h('span', { class: 'rb-en' }, `${R.en}・按 ${R.v}`), candyRow(R.v)))),
     h('div', { class: 'flags' }, h('span', { class: 'label' }, '要加強'),
@@ -1611,7 +1623,16 @@ function viewPick() {
         micTestPanel()),
       h('div', null, islandMap(false))));
 }
-function pickStudent(s) { state.student = { id: s.id, name: s.name }; state.zoneOpen = 'festival'; go('map'); }
+/* 這段在做什麼：選了學生，就讀他的學習紀錄，地圖直接打開他上次上課的區域 */
+function pickStudent(s) {
+  const full = state.students.find(x => x.id === s.id) || s;
+  const lastL = full.lastClass && Object.values(LESSONS).find(L => L.title === full.lastClass.title);
+  state.student = { id: s.id, name: s.name };
+  state.zoneOpen = lastL ? lastL.zone : 'festival';
+  state.detail = { sid: s.id, loaded: false, sessions: [], homework: [], practice: [], logs: [] };
+  go('map');
+  loadDetail(s.id);
+}
 function openZone(z) {
   if (state.mode === 'student') { go('shome', z.action === 'history' ? 'report' : 'class'); return; }
   if (z.action === 'history') { openStudent(state.student.id, 'class'); return; }
@@ -1624,11 +1645,33 @@ function viewMap() {
     h('div', { class: 'page-head' },
       h('div', null, h('p', { class: 'eyebrow' }, '島嶼地圖'), h('h1', { class: 'h1' }, `${state.student.name} 的英語島`)),
       h('p', { class: 'muted' }, '點地圖上的區域。橘色的區域已經開放。')),
+    studentRecord(),
     islandMap(true),
     zonePanel(z),
     h('div', { class: 'zones' }, ZONES.map(x => h('button', { class: 'zone-card', type: 'button', 'aria-pressed': String(x.id === z.id), onclick: () => openZone(x) },
       h('span', { class: 'status' + (x.open ? ' on' : '') }, x.open ? '開放中' : '即將開放'),
       h('b', null, x.zh), h('span', { class: 'muted sm' }, x.name + '・' + x.desc)))));
+}
+/* 這段在做什麼：島上最上面的「學習紀錄」（上次上課、回家任務、自己練習、上次要加強） */
+const sumOf = se => se.summary || summarize(se);
+function studentRecord() {
+  const s = state.students.find(x => x.id === state.student.id) || state.student, D = state.detail;
+  const hw = s.homeworkActive, prog = s.hwProgress && hw && s.hwProgress.hwId === hw.hwId ? s.hwProgress : null;
+  const last = D.loaded && D.sid === s.id ? D.sessions.find(x => LESSONS[x.lessonId]) : null;
+  const work = last ? computeReport(last).work.slice(0, 4).map(x => x.label) : [];
+  return h('section', { class: 'record', 'aria-label': '學習紀錄' },
+    h('div', { class: 'record-head' },
+      h('h2', null, '學習紀錄'),
+      h('div', { class: 'tools', style: 'margin:0' },
+        last ? h('button', { class: 'btn small', type: 'button', onclick: () => { state.reportSession = last; go('report'); } }, '看上次的報告') : null,
+        h('button', { class: 'btn small ghost', type: 'button', onclick: () => openStudent(s.id, 'class') }, '看全部紀錄'))),
+    h('div', { class: 'stat-row' },
+      statBox('上次上課', s.lastClass ? `${fmtShort(s.lastClass.at)}・${s.lastClass.title}・${s.lastClass.pct}%` : '還沒上過課'),
+      statBox('回家任務', hw ? `完成 ${prog ? prog.done : 0} / ${hw.total}・${fmtShort(hw.dueAt)} 截止` : '沒有回家任務'),
+      statBox('自己練習', `今天 ${mins((s.daily || {})[dayKey()])} 分・近 7 天 ${mins(weekMs(s))} 分`)),
+    !D.loaded ? h('p', { class: 'muted sm' }, '正在讀取上課紀錄…')
+      : D.error ? h('p', { class: 'mic-err' }, '讀不到上課紀錄：' + D.error)
+      : work.length ? h('p', { class: 'record-work' }, h('span', { class: 'tag' }, '上次要加強'), work.join('、')) : null);
 }
 function zonePanel(z) {
   const panel = h('section', { class: 'zone-panel', id: 'zone-panel' },
@@ -1754,7 +1797,9 @@ async function loadDetail(sid) {
   } catch (e) {
     Object.assign(state.detail, { loaded: true, error: errText(e) });
   }
-  if (state.view === 'tstudent' && state.student && state.student.id === sid) render();
+  if (!state.student || state.student.id !== sid) return;
+  if (state.view === 'tstudent' || state.view === 'map') render();
+  else if (state.view === 'lesson') paintTutor();
 }
 function viewTStudent() {
   const s = state.students.find(x => x.id === state.student.id) || state.student;

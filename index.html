@@ -120,6 +120,15 @@ label{font-size:13px;color:var(--muted);font-weight:600}
 .status.on{background:var(--pumpkin);border-color:transparent;color:var(--pumpkin-ink)}
 .lesson-card{display:grid;gap:18px}
 .lesson-card+.lesson-card{margin-top:26px;padding-top:24px;border-top:1px dashed var(--line)}
+.lc-hist{font-size:15px;font-weight:700;color:var(--moon);margin-top:6px}
+.lc-hist.muted{color:var(--muted);font-weight:500}
+/* 這段在做什麼：島上的「學習紀錄」和評分區的「上次這題」 */
+.record{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px clamp(16px,3vw,24px);display:grid;gap:12px;margin-bottom:18px}
+.record-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
+.record-head h2{font-family:var(--f-display);font-size:22px}
+.record .stat{background:var(--sea-deep)}
+.record-work{font-size:15px;margin-top:6px}
+.prev-line{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px;color:var(--muted)}
 .lc-title{font-family:var(--f-display);font-size:clamp(24px,3vw,32px);font-weight:800}
 .lc-title span{font-family:var(--f-ui);font-size:.6em;font-weight:600;color:var(--muted);margin-left:8px}
 .lc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
