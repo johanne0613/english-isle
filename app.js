@@ -597,6 +597,8 @@ function lessonCard(L) {
     h('div', { class: 'lc-actions' },
       hasDraft ? h('button', { class: 'btn primary', type: 'button', onclick: () => startLesson(L.id, true) }, `繼續上次的課（已評 ${done} 題）`) : null,
       h('button', { class: hasDraft ? 'btn' : 'btn primary', type: 'button', onclick: () => startLesson(L.id, false) }, hasDraft ? '重新開始' : '開始上課'),
+      L.bankId && BANKS[L.bankId] ? h('button', { class: 'btn', type: 'button', onclick: () => goDrillHome(L.bankId) }, '段考刷題') : null,
+      L.bankId && BANKS[L.bankId] ? h('button', { class: 'btn ghost', type: 'button', onclick: () => openBank(L.bankId) }, '題庫・上課素材') : null,
       L.video && L.video.url ? h('a', { class: 'btn ghost', href: L.video.url, target: '_blank', rel: 'noopener noreferrer' }, svg(ICON.play), '先看影片') : null)
   );
 }
@@ -1180,6 +1182,14 @@ function tick() {
 /* 這段在做什麼：鍵盤快捷鍵（方便老師用筆電操作） */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && state.drawer) { state.drawer = false; paintDrawer(); return; }
+  if (state.view === 'drill' && state.drill) {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || e.metaKey || e.ctrlKey || e.altKey) return;
+    const D = state.drill;
+    if (e.key === 'ArrowRight' && D.ans[D.list[D.idx]] && D.idx < D.list.length - 1) { drillGo(D.idx + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' && D.idx > 0) { drillGo(D.idx - 1); e.preventDefault(); }
+    return;
+  }
   if ((state.view !== 'lesson' && state.view !== 'practice') || state.drawer) return;
   const tag = (e.target.tagName || '').toLowerCase();
   if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
@@ -1503,16 +1513,18 @@ function render() {
   Speech.abort();
   const V = {
     loading: viewLoading, setup: viewSetup, error: viewError, tsignin: viewSignIn, pick: viewPick, map: viewMap, dash: viewDash, tstudent: viewTStudent,
-    lesson: viewLesson, report: viewReport, shome: viewSHome, sreport: viewReport, practice: viewPractice, pdone: viewPracticeDone
+    lesson: viewLesson, report: viewReport, shome: viewSHome, sreport: viewReport, practice: viewPractice, pdone: viewPracticeDone,
+    drillhome: viewDrillHome, drill: viewDrill, drilldone: viewDrillDone, bank: viewBank, sheet: viewSheet
   };
   const view = (V[state.view] || viewLoading)();
   $('#app').replaceChildren(topbar(), warnings(), view);
   if (state.view === 'lesson') { paintLesson(); startTimer(); }
   if (state.view === 'practice') { paintPractice(); startTimer(); }
+  if (state.view === 'drill') paintDrill();
   paintDrawer();
 }
 function topbar() {
-  const right = [], busy = state.view === 'lesson' || state.view === 'practice';
+  const right = [], busy = state.view === 'lesson' || state.view === 'practice' || state.view === 'drill';
   const tbtn = (label, fn) => h('button', { class: 'btn small ghost', type: 'button', onclick: fn }, label);
   if (state.mode === 'teacher' && Cloud.isTeacher) {
     const backstage = state.view === 'dash' || state.view === 'tstudent';
@@ -1668,7 +1680,9 @@ function studentRecord() {
     h('div', { class: 'stat-row' },
       statBox('上次上課', s.lastClass ? `${fmtShort(s.lastClass.at)}・${s.lastClass.title}・${s.lastClass.pct}%` : '還沒上過課'),
       statBox('回家任務', hw ? `完成 ${prog ? prog.done : 0} / ${hw.total}・${fmtShort(hw.dueAt)} 截止` : '沒有回家任務'),
-      statBox('自己練習', `今天 ${mins((s.daily || {})[dayKey()])} 分・近 7 天 ${mins(weekMs(s))} 分`)),
+      statBox('自己練習', `今天 ${mins((s.daily || {})[dayKey()])} 分・近 7 天 ${mins(weekMs(s))} 分`),
+      statBox('段考刷題', !D.loaded ? '…' : (Object.values(BANKS).map(B => ({ B, I: drillInfo(B.id) })).filter(x => x.I.attempts.length)
+        .map(x => `${x.B.title} 最好 ${x.I.best} 分・錯題 ${x.I.wrong.length}`).join('；') || '還沒刷過'))),
     !D.loaded ? h('p', { class: 'muted sm' }, '正在讀取上課紀錄…')
       : D.error ? h('p', { class: 'mic-err' }, '讀不到上課紀錄：' + D.error)
       : work.length ? h('p', { class: 'record-work' }, h('span', { class: 'tag' }, '上次要加強'), work.join('、')) : null);
@@ -1805,13 +1819,14 @@ function viewTStudent() {
   const s = state.students.find(x => x.id === state.student.id) || state.student;
   const D = state.detail, tab = state.tab || 'hw';
   const hwActive = s.homeworkActive;
-  const tabs = [['hw', '回家任務'], ['class', '課堂報告'], ['log', '練習時間軸']];
+  const tabs = [['hw', '回家任務'], ['drill', '段考刷題'], ['class', '課堂報告'], ['log', '練習時間軸']];
   let body;
   if (!D.loaded) body = h('div', { class: 'empty' }, '載入中…');
   else if (D.error) body = h('div', { class: 'empty' }, '讀取失敗：' + D.error);
   else if (tab === 'hw') body = tHomework(s);
   else if (tab === 'class') body = tClasses(s);
   else if (tab === 'log') body = tLog(s);
+  else if (tab === 'drill') body = tDrill(s);
   return h('div', null,
     h('div', { class: 'page-head' },
       h('div', null, h('p', { class: 'eyebrow' }, '學生'), h('h1', { class: 'h1' }, s.name)),
@@ -1881,7 +1896,8 @@ const LOG_TEXT = {
   start: e => e.hwId ? '開始回家任務' : `開始自由練習${e.stage ? '：' + e.stage : ''}`,
   pause: e => `離開練習（這次 ${mins(e.activeMs)} 分鐘）`,
   finish: e => `完成練習：${e.done} / ${e.total} 題，拿到 ${e.candies} 顆糖`,
-  answer: e => e.label
+  answer: e => e.label,
+  drill: e => `段考刷題：${e.title}，答對 ${e.correct} / ${e.n} 題（${e.score} 分）${e.mode === 'class' ? '・上課' : '・自學'}`
 };
 function tLog(s) {
   const D = state.detail;
@@ -2112,18 +2128,19 @@ function activeHomework() {
 }
 function viewSHome() {
   const st = state.student, hw = activeHomework(), tab = state.tab || 'hw';
-  const tabs = [['hw', '回家任務'], ['class', '上課內容'], ['report', '我的報告']];
+  const tabs = [['hw', '回家任務'], ['drill', '段考刷題'], ['class', '上課內容'], ['report', '我的報告']];
   return h('div', null,
     h('div', { class: 's-hero' },
       h('div', null,
         h('p', { class: 'eyebrow' }, 'English Isle'),
         h('h1', { class: 'h1' }, `${st.name} 的英語島`),
-        h('p', { class: 'lede' }, hw ? `下次上課前要完成「${hw.title}」，${fmtShort(hw.dueAt)} 截止。` : '目前沒有回家任務，可以到「上課內容」挑一關自由練習。')),
+        h('p', { class: 'lede' }, hw ? `下次上課前要完成「${hw.title}」，${fmtShort(hw.dueAt)} 截止。` : '目前沒有回家任務，可以到「上課內容」挑一關自由練習。'),
+        Object.values(BANKS).some(B => drillInfo(B.id).assigned) ? h('p', { class: 'hw-note' }, h('span', { class: 'tag' }, '老師說'), '有指定的段考刷題，到「段考刷題」看看。') : null),
       h('div', { class: 's-map' }, islandMap(false))),
     h('nav', { class: 'tabs', 'aria-label': '我的島' }, tabs.map(([id, label], i) =>
       h('button', { class: 'tab', type: 'button', 'aria-current': String(tab === id), onclick: () => go('shome', id) },
         h('span', { class: 'tab-n' }, String(i + 1)), h('span', { class: 'tab-t' }, h('b', null, label))))),
-    tab === 'hw' ? sHomework(hw) : tab === 'class' ? sClasses() : sReports(),
+    tab === 'hw' ? sHomework(hw) : tab === 'drill' ? sDrill() : tab === 'class' ? sClasses() : sReports(),
     h('details', { class: 'help', style: 'margin-top:22px' }, h('summary', null, '麥克風測試（第一次練習前先試一次）'), micTestPanel()));
 }
 function sHomework(hw) {
@@ -2327,6 +2344,406 @@ function viewPracticeDone() {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden' && state.view === 'practice') { Practice.flushTime(); Practice.save(); }
 });
+
+/* ==========================================================
+   這段在做什麼：段考刷題和題庫
+   學生課後自己刷題：電腦馬上改，答錯的進錯題本
+   老師上課：挑題目上課刷、印學習單、指定題目給學生回家刷
+   成績存在學生的練習紀錄（practice/drill_題庫代號），老師後台、學習紀錄、題庫都看得到
+   ========================================================== */
+const drillDocId = bankId => 'drill_' + bankId;
+const bankQ = (B, id) => B.questions.find(q => q.id === id);
+function drillDocOf(bankId) {
+  const id = drillDocId(bankId);
+  if (state.mode === 'student') return state.me.practice[id] || null;
+  const D = state.detail;
+  return (D && state.student && D.sid === state.student.id && (D.practice || []).find(p => p.id === id)) || null;
+}
+function drillInfo(bankId) {
+  const B = BANKS[bankId], d = drillDocOf(bankId), at = (d && d.attempts) || [];
+  const wrong = d && d.stats ? Object.keys(d.stats).filter(k => d.stats[k].last === 0 && bankQ(B, k)) : [];
+  const asg = d && d.assigned && (d.assigned.qids || []).length && !d.assigned.doneAt ? d.assigned : null;
+  return { doc: d, attempts: at, best: at.length ? Math.max(...at.map(a => a.score)) : null, wrong, assigned: asg };
+}
+function saveDrillDoc(doc) {
+  const sid = state.student.id;
+  doc.updatedAt = Date.now();
+  if (state.mode === 'student') state.me.practice[doc.id] = plain(doc);
+  else if (state.detail && state.detail.sid === sid) state.detail.practice = [plain(doc), ...(state.detail.practice || []).filter(p => p.id !== doc.id)];
+  return Cloud.savePractice(sid, doc).catch(() => {});
+}
+const newDrillDoc = bankId => Object.assign({ id: drillDocId(bankId), kind: 'drill', bankId, attempts: [], stats: {} }, plain(drillDocOf(bankId) || {}));
+/* 題目的文字和答案（題庫列表、成績、學習單共用） */
+function qText(q) {
+  if (q.type === 'order') return '句子重組：' + q.zh;
+  if (q.type === 'spell') return `拼字：${q.pic} ${q.zh}（${q.show}）`;
+  return [q.audio ? '🔊 聽力' : '', q.passage ? '［閱讀］' : '', q.pic || '', q.show || '', q.prompt].filter(Boolean).join(' ');
+}
+const qAnswer = q => (q.type === 'choice' ? q.options[q.answer] : q.type === 'order' ? q.answer : q.word);
+// 選項順序每題固定（學習單和解答才對得起來）；閱讀判斷的 True / False / Not mentioned 不打亂
+const optOrder = q => (q.tag === '閱讀判斷' ? q.options.map((_, i) => i) : shuffled(q.options.length, q.id));
+function splitPic(pic) { const i = pic.indexOf(' '); return i < 0 ? [pic, ''] : [pic.slice(0, i), pic.slice(i + 1)]; }
+
+function goDrillHome(bankId) { state.drillBank = bankId; go('drillhome'); }
+function startDrill(bankId, opts = {}) {
+  const B = BANKS[bankId];
+  let pool;
+  if (opts.qids) pool = opts.qids.map(id => bankQ(B, id)).filter(Boolean);
+  else {
+    const all = B.questions.filter(q => !opts.unit || q.unit === opts.unit);
+    pool = shuffled(all.length, bankId + Date.now()).map(i => all[i]);
+    if (opts.n) pool = pool.slice(0, opts.n);
+  }
+  if (!pool.length) return;
+  state.drill = { bankId, list: pool.map(q => q.id), idx: 0, ans: {}, work: {}, opts,
+    mode: opts.mode || (state.mode === 'student' ? 'self' : 'class'), title: opts.title || `${opts.unit ? opts.unit + ' ' : ''}隨機 ${pool.length} 題`, startedAt: Date.now(),
+    from: { view: state.view === 'drilldone' ? 'drillhome' : state.view, tab: state.tab } };
+  go('drill');
+}
+function leaveDrill() {
+  const f = (state.drill && state.drill.from) || { view: 'drillhome' };
+  VOICE.stop(); state.drill = null;
+  go(f.view, f.tab);
+}
+
+/* ---------- 刷題畫面 ---------- */
+function viewDrill() {
+  const D = state.drill, B = BANKS[D.bankId], answered = Object.keys(D.ans).length;
+  return h('div', null,
+    h('div', { class: 'lesson-head' },
+      h('div', { class: 'lh-left' },
+        answered ? confirmBtn('← 離開', '確定離開？這次不算成績', 'btn small ghost', leaveDrill)
+                 : h('button', { class: 'btn small ghost', type: 'button', onclick: leaveDrill }, '← 離開'),
+        h('div', null,
+          h('p', { class: 'eyebrow' }, `${D.mode === 'class' ? '上課刷題' : '段考刷題'}・${state.student.name}・${B.title}`),
+          h('h1', { class: 'lesson-title' }, D.title))),
+      h('div', { class: 'lh-right' },
+        h('span', { class: 'counter', id: 'd-score', 'aria-label': '答對題數' }),
+        h('button', { class: 'btn small', type: 'button', id: 'slow-btn', 'aria-pressed': String(!!state.settings.slow), onclick: toggleSlow }, state.settings.slow ? '慢速語音：開' : '慢速語音：關'))),
+    h('div', { class: 'p-progress top' }, h('span', { class: 'bar' }, h('i', { id: 'd-bar' })), h('span', { class: 'sm', id: 'd-count' })),
+    h('section', { class: 'stage', id: 'd-stage' }));
+}
+const drillScore = D => {
+  const n = D.list.length, c = D.list.filter(id => D.ans[id] && D.ans[id].ok).length;
+  return { n, c, done: Object.keys(D.ans).length, score: n ? Math.round(c / n * 100) : 0 };
+};
+function paintDrill() {
+  const D = state.drill; if (!D || !$('#d-stage')) return;
+  const B = BANKS[D.bankId], q = bankQ(B, D.list[D.idx]), a = D.ans[q.id], S = drillScore(D);
+  $('#d-score').textContent = `答對 ${S.c}`;
+  $('#d-bar').style.width = (S.done / S.n * 100) + '%';
+  $('#d-count').textContent = `做了 ${S.done} / ${S.n} 題`;
+  const last = D.idx === D.list.length - 1;
+  const dots = h('div', { class: 'dots' }, D.list.map((id, i) => {
+    const x = D.ans[id];
+    return h('button', { class: 'dotb' + (x ? (x.ok ? ' r3' : ' r1') : ''), type: 'button', 'aria-current': String(i === D.idx), 'aria-label': `第 ${i + 1} 題`, onclick: () => drillGo(i) }, String(i + 1));
+  }));
+  const body = q.type === 'order' ? drillOrder(q, a) : q.type === 'spell' ? drillSpell(q, a) : drillChoice(q, a);
+  $('#d-stage').replaceChildren(
+    h('div', { class: 'stage-head' },
+      h('div', null, h('p', { class: 'eyebrow' }, `${q.tag}・${q.unit}・第 ${D.idx + 1} / ${D.list.length} 題`), h('p', { class: 'src' }, '出處：' + q.source)),
+      dots),
+    body,
+    drillFeedback(q, a),
+    h('div', { class: 'tnav', style: 'margin-top:18px' },
+      h('button', { class: 'btn small', type: 'button', disabled: D.idx === 0, onclick: () => drillGo(D.idx - 1) }, '← 上一題'),
+      h('span', { class: 'spacer' }),
+      !a && !last ? h('button', { class: 'btn small ghost', type: 'button', onclick: () => drillGo(D.idx + 1) }, '先跳過') : null,
+      last ? h('button', { class: 'btn primary', type: 'button', onclick: finishDrill }, S.done < S.n ? `交卷（還有 ${S.n - S.done} 題沒做）` : '交卷，看成績')
+           : h('button', { class: 'btn primary', type: 'button', disabled: !a, onclick: () => drillGo(D.idx + 1) }, '下一題 →')));
+}
+function drillGo(i) {
+  const D = state.drill;
+  D.idx = Math.max(0, Math.min(D.list.length - 1, i));
+  VOICE.stop(); paintDrill();
+  $('#d-stage').scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+function drillAnswer(q, ok, said, extra) {
+  state.drill.ans[q.id] = Object.assign({ ok, said: String(said) }, extra || {});
+  paintDrill();
+}
+function drillChoice(q, a) {
+  const [pic, cue] = q.pic ? splitPic(q.pic) : ['', ''];
+  return h('div', null,
+    q.passage ? h('div', { class: 'passage' }, h('p', null, q.passage), h('div', { class: 'tools', style: 'margin:10px 0 0' }, speakBtn(q.passage, '聽一次'))) : null,
+    q.audio ? h('div', { class: 'tools' },
+      h('button', { class: 'btn primary', type: 'button', onclick: () => VOICE.say(q.audio, audioRole(q.audio)) }, svg(ICON.play), '播放'),
+      h('span', { class: 'muted sm' }, '可以重聽')) : null,
+    pic ? h('div', { class: 'q-cue' }, h('span', { class: 'q-pic', 'aria-hidden': 'true' }, pic), cue ? h('span', { class: 'q-cue-t' }, cue) : null) : null,
+    q.show ? h('p', { class: 'mask' }, q.show) : null,
+    h('p', { class: 'prompt sm' }, q.prompt),
+    h('div', { class: 'opts', role: 'group', 'aria-label': '選項' }, optOrder(q).map((oi, k) => {
+      const right = oi === q.answer, picked = a && a.pick === oi;
+      return h('button', { class: 'opt' + (a && right ? ' ok' : '') + (picked && !right ? ' no' : ''), type: 'button', disabled: !!a,
+        onclick: () => drillAnswer(q, right, q.options[oi], { pick: oi }) }, h('span', { class: 'opt-n' }, 'ABCD'[k]), h('span', null, q.options[oi]));
+    })));
+}
+function drillOrder(q, a) {
+  const D = state.drill, m = q.answer.match(/^(.*?)([.?!]?)$/), body = m[1], end = m[2], words = body.split(' ');
+  const cur = a ? a.cur : (D.work[q.id] || (D.work[q.id] = []));
+  const full = cur.length === words.length;
+  return h('div', null,
+    h('p', { class: 'zh-gloss' }, q.zh),
+    h('div', { class: 'build' + (a ? (a.ok ? ' ok' : ' bad') : '') },
+      cur.length ? cur.map((wi, pos) => h('button', { class: 'tile', type: 'button', disabled: !!a, onclick: () => { cur.splice(pos, 1); paintDrill(); } }, words[wi]))
+                 : h('span', { class: 'build-ph' }, '點下面的字，排成一個句子'),
+      full ? h('span', { class: 'end' }, end) : null),
+    a ? null : h('div', { class: 'tiles' }, shuffled(words.length, q.id + q.answer).map(wi =>
+      h('button', { class: 'tile' + (cur.includes(wi) ? ' used' : ''), type: 'button', disabled: cur.includes(wi), onclick: () => { cur.push(wi); paintDrill(); } }, words[wi]))),
+    a ? null : h('div', { class: 'tools' },
+      h('button', { class: 'btn primary', type: 'button', disabled: !full, onclick: () => { const built = cur.map(i => words[i]).join(' '); drillAnswer(q, built === body, built + end, { cur: cur.slice() }); } }, '確定'),
+      cur.length ? h('button', { class: 'btn small ghost', type: 'button', onclick: () => { cur.length = 0; paintDrill(); } }, '全部拿掉') : null));
+}
+function drillSpell(q, a) {
+  const input = h('input', { type: 'text', class: 'spell-in', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false',
+    'aria-label': '拼出這個字', disabled: !!a, value: a ? a.said : '' });
+  const check = () => {
+    const v = input.value.trim().replace(/\s+/g, ' ');
+    if (!v) { input.focus(); return; }
+    drillAnswer(q, q.caps ? v === q.word : v.toLowerCase() === q.word.toLowerCase(), v);
+  };
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  return h('div', { class: 'word' },
+    h('div', { class: 'word-pic', 'aria-hidden': 'true' }, q.pic),
+    h('div', null,
+      h('p', { class: 'zh-gloss' }, q.zh),
+      h('p', { class: 'mask' }, q.show),
+      h('div', { class: 'tools' }, speakBtn(q.word, '聽發音', 'word')),
+      h('div', { class: 'spell-row' }, input, h('button', { class: 'btn primary', type: 'button', disabled: !!a, onclick: check }, '確定'))));
+}
+function drillFeedback(q, a) {
+  if (!a) return null;
+  const caseOnly = q.type === 'spell' && !a.ok && a.said.toLowerCase() === q.word.toLowerCase();
+  return h('div', { class: 'result', 'aria-live': 'polite' },
+    h('p', { class: 'earn' + (a.ok ? '' : ' miss') }, a.ok ? '✓ 答對了！' : '✗ 答錯了，記一下正確答案'),
+    a.ok ? null : h('p', { class: 'heard' }, '正確答案：' + qAnswer(q)),
+    caseOnly ? h('p', { class: 'explain' }, '字母都對了！國家名字的第一個字母要大寫。') : null,
+    q.audio ? h('p', { class: 'muted sm' }, '播放的是：' + q.audio) : null,
+    q.explain ? h('p', { class: 'explain' }, q.explain) : null,
+    q.type === 'order' ? h('div', { class: 'tools', style: 'margin:0' }, speakBtn(q.answer, '聽一次'), h('span', { class: 'muted sm' }, '聽完跟著唸一次')) : null);
+}
+function finishDrill() {
+  const D = state.drill, S = drillScore(D), ms = Math.min(Date.now() - D.startedAt, 3 * 3600e3);
+  VOICE.stop();
+  const doc = newDrillDoc(D.bankId);
+  Object.entries(D.ans).forEach(([id, a]) => {
+    const st = doc.stats[id] || { r: 0, w: 0 };
+    if (a.ok) st.r++; else st.w++;
+    st.last = a.ok ? 1 : 0; doc.stats[id] = st;
+  });
+  doc.attempts = [...(doc.attempts || []), { at: Date.now(), n: S.n, done: S.done, correct: S.c, score: S.score, ms, mode: D.mode, kind: D.opts.kind || 'random', title: D.title }].slice(-30);
+  if (D.opts.kind === 'assigned' && doc.assigned) doc.assigned.doneAt = Date.now();
+  state.drillDone = { bankId: D.bankId, S, D };
+  if (state.student) {
+    saveDrillDoc(doc);
+    Cloud.log(state.student.id, { type: 'drill', bankId: D.bankId, title: `${BANKS[D.bankId].title}・${D.title}`, n: S.n, correct: S.c, score: S.score, mode: D.mode });
+    if (state.mode === 'student') Cloud.touch(state.student.id, ms);
+  }
+  state.drill = null;
+  go('drilldone');
+}
+function viewDrillDone() {
+  const R = state.drillDone;
+  if (!R) return h('div', { class: 'empty' }, '找不到這次的成績。');
+  const { bankId, S, D } = R, B = BANKS[bankId];
+  const byTag = {};
+  D.list.forEach(id => { const q = bankQ(B, id), t = byTag[q.tag] || (byTag[q.tag] = { n: 0, c: 0 }); t.n++; if (D.ans[id] && D.ans[id].ok) t.c++; });
+  const wrong = D.list.map(id => bankQ(B, id)).filter(q => !(D.ans[q.id] && D.ans[q.id].ok));
+  return h('div', null,
+    h('div', { class: 'report-tools' }, h('button', { class: 'btn small ghost', type: 'button', onclick: () => goDrillHome(bankId) }, '← 回段考刷題')),
+    h('article', { class: 'paper' },
+      h('header', null, h('p', { class: 'eyebrow' }, `段考刷題・${state.student.name}`), h('h1', null, `${B.title}・${D.title}`), h('div', { class: 'meta' }, h('span', null, fmtDate(Date.now())), h('span', null, B.sub))),
+      h('section', { class: 'score' },
+        h('p', { class: 'big' }, String(S.score), h('small', null, '分')),
+        h('div', { class: 'score-meta' }, h('span', null, `答對 ${S.c} / ${S.n} 題`), S.done < S.n ? h('span', null, `有 ${S.n - S.done} 題沒做，算答錯`) : null)),
+      h('section', null, h('h3', null, '各題型'),
+        h('div', { class: 'bars' }, Object.entries(byTag).map(([t, x]) => h('div', { class: 'bar-row' },
+          h('span', null, t), h('span', { class: 'bar' }, h('i', { style: `width:${x.c / x.n * 100}%` })), h('b', null, `${x.c}/${x.n}`))))),
+      h('section', null, h('h3', null, wrong.length ? `要再記一下的 ${wrong.length} 題（已放進錯題本）` : '全部答對！'),
+        wrong.length ? h('ul', { class: 'list' }, wrong.map(q => h('li', null,
+          h('b', null, qText(q)),
+          h('p', { class: 'said' }, '正確答案：' + qAnswer(q)),
+          D.ans[q.id] ? h('p', { class: 'empty-note' }, '你的答案：' + D.ans[q.id].said) : h('p', { class: 'empty-note' }, '沒有作答'),
+          q.explain ? h('p', { class: 'empty-note' }, q.explain) : null))) : null),
+      h('section', { class: 'copy-row' },
+        h('button', { class: 'btn primary', type: 'button', onclick: () => startDrill(bankId, D.opts) }, '再刷一次'),
+        wrong.length ? h('button', { class: 'btn', type: 'button', onclick: () => startDrill(bankId, { qids: wrong.map(q => q.id), title: '這次的錯題', kind: 'wrong' }) }, `馬上練這 ${wrong.length} 題`) : null)));
+}
+
+/* ---------- 段考刷題首頁（選題數、範圍、錯題本、老師指定） ---------- */
+function viewDrillHome() {
+  const bankId = state.drillBank, B = BANKS[bankId];
+  if (!B) return h('div', { class: 'empty' }, '找不到這份題庫。');
+  const I = drillInfo(bankId), teacher = state.mode === 'teacher';
+  const pick = state.drillPick || (state.drillPick = { n: 20, unit: '' });
+  const units = [...new Set(B.questions.map(q => q.unit))];
+  const avail = B.questions.filter(q => !pick.unit || q.unit === pick.unit).length;
+  const chip = (label, on, fn) => h('button', { class: 'flag', type: 'button', 'aria-pressed': String(on), onclick: fn }, label);
+  return h('div', null,
+    h('div', { class: 'report-tools' },
+      h('button', { class: 'btn small ghost', type: 'button', onclick: () => (teacher ? go('map') : go('shome', 'drill')) }, teacher ? '← 回島上' : '← 回我的島'),
+      teacher ? h('button', { class: 'btn small', type: 'button', onclick: () => openBank(bankId) }, '題庫・上課素材') : null),
+    h('div', { class: 'page-head' },
+      h('div', null, h('p', { class: 'eyebrow' }, `段考刷題・${state.student.name}`), h('h1', { class: 'h1' }, B.title)),
+      h('p', { class: 'muted' }, `${B.sub}・題庫 ${B.questions.length} 題`)),
+    h('div', { class: 'hw-cards' },
+      I.assigned ? h('section', { class: 's-card' },
+        h('div', { class: 'zp-head' }, h('h2', null, '老師指定的題目'), h('span', { class: 'status on' }, `${I.assigned.qids.length} 題`)),
+        I.assigned.note ? h('p', { class: 'hw-note' }, h('span', { class: 'tag' }, '老師說'), I.assigned.note) : null,
+        h('div', { class: 'lc-actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => startDrill(bankId, { qids: I.assigned.qids, title: '老師指定的題目', kind: 'assigned' }) }, '開始練習'))) : null,
+      h('section', { class: 's-card' },
+        h('h2', null, '隨機刷題'),
+        h('div', { class: 'flags' }, h('span', { class: 'label' }, '題數'), [10, 20, 30, 0].map(n => chip(n ? `${n} 題` : '全部', pick.n === n, () => { pick.n = n; render(); }))),
+        h('div', { class: 'flags' }, h('span', { class: 'label' }, '範圍'), ['', ...units].map(u => chip(u || '全部', pick.unit === u, () => { pick.unit = u; render(); }))),
+        h('div', { class: 'lc-actions' },
+          h('button', { class: 'btn primary', type: 'button', onclick: () => startDrill(bankId, { n: pick.n || undefined, unit: pick.unit || undefined }) }, `開始刷題（${pick.n ? Math.min(pick.n, avail) : avail} 題）`),
+          I.wrong.length ? h('button', { class: 'btn', type: 'button', onclick: () => startDrill(bankId, { qids: I.wrong, title: '錯題本', kind: 'wrong' }) }, `練錯題本（${I.wrong.length} 題）`)
+                         : h('span', { class: 'muted sm' }, '錯題本是空的。答錯的題目會自動放進來，答對就拿掉。'))),
+      h('section', { class: 's-card' },
+        h('h2', null, '刷題紀錄'),
+        drillHistory(I.attempts))));
+}
+function drillHistory(attempts) {
+  if (!attempts.length) return h('p', { class: 'muted' }, '還沒刷過題。');
+  return h('div', { class: 'tbl-wrap' }, h('table', { class: 'tbl dark' },
+    h('thead', null, h('tr', null, h('th', null, '時間'), h('th', null, '內容'), h('th', { class: 'num' }, '答對'), h('th', { class: 'num' }, '分數'), h('th', { class: 'num' }, '花了'))),
+    h('tbody', null, attempts.slice().reverse().slice(0, 12).map(a => h('tr', null,
+      h('td', null, `${fmtShort(a.at)} ${fmtTime(a.at)}`),
+      h('td', null, `${a.title || ''}${a.mode === 'class' ? '・上課' : '・自學'}`),
+      h('td', { class: 'num' }, `${a.correct} / ${a.n}`),
+      h('td', { class: 'num' }, String(a.score)),
+      h('td', { class: 'num' }, fmtMin(a.ms)))))));
+}
+/* 學生頁面的「段考刷題」分頁 */
+function sDrill() {
+  return h('div', { class: 'hw-cards' }, Object.values(BANKS).map(B => {
+    const I = drillInfo(B.id);
+    return h('section', { class: 's-card' },
+      h('div', { class: 'zp-head' },
+        h('div', null, h('p', { class: 'eyebrow' }, B.sub), h('h2', null, B.title)),
+        I.assigned ? h('span', { class: 'status on' }, `老師指定 ${I.assigned.qids.length} 題`) : null),
+      h('p', { class: 'sm' }, I.attempts.length ? `刷過 ${I.attempts.length} 次・最好 ${I.best} 分・錯題本 ${I.wrong.length} 題` : `題庫 ${B.questions.length} 題，還沒刷過`),
+      h('div', { class: 'lc-actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => goDrillHome(B.id) }, I.assigned ? '去練老師指定的題目' : '開始刷題')));
+  }));
+}
+/* 後台・學生的「段考刷題」分頁 */
+function tDrill() {
+  const banks = Object.values(BANKS);
+  return h('div', { class: 'hw-cards' }, banks.map(B => {
+    const I = drillInfo(B.id);
+    const wrongQs = I.wrong.map(id => bankQ(B, id));
+    return h('section', { class: 's-card' },
+      h('div', { class: 'zp-head' },
+        h('div', null, h('p', { class: 'eyebrow' }, B.sub), h('h2', null, B.title)),
+        h('div', { class: 'tools', style: 'margin:0' },
+          h('button', { class: 'btn small', type: 'button', onclick: () => openBank(B.id) }, '題庫・上課素材'))),
+      h('p', { class: 'sm' }, I.attempts.length ? `刷過 ${I.attempts.length} 次・最好 ${I.best} 分・錯題本 ${I.wrong.length} 題` : '還沒刷過'),
+      I.assigned ? h('p', { class: 'hw-note' }, h('span', { class: 'tag' }, '指定中'), `${I.assigned.qids.length} 題，${fmtShort(I.assigned.at)} 指定，學生還沒做完`) : null,
+      drillHistory(I.attempts),
+      wrongQs.length ? h('details', { class: 'help' }, h('summary', null, `錯題本（${wrongQs.length} 題）`),
+        h('ul', { class: 'stage-list', style: 'list-style:none;padding:0;margin-top:10px' }, wrongQs.map(q => h('li', { class: 'stage-li' },
+          h('span', null, h('span', { class: 'pill' }, q.tag), ' ', qText(q)), h('span', { class: 'muted sm' }, '答案：' + qAnswer(q)))))) : null);
+  }));
+}
+
+/* ---------- 題庫・上課素材（老師） ---------- */
+function openBank(bankId) { state.bankView = { bankId, sel: new Set(), unit: '', tag: '', wrongOnly: false }; go('bank'); }
+function viewBank() {
+  const V = state.bankView, B = BANKS[V.bankId], I = drillInfo(V.bankId), st = state.student;
+  const units = [...new Set(B.questions.map(q => q.unit))], tags = [...new Set(B.questions.map(q => q.tag))];
+  const list = B.questions.filter(q => (!V.unit || q.unit === V.unit) && (!V.tag || q.tag === V.tag) && (!V.wrongOnly || I.wrong.includes(q.id)));
+  const selQids = () => B.questions.filter(q => V.sel.has(q.id)).map(q => q.id);
+  const chip = (label, on, fn) => h('button', { class: 'flag', type: 'button', 'aria-pressed': String(on), onclick: fn }, label);
+  const msg = h('p', { class: 'copy-status', 'aria-live': 'polite' });
+  const after = h('div', { class: 'copy-row' });
+  const note = h('input', { type: 'text', id: 'assign-note', placeholder: '給學生的話（選填），例如：段考前每天刷一次' });
+  const assign = async () => {
+    const qids = selQids(); if (!qids.length) return;
+    const doc = newDrillDoc(V.bankId);
+    doc.assigned = { qids, at: Date.now(), by: Cloud.user ? Cloud.user.email : '', note: note.value.trim() };
+    await saveDrillDoc(doc);
+    msg.textContent = `已指定 ${qids.length} 題給 ${st.name}。學生打開專屬連結，在「段考刷題」就會看到。`;
+    after.replaceChildren(copyBtn('複製 LINE 訊息', () => `${st.name} 的段考刷題：老師指定了 ${qids.length} 題（${B.title}）。請用 Chrome 打開專屬連結，到「段考刷題」練習：\n${studentLink(st.id)}`));
+  };
+  const n = V.sel.size;
+  return h('div', null,
+    h('div', { class: 'report-tools' },
+      h('button', { class: 'btn small ghost', type: 'button', onclick: () => go('map') }, '← 回島上'),
+      h('button', { class: 'btn small', type: 'button', onclick: () => goDrillHome(V.bankId) }, '段考刷題')),
+    h('div', { class: 'page-head' },
+      h('div', null, h('p', { class: 'eyebrow' }, `題庫・上課素材・${st.name}`), h('h1', { class: 'h1' }, B.title)),
+      h('p', { class: 'muted' }, `${B.sub}・${B.questions.length} 題`)),
+    h('section', { class: 's-card' },
+      h('div', { class: 'flags' }, h('span', { class: 'label' }, '範圍'), ['', ...units].map(u => chip(u || '全部', V.unit === u, () => { V.unit = u; render(); }))),
+      h('div', { class: 'flags' }, h('span', { class: 'label' }, '題型'), ['', ...tags].map(t => chip(t || '全部', V.tag === t, () => { V.tag = t; render(); }))),
+      I.wrong.length ? h('div', { class: 'flags' }, h('span', { class: 'label' }, st.name), chip(`只看答錯的（${I.wrong.length} 題）`, V.wrongOnly, () => { V.wrongOnly = !V.wrongOnly; render(); })) : null,
+      h('div', { class: 'bank-bar' },
+        h('b', null, `已選 ${n} 題`),
+        h('button', { class: 'btn small', type: 'button', onclick: () => { list.forEach(q => V.sel.add(q.id)); render(); } }, `全選列出的 ${list.length} 題`),
+        n ? h('button', { class: 'btn small ghost', type: 'button', onclick: () => { V.sel.clear(); render(); } }, '清除') : null),
+      h('div', { class: 'bank-bar' },
+        h('button', { class: 'btn primary', type: 'button', disabled: !n, onclick: () => startDrill(V.bankId, { qids: selQids(), title: '上課刷題', kind: 'class', mode: 'class' }) }, '上課刷這幾題'),
+        h('button', { class: 'btn', type: 'button', disabled: !n, onclick: () => { state.sheet = { bankId: V.bankId, qids: selQids() }; go('sheet'); } }, '印學習單'),
+        h('button', { class: 'btn', type: 'button', disabled: !n, onclick: assign }, `指定給 ${st.name} 回家刷`)),
+      note, msg, after,
+      I.assigned ? h('p', { class: 'muted sm' }, `目前指定中：${I.assigned.qids.length} 題（${fmtShort(I.assigned.at)}），學生還沒做完。再指定一次會換成新的題目。`) : null),
+    h('ul', { class: 'bank-list' }, list.map(q => {
+      const id = 'bq-' + q.id.replace(/[^\w-]/g, '_'), s = I.doc && I.doc.stats && I.doc.stats[q.id];
+      const cb = h('input', { type: 'checkbox', id, checked: V.sel.has(q.id) });
+      cb.addEventListener('change', () => { if (cb.checked) V.sel.add(q.id); else V.sel.delete(q.id); render(); });
+      return h('li', null, h('label', { class: 'bank-item' + (V.sel.has(q.id) ? ' on' : ''), for: id }, cb,
+        h('span', { class: 'bank-main' },
+          h('span', { class: 'bank-tags' }, h('span', { class: 'pill' }, q.tag), h('span', { class: 'pill' }, q.unit),
+            s ? h('span', { class: 'pill' + (s.last === 0 ? ' warn' : '') }, `${st.name}：對 ${s.r}・錯 ${s.w}`) : null),
+          h('span', { class: 'bank-q' }, qText(q)),
+          h('span', { class: 'muted sm' }, `答案：${qAnswer(q)}・出處：${q.source}`))));
+    })));
+}
+
+/* ---------- 學習單（可以列印） ---------- */
+function viewSheet() {
+  const S = state.sheet, B = BANKS[S.bankId], qs = S.qids.map(id => bankQ(B, id)).filter(Boolean);
+  const groups = [];
+  qs.forEach(q => { let g = groups.find(x => x.tag === q.tag); if (!g) groups.push(g = { tag: q.tag, qs: [] }); g.qs.push(q); });
+  const num = new Map(); let k = 0;
+  groups.forEach(g => g.qs.forEach(q => num.set(q.id, ++k)));
+  const letter = q => 'ABCD'[optOrder(q).indexOf(q.answer)];
+  const words = q => q.answer.replace(/[.?!]$/, '').split(' ');
+  const item = q => h('li', { class: 'ws-q', value: num.get(q.id) },
+    q.type === 'choice' ? [
+      h('p', null, '(　　) ', q.pic ? q.pic + '　' : '', q.show ? h('b', null, q.show + '　') : '', q.audio ? '（聽老師唸）' : '', q.prompt),
+      h('p', { class: 'ws-opts' }, optOrder(q).map((oi, j) => `(${'ABCD'[j]}) ${q.options[oi]}`).join('　　'))]
+    : q.type === 'order' ? [
+      h('p', null, q.zh),
+      h('p', { class: 'ws-opts' }, shuffled(words(q).length, q.id + q.answer).map(i => words(q)[i]).join(' / ')),
+      h('p', { class: 'ws-line' }, '')]
+    : [h('p', null, q.pic + '　' + q.zh + '　', h('b', null, q.show)), h('p', { class: 'ws-line short' }, '')]);
+  const body = [];
+  groups.forEach((g, gi) => {
+    body.push(h('h3', null, `${'一二三四五六七八九十'[gi] || gi + 1}、${g.tag}`));
+    let lastP = null, ol = null;
+    g.qs.forEach(q => {
+      if (q.passage && q.passage !== lastP) { body.push(h('div', { class: 'ws-passage' }, q.passage)); lastP = q.passage; ol = null; }
+      if (!ol) { ol = h('ol', { class: 'ws-list' }); body.push(ol); }
+      ol.append(item(q));
+    });
+  });
+  const key = h('section', { class: 'ws-key' }, h('h3', null, '解答（老師用）'),
+    h('ol', { class: 'ws-list' }, qs.slice().sort((a, b) => num.get(a.id) - num.get(b.id)).map(q => h('li', { value: num.get(q.id) },
+      q.type === 'choice' ? `(${letter(q)}) ${qAnswer(q)}` : qAnswer(q),
+      q.audio ? h('span', { class: 'ws-script' }, `　老師唸：${q.audio}`) : null))));
+  return h('div', null,
+    h('div', { class: 'report-tools no-print' },
+      h('button', { class: 'btn small ghost', type: 'button', onclick: () => go('bank') }, '← 回題庫'),
+      h('button', { class: 'btn small primary', type: 'button', onclick: () => window.print() }, '列印／存成 PDF'),
+      h('span', { class: 'muted sm' }, '解答會印在最後一頁。')),
+    h('article', { class: 'paper sheet' },
+      h('header', null,
+        h('p', { class: 'eyebrow' }, 'English Isle 學習單'),
+        h('h1', null, `${B.title}・${qs.length} 題`),
+        h('div', { class: 'meta' }, h('span', null, B.sub), h('span', null, '姓名：＿＿＿＿＿＿'), h('span', null, '日期：＿＿＿＿'), h('span', null, '分數：＿＿＿＿'))),
+      body, key));
+}
 
 /* ==========================================================
    這段在做什麼：開始（看網址決定是老師後台還是學生頁面）

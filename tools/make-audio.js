@@ -158,9 +158,10 @@ function recordAllEdge(items, manifest, manifestPath) {
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
 
-  // 這段在做什麼：讀課程檔 lessons.js，拿到所有要唸的句子（不用開瀏覽器）
+  // 這段在做什麼：讀課程檔 lessons.js 和題庫 bank.js，拿到所有要唸的句子（不用開瀏覽器）
   if (!fs.existsSync(path.join(ROOT, 'lessons.js'))) { console.error('找不到 lessons.js。請切到 dashboard 分支再執行，錄好再把 audio 資料夾複製到 main。'); process.exit(1); }
-  const catalog = vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'lessons.js'), 'utf8') + '\n;speechCatalog();');
+  const bankFile = path.join(ROOT, 'bank.js');
+  const catalog = vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'lessons.js'), 'utf8') + '\n;' + (fs.existsSync(bankFile) ? fs.readFileSync(bankFile, 'utf8') : '') + '\n;speechCatalog();');
 
   const manifestPath = path.join(OUT, 'manifest.json');
   const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : {};
