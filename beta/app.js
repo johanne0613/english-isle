@@ -504,7 +504,7 @@ function micTestPanel() {
         const others = [...new Set((r.alts || []).flat().map(x => x.trim()))].filter(x => x && x.toLowerCase() !== r.text.toLowerCase()).slice(0, 3);
         res.replaceChildren(
           h('p', { class: 'heard' }, '電腦聽到：' + r.text),
-          others.length ? h('p', { class: 'alts' }, '其他可能：' + others.join(' / ')) : null);
+          others.length ? h('p', { class: 'alts' }, '其他可能：' + others.join(' / ')) : '');
       } }),
     h('div', { class: 'meter', 'aria-hidden': 'true' }, bar),
     devLabel, res,
@@ -756,7 +756,8 @@ function renderQuestion(st, it, k) {
   const hint = reveal('看句型提示', h('p', { class: 'hint' }, it.hint), k);
   const main = h('div', null,
     h('p', { class: 'eyebrow' }, `Question ${curPos() + 1} of ${curItems().length}`),
-    it.pic ? h('div', { class: 'q-cue' }, h('span', { class: 'q-pic', 'aria-hidden': 'true' }, it.pic), it.cue ? h('span', { class: 'q-cue-t' }, it.cue) : null) : null,
+    it.ctx ? h('div', { class: 'q-ctx-row' }, it.pic ? h('span', { class: 'q-pic', 'aria-hidden': 'true' }, it.pic) : null, h('p', { class: 'q-ctx' }, it.ctx))
+      : it.pic ? h('div', { class: 'q-cue' }, h('span', { class: 'q-pic', 'aria-hidden': 'true' }, it.pic), it.cue ? h('span', { class: 'q-cue-t' }, it.cue) : null) : null,
     h('p', { class: 'prompt' }, it.prompt),
     h('div', { class: 'tools' }, speakBtn(it.prompt, '聽題目'), hint.btn),
     hint.content,
@@ -1054,7 +1055,7 @@ function renderOrder(st, it, k) {
   }
   return h('div', null,
     testHead(it),
-    h('p', { class: 'zh-gloss' }, it.zh),
+    it.ctx ? [h('p', { class: 'muted sm' }, '排出空格（＿＿＿）那一句：'), h('p', { class: 'q-ctx' }, it.ctx)] : h('p', { class: 'zh-gloss' }, it.zh),
     build,
     solved ? null : bank,
     solved ? null : h('div', { class: 'tools' },
@@ -1078,13 +1079,12 @@ function renderSpell(st, it, k) {
   const tries = (ev && ev.tries) || [];
   const last = tries[tries.length - 1] || '';
   const wrongMsg = last.toLowerCase() === it.word.toLowerCase() ? '字母都對了！國家名字的第一個字母要大寫。' : '還不對。按「聽發音」再聽一次，一個一個字母對對看。';
-  return h('div', { class: 'word' },
-    h('div', { class: 'word-pic', 'aria-hidden': 'true' }, it.pic),
+  return h('div', null,
     h('div', null,
       testHead(it),
-      h('p', { class: 'zh-gloss' }, it.zh),
+      h('p', { class: 'prompt sm' }, 'Listen and spell.'),
+      h('div', { class: 'tools' }, h('button', { class: 'btn primary', type: 'button', onclick: () => VOICE.say(it.word, 'word') }, svg(ICON.play), '播放'), h('span', { class: 'muted sm' }, '可以重聽')),
       h('p', { class: 'mask' }, solved ? it.word : it.show),
-      h('div', { class: 'tools' }, speakBtn(it.word, '聽發音', 'word')),
       h('div', { class: 'spell-row' }, input,
         h('button', { class: 'btn primary', type: 'button', disabled: solved, onclick: check }, '檢查'),
         !solved && tries.length >= 3 ? h('button', { class: 'linkish', type: 'button', onclick: () => testTry(k, '看答案', true, true) }, '看答案') : null),
@@ -1113,7 +1113,7 @@ function paintTutorPanel() {
         '・鍵盤：1 / 2 / 3 評分、M 開麥克風、← → 換題')),
     prev ? h('p', { class: 'prev-line' }, h('span', { class: 'tag' }, `上次 ${fmtShort(prev.startedAt)}`),
       pr ? [candyRow(pr), `${pr} 顆糖`] : '這題沒做到',
-      psaid ? `・${TEST_KINDS.includes(kindOf(st, it)) ? '作答' : '說了'}「${clip(psaid, 70)}」` : '') : null,
+      psaid ? `・${TEST_KINDS.includes(kindOf(st, it)) ? '作答' : '說了'}「${clip(psaid, 70)}」` : '') : '',
     h('div', { class: 'rate' }, RATINGS.map(R => h('button', { class: 'rate-btn r' + R.v, type: 'button', 'aria-pressed': String(r === R.v), onclick: () => setManual(k, R.v) },
       h('span', { class: 'rb-zh' }, R.zh), h('span', { class: 'rb-en' }, `${R.en}・按 ${R.v}`), candyRow(R.v)))),
     h('div', { class: 'flags' }, h('span', { class: 'label' }, '要加強'),
@@ -2375,9 +2375,10 @@ function saveDrillDoc(doc) {
 const newDrillDoc = bankId => Object.assign({ id: drillDocId(bankId), kind: 'drill', bankId, attempts: [], stats: {} }, plain(drillDocOf(bankId) || {}));
 /* 題目的文字和答案（題庫列表、成績、學習單共用） */
 function qText(q) {
-  if (q.type === 'order') return '句子重組：' + q.zh;
-  if (q.type === 'spell') return `拼字：${q.pic} ${q.zh}（${q.show}）`;
-  return [q.audio ? '🔊 聽力' : '', q.passage ? '［閱讀］' : '', q.pic || '', q.show || '', q.prompt].filter(Boolean).join(' ');
+  const oneLine = t => t.replace(/\n/g, ' / ');
+  if (q.type === 'order') return '句子重組：' + (q.ctx ? oneLine(q.ctx) : q.zh);
+  if (q.type === 'spell') return `聽寫拼字：${q.show}`;
+  return [q.audio ? '🔊 聽力' : '', q.passage ? '［閱讀］' : '', q.ctx ? oneLine(q.ctx) : '', q.show || '', q.prompt].filter(Boolean).join(' ');
 }
 const qAnswer = q => (q.type === 'choice' ? q.options[q.answer] : q.type === 'order' ? q.answer : q.word);
 // 選項順序每題固定（學習單和解答才對得起來）；閱讀判斷的 True / False / Not mentioned 不打亂
@@ -2439,7 +2440,7 @@ function paintDrill() {
     return h('button', { class: 'dotb' + (x ? (x.ok ? ' r3' : ' r1') : ''), type: 'button', 'aria-current': String(i === D.idx), 'aria-label': `第 ${i + 1} 題`, onclick: () => drillGo(i) }, String(i + 1));
   }));
   const body = q.type === 'order' ? drillOrder(q, a) : q.type === 'spell' ? drillSpell(q, a) : drillChoice(q, a);
-  $('#d-stage').replaceChildren(
+  $('#d-stage').replaceChildren(...[
     h('div', { class: 'stage-head' },
       h('div', null, h('p', { class: 'eyebrow' }, `${q.tag}・${q.unit}・第 ${D.idx + 1} / ${D.list.length} 題`), h('p', { class: 'src' }, '出處：' + q.source)),
       dots),
@@ -2450,7 +2451,8 @@ function paintDrill() {
       h('span', { class: 'spacer' }),
       !a && !last ? h('button', { class: 'btn small ghost', type: 'button', onclick: () => drillGo(D.idx + 1) }, '先跳過') : null,
       last ? h('button', { class: 'btn primary', type: 'button', onclick: finishDrill }, S.done < S.n ? `交卷（還有 ${S.n - S.done} 題沒做）` : '交卷，看成績')
-           : h('button', { class: 'btn primary', type: 'button', disabled: !a, onclick: () => drillGo(D.idx + 1) }, '下一題 →')));
+           : h('button', { class: 'btn primary', type: 'button', disabled: !a, onclick: () => drillGo(D.idx + 1) }, '下一題 →'))
+  ].filter(Boolean));
 }
 function drillGo(i) {
   const D = state.drill;
@@ -2469,7 +2471,9 @@ function drillChoice(q, a) {
     q.audio ? h('div', { class: 'tools' },
       h('button', { class: 'btn primary', type: 'button', onclick: () => VOICE.say(q.audio, audioRole(q.audio)) }, svg(ICON.play), '播放'),
       h('span', { class: 'muted sm' }, '可以重聽')) : null,
-    pic ? h('div', { class: 'q-cue' }, h('span', { class: 'q-pic', 'aria-hidden': 'true' }, pic), cue ? h('span', { class: 'q-cue-t' }, cue) : null) : null,
+    pic || q.ctx ? h('div', { class: 'q-ctx-row' },
+      pic ? h('span', { class: 'q-pic', 'aria-hidden': 'true' }, pic) : null,
+      q.ctx ? h('p', { class: 'q-ctx' }, q.ctx) : cue ? h('span', { class: 'q-cue-t' }, cue) : null) : null,
     q.show ? h('p', { class: 'mask' }, q.show) : null,
     h('p', { class: 'prompt sm' }, q.prompt),
     h('div', { class: 'opts', role: 'group', 'aria-label': '選項' }, optOrder(q).map((oi, k) => {
@@ -2483,7 +2487,7 @@ function drillOrder(q, a) {
   const cur = a ? a.cur : (D.work[q.id] || (D.work[q.id] = []));
   const full = cur.length === words.length;
   return h('div', null,
-    h('p', { class: 'zh-gloss' }, q.zh),
+    q.ctx ? [h('p', { class: 'muted sm' }, '排出空格（＿＿＿）那一句：'), h('p', { class: 'q-ctx' }, q.ctx)] : h('p', { class: 'zh-gloss' }, q.zh),
     h('div', { class: 'build' + (a ? (a.ok ? ' ok' : ' bad') : '') },
       cur.length ? cur.map((wi, pos) => h('button', { class: 'tile', type: 'button', disabled: !!a, onclick: () => { cur.splice(pos, 1); paintDrill(); } }, words[wi]))
                  : h('span', { class: 'build-ph' }, '點下面的字，排成一個句子'),
@@ -2503,13 +2507,14 @@ function drillSpell(q, a) {
     drillAnswer(q, q.caps ? v === q.word : v.toLowerCase() === q.word.toLowerCase(), v);
   };
   input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
-  return h('div', { class: 'word' },
-    h('div', { class: 'word-pic', 'aria-hidden': 'true' }, q.pic),
-    h('div', null,
-      h('p', { class: 'zh-gloss' }, q.zh),
-      h('p', { class: 'mask' }, q.show),
-      h('div', { class: 'tools' }, speakBtn(q.word, '聽發音', 'word')),
-      h('div', { class: 'spell-row' }, input, h('button', { class: 'btn primary', type: 'button', disabled: !!a, onclick: check }, '確定'))));
+  // 聽寫：聽發音拼出來（考字母和發音的對應，不考中翻英）
+  return h('div', null,
+    h('p', { class: 'prompt sm' }, 'Listen and spell.'),
+    h('div', { class: 'tools' },
+      h('button', { class: 'btn primary', type: 'button', onclick: () => VOICE.say(q.word, 'word') }, svg(ICON.play), '播放'),
+      h('span', { class: 'muted sm' }, '可以重聽')),
+    h('p', { class: 'mask' }, q.show),
+    h('div', { class: 'spell-row' }, input, h('button', { class: 'btn primary', type: 'button', disabled: !!a, onclick: check }, '確定')));
 }
 function drillFeedback(q, a) {
   if (!a) return null;
@@ -2711,13 +2716,14 @@ function viewSheet() {
   const words = q => q.answer.replace(/[.?!]$/, '').split(' ');
   const item = q => h('li', { class: 'ws-q', value: num.get(q.id) },
     q.type === 'choice' ? [
-      h('p', null, '(　　) ', q.pic ? q.pic + '　' : '', q.show ? h('b', null, q.show + '　') : '', q.audio ? '（聽老師唸）' : '', q.prompt),
+      q.ctx ? h('p', { class: 'ws-ctx' }, (q.pic ? q.pic + ' ' : '') + q.ctx) : null,
+      h('p', null, '(　　) ', q.show ? h('b', null, q.show + '　') : '', q.audio ? '（聽老師唸）' : '', q.prompt),
       h('p', { class: 'ws-opts' }, optOrder(q).map((oi, j) => `(${'ABCD'[j]}) ${q.options[oi]}`).join('　　'))]
     : q.type === 'order' ? [
-      h('p', null, q.zh),
+      q.ctx ? h('p', { class: 'ws-ctx' }, q.ctx) : h('p', null, q.zh),
       h('p', { class: 'ws-opts' }, shuffled(words(q).length, q.id + q.answer).map(i => words(q)[i]).join(' / ')),
       h('p', { class: 'ws-line' }, '')]
-    : [h('p', null, q.pic + '　' + q.zh + '　', h('b', null, q.show)), h('p', { class: 'ws-line short' }, '')]);
+    : [h('p', null, '（聽老師唸）　', h('b', null, q.show)), h('p', { class: 'ws-line short' }, '')]);
   const body = [];
   groups.forEach((g, gi) => {
     body.push(h('h3', null, `${'一二三四五六七八九十'[gi] || gi + 1}、${g.tag}`));
@@ -2731,7 +2737,7 @@ function viewSheet() {
   const key = h('section', { class: 'ws-key' }, h('h3', null, '解答（老師用）'),
     h('ol', { class: 'ws-list' }, qs.slice().sort((a, b) => num.get(a.id) - num.get(b.id)).map(q => h('li', { value: num.get(q.id) },
       q.type === 'choice' ? `(${letter(q)}) ${qAnswer(q)}` : qAnswer(q),
-      q.audio ? h('span', { class: 'ws-script' }, `　老師唸：${q.audio}`) : null))));
+      q.audio || q.type === 'spell' ? h('span', { class: 'ws-script' }, `　老師唸：${q.audio || q.word}`) : null))));
   return h('div', null,
     h('div', { class: 'report-tools no-print' },
       h('button', { class: 'btn small ghost', type: 'button', onclick: () => go('bank') }, '← 回題庫'),

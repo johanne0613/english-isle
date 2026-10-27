@@ -26,7 +26,7 @@ const EDGE = process.env.EDGE_TTS || 'edge-tts';
 // edge 是改用 edge-tts 時的聲音
 const ROLES = {
   teacher: { voice: 'Kore', edge: 'en-US-AvaNeural', who: 'Ms. Kore, a friendly American English teacher.', style: 'warm, clear, natural pace, talking to a 10-year-old English learner.' },
-  word: { voice: 'Kore', edge: 'en-US-AvaNeural', who: 'Ms. Kore, a friendly American English teacher.', style: 'clear and natural, modeling the pronunciation of single words for a 10-year-old learner.' },
+  word: { voice: 'Kore', edge: 'en-US-AvaNeural', who: 'Ms. Kore, a friendly American English teacher.', style: 'clear and natural, modeling the pronunciation of single words for a 10-year-old learner. Say each word once as one smooth unit with normal dictionary stress and a falling tone, like reading it from a dictionary. Do not split a word into parts, do not stretch the ending, and do not add an extra vowel sound at the end.' },
   green: { voice: 'Sulafat', edge: 'en-US-JennyNeural', who: 'Mrs. Green, a kind neighbor greeting a child in a Halloween costume.', style: 'warm, cheerful and friendly.' },
   bones: { voice: 'Algenib', edge: 'en-US-RogerNeural', who: 'Mr. Bones, a playful, curious old grandpa teasing a trick-or-treater.', style: 'playful, a little gravelly, amused.' },
   haunted: { voice: 'Enceladus', edge: 'en-US-GuyNeural', edgeRate: '-20%', edgePitch: '-12Hz', who: 'The Haunted House, a spooky voice behind an old door.', style: 'slow, whispery and spooky, but fun and not too scary for children.' },
