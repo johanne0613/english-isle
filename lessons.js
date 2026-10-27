@@ -551,6 +551,175 @@ const LESSONS = {
       { id: 'knsh', kind: '其他', title: '康軒數位高手（WW7 電子書）', url: 'https://digitalmaster.knsh.com.tw/', note: '老師帳號登入後，電子書 → 英語 WW7，對照課本頁碼。' },
       { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：五上康軒英語・期末考（第二次段考）', url: 'https://www.tcool.cc/mock/-501/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
     ]
+  },
+
+  /* ==========================================================
+     這段在做什麼：英檢山・Cambridge A2 Flyers 口說模擬（自命題）
+     照官方四大題型：Part 1 找不同（1 個例子＋6 個不同）、Part 2 資訊交換（老師問 5 題、學生問 5 題）、
+     Part 3 看圖說故事（5 張圖，老師說第 1 張）、Part 4 個人問答（5 題）。
+     題目和圖都是自己出的，沒有用劍橋的考古題。voice 是唸題目的聲音（英國腔考官）。
+     ========================================================== */
+  flyers1: {
+    id: 'flyers1', zone: 'exam', voice: 'examiner',
+    title: 'Flyers Speaking 1', zh: '劍橋 Flyers 口說模擬・第 1 回',
+    level: 'CEFR A2・Cambridge A2 Flyers', minutes: 40,
+    format: 'Flyers 口說四大題型（自命題）',
+    audience: '程度好，有上吉的堡；目標增能和超前。',
+    scopeTitle: '官方題型（正式考試 7–9 分鐘，一對一）',
+    scope: [
+      'Part 1 找不同：老師（考官）說自己的圖，學生說自己的圖哪裡不一樣。1 個例子＋6 個不同',
+      'Part 2 資訊交換：老師看學生的資訊卡問 5 題；學生看提示字問老師 5 題',
+      'Part 3 看圖說故事：5 張圖，老師說第 1 張，學生接著說第 2–5 張',
+      'Part 4 個人問答：5 題，最後一題是 Tell me about …',
+      '評分三項：字彙文法、發音、互動（各 5 分，換成最多 5 個盾牌）'
+    ],
+    goals: [
+      '用 In my picture, … 說出兩張圖的 6 個不同（數量、顏色、位置、動作、外表、大小）',
+      '看資訊卡用短句回答，再看提示字自己問出 5 個問題（Where did …? Was it … or …?）',
+      '看 5 張圖用過去式說完一個故事',
+      '個人問答每題多說一句理由或細節'
+    ],
+    assess: '學生按麥克風說話，電腦聽寫並給建議分數，老師可以改。每題 1–3 顆糖，下課自動算出能力分數。對應 Flyers 的評分：字彙文法、發音、互動。',
+    aiPoint: '語音辨識檢查學生有沒有用對句型（In my picture、did 問句、過去式）。下課後一鍵複製報告給 Claude，寫出家長評語和下次要練的題型。',
+    ranks: [[90, 'Flyers Ace 五個盾牌'], [75, 'Sky Pilot 四個盾牌'], [60, 'Cloud Climber 三個盾牌'], [0, 'Young Flyer 小飛行員，繼續加油']],
+    stages: [
+      {
+        id: 'diff', kind: 'question', title: 'Find the Differences', zh: 'Part 1 找不同', minutes: 8,
+        skills: ['vocab', 'grammar'],
+        intro: "Here are two pictures. They are different. I'll tell you about my picture. You tell me about your picture.",
+        diff: {
+          candidate: { label: '你的圖：公園。陰天、樹上兩隻鳥、男孩踢足球、貓在椅子上、黃色的花、沒有鬍子的男生在看報紙、女孩拿大冰淇淋',
+            items: [['☁️', 14, 14, 'l'], ['☁️', 30, 9, 'm'], ['🌳', 84, 46, 'xl'], ['🐦', 79, 36, 's'], ['🐦', 89, 40, 's'],
+              ['👦', 40, 70, 'l'], ['⚽', 47, 85, 'm'], ['🪑', 71, 76, 'l'], ['🐈', 71, 63, 's'],
+              ['🌻', 6, 88, 's'], ['🌻', 13, 92, 's'], ['🌻', 20, 88, 's'], ['👨', 24, 68, 'l'], ['📰', 30, 75, 's'], ['👧', 55, 70, 'l'], ['🍦', 60.5, 72, 'l']] },
+          examiner: { label: '老師的圖：公園。晴天、樹上三隻鳥、男孩放風箏、貓在椅子下、紅色的花、有鬍子的男生在看報紙、女孩拿小冰淇淋',
+            items: [['☀️', 14, 14, 'l'], ['🌳', 84, 46, 'xl'], ['🐦', 78, 36, 's'], ['🐦', 85, 31, 's'], ['🐦', 91, 40, 's'],
+              ['👦', 40, 70, 'l'], ['🪁', 47, 24, 'l'], ['🪑', 71, 76, 'l'], ['🐈', 71, 84, 's'],
+              ['🌹', 6, 88, 's'], ['🌹', 13, 92, 's'], ['🌹', 20, 88, 's'], ['🧔', 24, 68, 'l'], ['📰', 30, 75, 's'], ['👧', 55, 70, 'l'], ['🍦', 59.5, 75, 's']] }
+        },
+        items: [
+          { id: 'd0', prompt: "For example, in my picture, it's sunny. Now you. What's the weather like in your picture?",
+            hint: "In my picture, it's cloudy.",
+            follow: '這是例子。正式考試由考官示範，學生跟著說一次就好。',
+            expect: { minWords: 4, groups: [{ any: ['in my picture'], miss: '用 In my picture, … 開頭' }, { any: ['cloudy', 'clouds', 'cloud'], miss: '看你的圖：天氣怎麼樣？' }] } },
+          { id: 'd1', prompt: 'In my picture, there are three birds in the tree.',
+            hint: 'In my picture, there are … birds.',
+            follow: '差在數量。追問：How many birds can you see?',
+            expect: { minWords: 5, groups: [{ any: ['in my picture'], miss: '用 In my picture, … 開頭' }, { any: ['two'], miss: '數數看你的圖有幾隻鳥' }, { any: ['bird', 'birds'], miss: '說出 birds' }] } },
+          { id: 'd2', prompt: 'In my picture, a boy is flying a kite.',
+            hint: 'In my picture, the boy is …ing …',
+            follow: '差在動作。要用現在進行式 is playing。',
+            expect: { minWords: 5, groups: [{ any: ['in my picture'], miss: '用 In my picture, … 開頭' }, { any: ['football', 'soccer', 'ball'], miss: '你的圖裡男孩在玩什麼？' }, { any: ['is playing', 'is kicking', 'playing', 'kicking'], miss: '用 is playing … 說他在做什麼' }] } },
+          { id: 'd3', prompt: 'In my picture, the cat is under the chair.',
+            hint: 'In my picture, the cat is … the chair.',
+            follow: '差在位置：under / on / next to / behind。',
+            expect: { minWords: 5, groups: [{ any: ['in my picture'], miss: '用 In my picture, … 開頭' }, { any: ['on the chair', 'is on', 'on it', 'sitting on'], miss: '你的圖裡貓在椅子的哪裡？' }] } },
+          { id: 'd4', prompt: 'In my picture, the flowers are red.',
+            hint: 'In my picture, the flowers are …',
+            follow: '差在顏色。說成 sunflowers 也可以。',
+            expect: { minWords: 5, groups: [{ any: ['in my picture'], miss: '用 In my picture, … 開頭' }, { any: ['yellow', 'sunflower', 'sunflowers'], miss: '你的圖裡花是什麼顏色？' }] } },
+          { id: 'd5', prompt: 'In my picture, the man with the newspaper has got a beard.',
+            hint: "In my picture, the man hasn't got a beard.",
+            follow: "差在外表。hasn't got、doesn't have、has no beard 都可以。",
+            expect: { minWords: 5, groups: [{ any: ['in my picture'], miss: '用 In my picture, … 開頭' }, { any: ['hasnt got', 'has not got', 'doesnt have', 'does not have', 'no beard', 'hasnt', 'doesnt'], miss: "你的圖裡他有沒有鬍子？用 hasn't got 說" }] } },
+          { id: 'd6', prompt: 'In my picture, the girl has got a small ice cream.',
+            hint: "In my picture, the girl's ice cream is …",
+            follow: '差在大小。big、large、huge 都可以。',
+            expect: { minWords: 5, groups: [{ any: ['in my picture'], miss: '用 In my picture, … 開頭' }, { any: ['big', 'large', 'huge'], miss: '你的圖裡冰淇淋是大的還是小的？' }] } }
+        ]
+      },
+      {
+        id: 'info', kind: 'question', title: 'Information Exchange', zh: 'Part 2 資訊交換', minutes: 8,
+        skills: ['grammar', 'fluency'],
+        intro: "Ben and Lily went on school trips. First, I'll ask you about Ben. Then you ask me about Lily.",
+        cards: {
+          mine: { pic: '👦', title: "Ben's school trip", rows: [['Where', 'the science museum'], ['When', 'last Friday'], ['How / travel', 'by train'], ['What / see', 'a robot that can dance'], ['Fun or boring', 'fun!']] },
+          yours: { pic: '👧', title: "Lily's school trip", ask: true, rows: [['Where / go', 'the zoo'], ['When / go', 'last Wednesday'], ['How / travel', 'by bus'], ['What / see', 'a baby elephant'], ['fun / boring', 'fun']] }
+        },
+        items: [
+          { id: 'b1', card: 'mine', row: 0, prompt: "I don't know anything about Ben's school trip, so I'm going to ask you some questions. Where did Ben go?",
+            hint: 'He went to …', follow: '看卡片回答，短句也可以：The science museum.',
+            expect: { minWords: 2, groups: [{ any: ['science museum', 'museum'], miss: '看卡片上 Where 那一行' }] } },
+          { id: 'b2', card: 'mine', row: 1, prompt: 'When did he go?',
+            hint: 'He went last …', follow: '短答：Last Friday.',
+            expect: { minWords: 2, groups: [{ any: ['friday'], miss: '看卡片上 When 那一行' }] } },
+          { id: 'b3', card: 'mine', row: 2, prompt: 'How did he travel there?',
+            hint: 'He went by …', follow: '短答：By train.',
+            expect: { minWords: 2, groups: [{ any: ['train'], miss: '看卡片上 How 那一行' }] } },
+          { id: 'b4', card: 'mine', row: 3, prompt: 'What did he see?',
+            hint: 'He saw a …', follow: '完整答法：He saw a robot that can dance.',
+            expect: { minWords: 3, groups: [{ any: ['robot'], miss: '看卡片上 What / see 那一行' }, { any: ['dance', 'dancing'], miss: '說出機器人會做什麼' }] } },
+          { id: 'b5', card: 'mine', row: 4, prompt: 'Was the trip fun or boring?',
+            hint: 'It was …', follow: '可以多說一句：He loved it!',
+            expect: { minWords: 2, groups: [{ any: ['fun'], miss: '看卡片最後一行' }] } },
+          { id: 'l1', card: 'yours', row: 0, prompt: "Lily went on a school trip too. You don't know anything about her trip, so you ask me some questions.",
+            hint: 'Where did Lily go?', follow: '學生要自己問。考官的回答會在說完後出現。',
+            reply: 'She went to the zoo.',
+            expect: { minWords: 3, groups: [{ any: ['where'], miss: '用 Where 開頭問' }, { any: ['did she go', 'did lily go', 'did she visit', 'did lily visit'], miss: '問過去的事：Where did she go?' }] } },
+          { id: 'l2', card: 'yours', row: 1, prompt: 'Ask me the next question.',
+            hint: 'When did she go?', reply: 'She went last Wednesday.',
+            expect: { minWords: 3, groups: [{ any: ['when', 'what day'], miss: '用 When 開頭問' }, { any: ['did she go', 'did lily go', 'was it', 'was the trip'], miss: '問過去的事：When did she go?' }] } },
+          { id: 'l3', card: 'yours', row: 2, prompt: 'And the next one.',
+            hint: 'How did she travel?', reply: 'She went by bus.',
+            expect: { minWords: 3, groups: [{ any: ['how'], miss: '用 How 開頭問' }, { any: ['did she travel', 'did lily travel', 'did she go', 'did lily go', 'did she get'], miss: '問過去的事：How did she travel?' }] } },
+          { id: 'l4', card: 'yours', row: 3, prompt: 'Ask me about what she saw.',
+            hint: 'What did she see?', reply: 'She saw a baby elephant!',
+            expect: { minWords: 3, groups: [{ any: ['what'], miss: '用 What 開頭問' }, { any: ['did she see', 'did lily see'], miss: '問過去的事：What did she see?' }] } },
+          { id: 'l5', card: 'yours', row: 4, prompt: 'Ask me one more question.',
+            hint: 'Was it fun or boring?', reply: 'It was fun. Lily loved it!',
+            follow: '這是「A 還是 B」的問句，語調先上揚再下降。',
+            expect: { minWords: 3, groups: [{ any: ['was it', 'was the trip', 'was her trip', 'was lilys trip'], miss: '用 Was it … ? 問' }, { any: ['fun or boring', 'boring or fun'], miss: '把兩個選擇都問出來：fun or boring' }] } }
+        ]
+      },
+      {
+        id: 'story', kind: 'panel', title: 'Picture Story', zh: 'Part 3 看圖說故事', minutes: 10,
+        skills: ['vocab', 'grammar', 'fluency'], storyTitle: 'The Hungry Duck',
+        intro: 'These pictures tell a story. Look at the pictures first. I will tell you about picture 1. Then you tell the story.',
+        lead: { scene: '🧺 ☀️ 👧 👨 🌳', text: "This story is called 'The Hungry Duck'. Last Saturday, Emma and her dad went to the park for a picnic. The sun was shining and they were very happy." },
+        items: [
+          { id: 'p2', scene: '🧺 🥪 🍎 🦆', prompt: 'What happened next?',
+            keywords: ['opened', 'basket', 'ate', 'sandwiches', 'duck', 'came', 'walked', 'lake'],
+            model: 'They opened the basket and ate some sandwiches. Then a big duck came out of the lake and walked to them.' },
+          { id: 'p3', scene: '🦆 🥪 💨 😮', prompt: 'What did the duck do?',
+            keywords: ['suddenly', 'took', 'sandwich', 'ran away', 'flew', 'surprised', 'laughed'],
+            model: "Suddenly, the duck took Emma's sandwich and ran away! Emma was very surprised." },
+          { id: 'p4', scene: '🌧️ 🌳 🏃‍♀️ 🏃‍♂️', prompt: 'What happened to the weather?',
+            keywords: ['started', 'rain', 'raining', 'ran', 'under', 'tree', 'got wet', 'cloudy'],
+            model: 'Then it started to rain. Emma and her dad ran under a big tree, but they got wet.' },
+          { id: 'p5', scene: '🏠 🧺 😄 🛋️', prompt: 'How did the story end?',
+            keywords: ['went home', 'had', 'picnic', 'living room', 'floor', 'laughed', 'happy', 'in the end'],
+            model: 'In the end, they went home and had their picnic on the living room floor. They laughed about the hungry duck.' }
+        ]
+      },
+      {
+        id: 'talk', kind: 'question', title: 'Personal Questions', zh: 'Part 4 個人問答', minutes: 8,
+        skills: ['fluency', 'ideas', 'pron'],
+        intro: "Now let's talk about your weekends. Answer and say a little more.",
+        items: [
+          { id: 'q1', pic: '🗓️', prompt: 'What do you usually do on Saturday mornings?',
+            hint: 'On Saturday mornings, I usually …', follow: '追問：What time do you get up on Saturdays?',
+            expect: { minWords: 6, keywords: ['usually', 'play', 'watch', 'read', 'sleep', 'swim', 'visit', 'help', 'go', 'have', 'study', 'practise', 'practice'], needHits: 1 } },
+          { id: 'q2', pic: '👨‍👩‍👧‍👦', prompt: 'Who do you spend your weekends with?',
+            hint: 'I spend my weekends with my …', follow: '追問：What do you like doing together?',
+            expect: { minWords: 5, keywords: ['family', 'mom', 'mum', 'dad', 'parents', 'brother', 'sister', 'grandma', 'grandpa', 'friends', 'cousin', 'twin'], needHits: 1 } },
+          { id: 'q3', pic: '⏪', prompt: 'What did you do last weekend?',
+            hint: 'Last weekend, I went / played / watched …', follow: '鼓勵說兩件事，都用過去式。',
+            expect: { minWords: 8, past: true } },
+          { id: 'q4', pic: '🌳🏠', prompt: 'Do you like going to the park or staying at home? Why?',
+            hint: 'I like … because …', follow: '要說原因：because …',
+            expect: { minWords: 8, because: true, keywords: ['park', 'home', 'outside', 'inside'], needHits: 1 } },
+          { id: 'q5', pic: '⭐', prompt: 'Tell me about your favourite weekend activity.',
+            hint: 'My favourite weekend activity is … I usually do it with … I like it because …',
+            follow: 'Flyers 最後一題通常是 Tell me about …，鼓勵說三句以上。',
+            expect: { minWords: 15, because: true } }
+        ]
+      }
+    ],
+    materials: [
+      { id: 'cam', kind: '其他', title: 'Cambridge A2 Flyers 官方題型說明', url: 'https://www.cambridgeenglish.org/exams-and-tests/flyers/test-format/', note: '口說四大題型的官方說明。' },
+      { id: 'words', kind: '學習單', title: 'Pre A1 Starters、A1 Movers、A2 Flyers 官方字表（PDF）', url: 'https://www.cambridgeenglish.org/Images/wordlists-pre-a1-starters-a1-movers-and-a2-flyers.pdf', note: '出題用的單字範圍。' },
+      { id: 'p3', kind: '學習單', title: 'Flyers Speaking Part 3 線上教學說明（Cambridge）', url: 'https://www.cambridgeenglish.org/Images/584860--online-teaching-a2-flyers-speaking-part-3.pdf', note: '官方的看圖說故事教學建議，裡面有樣題，上課前老師看就好。' }
+    ]
   }
 };
 
@@ -566,8 +735,9 @@ const ZONES = [
     desc: '日常口說練習。', plan: ['情境角色扮演', 'Show and Tell 上台報告', '看圖說故事題庫'] },
   { id: 'writing', name: 'Writing Woods', zh: '寫作森林', x: 40, y: 32.3, open: false,
     desc: '從句子寫到小短文。', plan: ['句型重組', '看圖寫句子', '五句小短文（說完再寫）'] },
-  { id: 'exam', name: 'Exam Peak', zh: '英檢山', x: 70, y: 27.4, open: false,
-    desc: '準備考試的地方。', plan: ['Cambridge Flyers 口說四大題型', 'GEPT 初級聽讀模擬', '錯題本'] },
+  { id: 'exam', name: 'Exam Peak', zh: '英檢山', x: 70, y: 27.4, open: true,
+    desc: '準備英檢：劍橋 Flyers 口說四大題型、全民英檢初級聽力和閱讀。題目都是照官方題型自己出的。', lessons: ['flyers1'], banks: ['gept-e1'],
+    plan: ['Flyers 口說第 2 回（換主題：學校、旅行）', 'Flyers 聽力、閱讀與寫作', 'GEPT 初級寫作、口說（複試）'] },
   { id: 'reading', name: 'Reading Lighthouse', zh: '閱讀燈塔', x: 84, y: 59.7, open: false,
     desc: '讀了再說。', plan: ['分級讀本朗讀', '讀後重述', 'Twinkl 閱讀理解學習單'] },
   { id: 'harbor', name: 'Report Harbor', zh: '成績港', x: 42, y: 77.4, open: true,
@@ -577,23 +747,36 @@ const ZONES = [
 /* 這段在做什麼：列出所有要預錄的句子和角色。網站播放、錄音程式 tools/make-audio.js 都用這一份 */
 /* 聽力題：單一個字用唸單字的聲音，整句用老師的聲音 */
 function audioRole(text) { return /\s/.test(text) ? 'teacher' : 'word'; }
+/* 英檢聽力：M: / W: 開頭的對話用一男一女兩個聲音（duo）；最後一行 Q: 是題目，用旁白的聲音（narrator）另外錄，播的時候接在後面 */
+function audioParts(text) {
+  const m = String(text).match(/^([\s\S]*?)\nQ: (.+)$/);
+  const main = m ? m[1] : String(text);
+  const out = [{ role: /^[MW]: /m.test(main) ? 'duo' : audioRole(main), text: main }];
+  if (m) out.push({ role: 'narrator', text: m[2] });
+  return out;
+}
 function speechCatalog() {
   const out = [], seen = new Set();
   const add = (role, text) => { const k = role + '|' + text; if (text && !seen.has(k)) { seen.add(k); out.push({ role, text }); } };
-  Object.values(LESSONS).forEach(L => L.stages.forEach(st => st.items.forEach(it => {
+  Object.values(LESSONS).forEach(L => L.stages.forEach(st => {
+   const V = L.voice || 'teacher';  // 英檢山用考官的聲音
+   if (st.lead) add(V, st.lead.text);
+   st.items.forEach(it => {
     const kind = it.kind || st.kind;
-    if (kind === 'question' || kind === 'panel') add('teacher', it.prompt);
-    if (kind === 'panel') add('teacher', it.model);
+    if (kind === 'question' || kind === 'panel') add(V, it.prompt);
+    if (kind === 'question' && it.reply) add(V, it.reply);
+    if (kind === 'panel') add(V, it.model);
     if (kind === 'word') { add('word', it.word); add('teacher', it.ex); }
     if (kind === 'shadow') add('teacher', it.text);
     if (kind === 'dialogue') it.lines.forEach(l => { if (l.s === 'n') add(it.voice || 'teacher', l.t); });
-    if (kind === 'choice' && it.audio) add(audioRole(it.audio), it.audio);
+    if (kind === 'choice' && it.audio) audioParts(it.audio).forEach(p => add(p.role, p.text));
     if (kind === 'order') add('teacher', it.answer);
     if (kind === 'spell') add('word', it.word);
-  })));
-  // 段考題庫（bank.js）裡的聽力、重組、拼字也要錄
+   });
+  }));
+  // 題庫（bank.js）裡的聽力、重組、拼字也要錄
   if (typeof BANKS !== 'undefined') Object.values(BANKS).forEach(B => B.questions.forEach(q => {
-    if (q.audio) add(audioRole(q.audio), q.audio);
+    if (q.audio) audioParts(q.audio).forEach(p => add(p.role, p.text));
     if (q.type === 'order') add('teacher', q.answer);
     if (q.type === 'spell') add('word', q.word);
   }));

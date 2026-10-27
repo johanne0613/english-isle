@@ -34,7 +34,12 @@ const ROLES = {
   camp: { voice: 'Puck', edge: 'en-US-AndrewNeural', who: 'Coach Max, a cheerful leader at an English summer camp.', style: 'upbeat, friendly and clear, welcoming a 10-year-old.' },
   nurse: { voice: 'Achernar', edge: 'en-US-MichelleNeural', edgeRate: '-8%', who: 'Nurse Lin, a gentle school nurse.', style: 'calm, kind and caring, speaking slowly to a sick child.' },
   waiter: { voice: 'Iapetus', edge: 'en-US-BrianNeural', who: 'A polite restaurant waiter.', style: 'polite, clear and friendly.' },
-  grandma: { voice: 'Gacrux', edge: 'en-US-AriaNeural', edgeRate: '-12%', edgePitch: '-6Hz', who: 'A loving grandma calling her grandchild on the phone.', style: 'warm, gentle and a little slow.' }
+  grandma: { voice: 'Gacrux', edge: 'en-US-AriaNeural', edgeRate: '-12%', edgePitch: '-6Hz', who: 'A loving grandma calling her grandchild on the phone.', style: 'warm, gentle and a little slow.' },
+  // 英檢山：Flyers 口說的考官（英國腔）、GEPT 聽力的旁白（唸題目）、GEPT 對話（一男一女，M: / W:）
+  examiner: { voice: 'Erinome', edge: 'en-GB-SoniaNeural', who: 'Ms. Erin, a friendly Cambridge English speaking examiner from London, with a clear British English accent.', style: 'kind, encouraging and clear, at a calm pace, talking to a 10-year-old candidate in a speaking test.' },
+  narrator: { voice: 'Charon', edge: 'en-US-ChristopherNeural', who: 'The narrator of an English listening test for children.', style: 'neutral, clear and steady, at a calm pace, like reading test questions aloud.' },
+  duo: { duo: { M: { name: 'Man', voice: 'Achird', edge: 'en-US-EricNeural' }, W: { name: 'Woman', voice: 'Aoede', edge: 'en-US-JennyNeural' } },
+    who: 'Two native American English speakers, a man and a woman, in a short everyday conversation for a children\'s English listening test.', style: 'natural, clear and friendly, at a moderate pace, with a short natural pause between turns.' }
 };
 
 function fnv(str) {
@@ -49,6 +54,21 @@ const dur = f => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries',
 
 function prompt(role, lines) {
   const r = ROLES[role] || ROLES.teacher;
+  // 對話：M: / W: 換成 Man: / Woman:，讓兩個聲音分開唸
+  if (r.duo) return `# AUDIO PROFILE: ${r.who}
+### DIRECTOR'S NOTES
+Style: ${r.style}
+Read the conversation exactly as written. Do not read these notes or the speaker names aloud.
+#### TRANSCRIPT
+${lines[0].split('\n').map(l => l.replace(/^([MW]): /, (m, k) => r.duo[k].name + ': ')).join('\n')}`;
+  // 一次只錄一段、裡面有換行（例如看圖辨義的題目和 A、B、C 三個選項）：照行唸，行和行之間停一下
+  if (lines.length === 1) return `# AUDIO PROFILE: ${r.who}
+### DIRECTOR'S NOTES
+Style: ${r.style}
+Read the transcript exactly as written. At each line break, pause for about one second.
+Do not read these notes aloud.
+#### TRANSCRIPT
+${lines[0]}`;
   return `# AUDIO PROFILE: ${r.who}
 ### DIRECTOR'S NOTES
 Style: ${r.style}
@@ -57,6 +77,10 @@ After each line, stay completely silent for two full seconds before starting the
 Do not read these notes, any numbers, or any labels aloud.
 #### TRANSCRIPT
 ${lines.join('\n')}`;
+}
+function speechConfig(r) {
+  if (r.duo) return { multiSpeakerVoiceConfig: { speakerVoiceConfigs: Object.values(r.duo).map(v => ({ speaker: v.name, voiceConfig: { prebuiltVoiceConfig: { voiceName: v.voice } } })) } };
+  return { voiceConfig: { prebuiltVoiceConfig: { voiceName: r.voice } } };
 }
 
 // 這段在做什麼：呼叫 Google。遇到「每分鐘太多次」就等；「今天額度用完」就換下一個模型
@@ -68,7 +92,7 @@ async function speak(role, lines) {
     const res = await fetch(`${API}/models/${model}:generateContent`, {
       method: 'POST', headers: { 'x-goog-api-key': KEY, 'content-type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt(role, lines) }] }],
-        generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: r.voice } } } } })
+        generationConfig: { responseModalities: ['AUDIO'], speechConfig: speechConfig(r) } })
     });
     const j = await res.json().catch(() => ({}));
     if (res.status === 200) {
@@ -139,11 +163,24 @@ function saveEdgeKeys() {
   if (edgeKeys.size) fs.writeFileSync(edgePath, JSON.stringify([...edgeKeys].sort(), null, 1));
   else fs.rmSync(edgePath, { force: true });
 }
+// 對話用 edge-tts：一句一句用男生、女生的聲音錄，再接起來（句子中間停 0.4 秒）
+function edgeDuo(r, text, tmp) {
+  const lines = text.split('\n').map(l => l.match(/^([MW]): (.*)$/)).filter(Boolean);
+  const parts = lines.map(([, k, t], i) => {
+    const f = path.join(TMP, `duo-${i}.mp3`);
+    execFileSync(EDGE, ['--voice', r.duo[k].edge, '--rate=-5%', '--text', t, '--write-media', f], { stdio: 'ignore' });
+    return f;
+  });
+  const inputs = parts.flatMap(f => ['-i', f]);
+  const chain = parts.map((_, i) => `[${i}:a]aresample=24000,apad=pad_dur=0.4[a${i}]`).join(';') + ';' + parts.map((_, i) => `[a${i}]`).join('') + `concat=n=${parts.length}:v=0:a=1[out]`;
+  ff([...inputs, '-filter_complex', chain, '-map', '[out]', tmp]);
+}
 function recordEdge(c, manifest, manifestPath) {
   const r = ROLES[c.role] || ROLES.teacher;
   fs.mkdirSync(TMP, { recursive: true });
   const tmp = path.join(TMP, 'edge.mp3'), rel = relOf(c);
-  execFileSync(EDGE, ['--voice', r.edge || ROLES.teacher.edge, `--rate=${r.edgeRate || '-5%'}`, `--pitch=${r.edgePitch || '+0Hz'}`, '--text', c.text, '--write-media', tmp], { stdio: 'ignore' });
+  if (r.duo) edgeDuo(r, c.text, tmp);
+  else execFileSync(EDGE, ['--voice', r.edge || ROLES.teacher.edge, `--rate=${r.edgeRate || '-5%'}`, `--pitch=${r.edgePitch || '+0Hz'}`, '--text', c.text, '--write-media', tmp], { stdio: 'ignore' });
   // edge-tts 比 Gemini 小聲，調到差不多的音量（Gemini 平均約 -17.5 LUFS）
   saveClip(tmp, { a: 0, b: dur(tmp) }, path.join(ROOT, rel), 'loudnorm=I=-17.5:TP=-1.5:LRA=11,aresample=24000,');
   manifest[c.role + '|' + c.text] = rel;
@@ -169,7 +206,7 @@ function recordAllEdge(items, manifest, manifestPath) {
   // 用 Gemini 錄的時候，之前 edge-tts 錄的句子也重錄一次
   const todo = catalog.filter(c => !done(c) || (!USE_EDGE && edgeKeys.has(c.role + '|' + c.text)));
   // 一句裡有兩個以上短句（例如 Yes, please. 前面還有一句）會被切錯，所以這種句子單獨錄
-  const solo = c => /[.?!]\s+\S/.test(c.text);
+  const solo = c => /[.?!]\s+\S/.test(c.text) || c.role === 'duo' || c.text.includes('\n');
   const batches = todo.filter(solo).length + Object.values(todo.filter(c => !solo(c)).reduce((a, c) => { a[c.role] = (a[c.role] || 0) + 1; return a; }, {})).reduce((a, n) => a + Math.ceil(n / BATCH), 0);
   console.log(`共 ${catalog.length} 句，要錄 ${todo.length} 句${USE_EDGE ? '（用 edge-tts）' : `（大約要叫 Google ${batches} 次）`}`);
   if (!todo.length) return;
