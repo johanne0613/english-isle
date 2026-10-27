@@ -177,5 +177,8 @@
  "waiter|Good evening. Here's the menu. What would you like to eat?": "audio/waiter-0cbe4ced.mp3",
  "waiter|Sure. Would you like some soup, too?": "audio/waiter-51e651bb.mp3",
  "grandma|Hi, sweetie! What time do you get up on school days?": "audio/grandma-544bc46c.mp3",
- "grandma|Wow, that's early. Do you go home at four?": "audio/grandma-f3961103.mp3"
+ "grandma|Wow, that's early. Do you go home at four?": "audio/grandma-f3961103.mp3",
+ "teacher|I'd like some beef noodles, please.": "audio/teacher-52c0c4f6.mp3",
+ "teacher|We have sandwiches for breakfast.": "audio/teacher-769b2398.mp3",
+ "grandma|Good. Sleep well, sweetie. Good night!": "audio/grandma-703daa5d.mp3"
 }
