@@ -3,6 +3,8 @@
 // 錄好之後，把 audio 資料夾複製到 main 分支（正式版和測試版共用 main 的 audio）
 // 免費方案是限制「每天叫幾次」，所以一次請它唸很多句，錄好再依停頓切開。
 // 已經錄好的會跳過，新增課程後再跑一次，只會錄新的句子。金鑰只從環境變數讀，不會寫進任何檔案。
+// Gemini 額度用完時，剩下的句子自動改用微軟 Edge 的免費語音（edge-tts，不用金鑰、沒有每日上限）一句一句錄。
+// 只想用 edge-tts：node tools/make-audio.js --edge（安裝：uv tool install edge-tts）
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -16,19 +18,22 @@ const API = 'https://generativelanguage.googleapis.com/v1beta';
 const MODELS = (process.env.TTS_MODELS || 'gemini-3.8-flash-tts,gemini-3.1-flash-tts-preview,gemini-2.5-flash-preview-tts').split(',');
 const BATCH = Number(process.env.TTS_BATCH || 10);
 const GAP_MS = Number(process.env.TTS_GAP_MS || 21000);
+const USE_EDGE = process.argv.includes('--edge');
+const EDGE = process.env.EDGE_TTS || 'edge-tts';
 
 // 這段在做什麼：每個角色用哪個聲音、什麼語氣（寫成「導演筆記」，模型才不會把說明唸出來）
+// edge 是改用 edge-tts 時的聲音
 const ROLES = {
-  teacher: { voice: 'Kore', who: 'Ms. Kore, a friendly American English teacher.', style: 'warm, clear, natural pace, talking to a 10-year-old English learner.' },
-  word: { voice: 'Kore', who: 'Ms. Kore, a friendly American English teacher.', style: 'clear and natural, modeling the pronunciation of single words for a 10-year-old learner.' },
-  green: { voice: 'Sulafat', who: 'Mrs. Green, a kind neighbor greeting a child in a Halloween costume.', style: 'warm, cheerful and friendly.' },
-  bones: { voice: 'Algenib', who: 'Mr. Bones, a playful, curious old grandpa teasing a trick-or-treater.', style: 'playful, a little gravelly, amused.' },
-  haunted: { voice: 'Enceladus', who: 'The Haunted House, a spooky voice behind an old door.', style: 'slow, whispery and spooky, but fun and not too scary for children.' },
+  teacher: { voice: 'Kore', edge: 'en-US-AvaNeural', who: 'Ms. Kore, a friendly American English teacher.', style: 'warm, clear, natural pace, talking to a 10-year-old English learner.' },
+  word: { voice: 'Kore', edge: 'en-US-AvaNeural', who: 'Ms. Kore, a friendly American English teacher.', style: 'clear and natural, modeling the pronunciation of single words for a 10-year-old learner.' },
+  green: { voice: 'Sulafat', edge: 'en-US-JennyNeural', who: 'Mrs. Green, a kind neighbor greeting a child in a Halloween costume.', style: 'warm, cheerful and friendly.' },
+  bones: { voice: 'Algenib', edge: 'en-US-RogerNeural', who: 'Mr. Bones, a playful, curious old grandpa teasing a trick-or-treater.', style: 'playful, a little gravelly, amused.' },
+  haunted: { voice: 'Enceladus', edge: 'en-US-GuyNeural', edgeRate: '-20%', edgePitch: '-12Hz', who: 'The Haunted House, a spooky voice behind an old door.', style: 'slow, whispery and spooky, but fun and not too scary for children.' },
   // 段考城堡的情境對話
-  camp: { voice: 'Puck', who: 'Coach Max, a cheerful leader at an English summer camp.', style: 'upbeat, friendly and clear, welcoming a 10-year-old.' },
-  nurse: { voice: 'Achernar', who: 'Nurse Lin, a gentle school nurse.', style: 'calm, kind and caring, speaking slowly to a sick child.' },
-  waiter: { voice: 'Iapetus', who: 'A polite restaurant waiter.', style: 'polite, clear and friendly.' },
-  grandma: { voice: 'Gacrux', who: 'A loving grandma calling her grandchild on the phone.', style: 'warm, gentle and a little slow.' }
+  camp: { voice: 'Puck', edge: 'en-US-AndrewNeural', who: 'Coach Max, a cheerful leader at an English summer camp.', style: 'upbeat, friendly and clear, welcoming a 10-year-old.' },
+  nurse: { voice: 'Achernar', edge: 'en-US-MichelleNeural', edgeRate: '-8%', who: 'Nurse Lin, a gentle school nurse.', style: 'calm, kind and caring, speaking slowly to a sick child.' },
+  waiter: { voice: 'Iapetus', edge: 'en-US-BrianNeural', who: 'A polite restaurant waiter.', style: 'polite, clear and friendly.' },
+  grandma: { voice: 'Gacrux', edge: 'en-US-AriaNeural', edgeRate: '-12%', edgePitch: '-6Hz', who: 'A loving grandma calling her grandchild on the phone.', style: 'warm, gentle and a little slow.' }
 };
 
 function fnv(str) {
@@ -95,9 +100,9 @@ function splitWav(wav, n) {
   const bounds = [0, ...cuts, total];
   return bounds.slice(0, -1).map((a, i) => ({ a, b: bounds[i + 1] }));
 }
-function saveClip(wav, seg, file) {
+function saveClip(wav, seg, file, pre = '') {
   ff(['-ss', seg.a.toFixed(3), '-to', seg.b.toFixed(3), '-i', wav,
-    '-af', 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,apad=pad_dur=0.25',
+    '-af', pre + 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,apad=pad_dur=0.25',
     '-codec:a', 'libmp3lame', '-b:a', '64k', file]);
 }
 
@@ -123,12 +128,29 @@ async function recordBatch(role, items, manifest, manifestPath) {
   return { ok: true, model };
 }
 
+// 這段在做什麼：用 edge-tts 錄一句（一句一個檔，不用切）
+function hasEdge() { try { execFileSync(EDGE, ['--version'], { stdio: 'ignore' }); return true; } catch (e) { return false; } }
+function recordEdge(c, manifest, manifestPath) {
+  const r = ROLES[c.role] || ROLES.teacher;
+  fs.mkdirSync(TMP, { recursive: true });
+  const tmp = path.join(TMP, 'edge.mp3'), rel = relOf(c);
+  execFileSync(EDGE, ['--voice', r.edge || ROLES.teacher.edge, `--rate=${r.edgeRate || '-5%'}`, `--pitch=${r.edgePitch || '+0Hz'}`, '--text', c.text, '--write-media', tmp], { stdio: 'ignore' });
+  // edge-tts 比 Gemini 小聲，調到差不多的音量（Gemini 平均約 -17.5 LUFS）
+  saveClip(tmp, { a: 0, b: dur(tmp) }, path.join(ROOT, rel), 'loudnorm=I=-17.5:TP=-1.5:LRA=11,aresample=24000,');
+  manifest[c.role + '|' + c.text] = rel;
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 1));
+  console.log(`    ${dur(path.join(ROOT, rel)).toFixed(1)}s  ${c.text.slice(0, 60)}（edge-tts）`);
+}
+function recordAllEdge(items, manifest, manifestPath) {
+  items.forEach(c => { try { recordEdge(c, manifest, manifestPath); } catch (e) { console.log(`  edge-tts 錄不了這句，跳過：${c.text.slice(0, 40)}`); } });
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
 
   // 這段在做什麼：讀課程檔 lessons.js，拿到所有要唸的句子（不用開瀏覽器）
   if (!fs.existsSync(path.join(ROOT, 'lessons.js'))) { console.error('找不到 lessons.js。請切到 dashboard 分支再執行，錄好再把 audio 資料夾複製到 main。'); process.exit(1); }
-  const catalog =vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'lessons.js'), 'utf8') + '\n;speechCatalog();');
+  const catalog = vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'lessons.js'), 'utf8') + '\n;speechCatalog();');
 
   const manifestPath = path.join(OUT, 'manifest.json');
   const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : {};
@@ -136,9 +158,16 @@ async function recordBatch(role, items, manifest, manifestPath) {
   // 一句裡有兩個以上短句（例如 Yes, please. 前面還有一句）會被切錯，所以這種句子單獨錄
   const solo = c => /[.?!]\s+\S/.test(c.text);
   const batches = todo.filter(solo).length + Object.values(todo.filter(c => !solo(c)).reduce((a, c) => { a[c.role] = (a[c.role] || 0) + 1; return a; }, {})).reduce((a, n) => a + Math.ceil(n / BATCH), 0);
-  console.log(`共 ${catalog.length} 句，要錄 ${todo.length} 句（大約要叫 Google ${batches} 次）`);
+  console.log(`共 ${catalog.length} 句，要錄 ${todo.length} 句${USE_EDGE ? '（用 edge-tts）' : `（大約要叫 Google ${batches} 次）`}`);
   if (!todo.length) return;
-  if (!KEY) { console.error('請先設定 GEMINI_API_KEY'); process.exit(1); }
+  if (USE_EDGE) {
+    if (!hasEdge()) { console.error('找不到 edge-tts。安裝：uv tool install edge-tts'); process.exit(1); }
+    recordAllEdge(todo, manifest, manifestPath);
+    fs.rmSync(TMP, { recursive: true, force: true });
+    console.log(`\n已錄好 ${catalog.filter(c => manifest[c.role + '|' + c.text]).length} / ${catalog.length} 句`);
+    return;
+  }
+  if (!KEY) { console.error('請先設定 GEMINI_API_KEY，或加 --edge 改用 edge-tts（不用金鑰）'); process.exit(1); }
 
   // 這段在做什麼：同一個角色的句子分組，一組一次錄
   const queue = [];
@@ -147,10 +176,10 @@ async function recordBatch(role, items, manifest, manifestPath) {
   Object.entries(byRole).forEach(([role, list]) => { for (let i = 0; i < list.length; i += BATCH) queue.push({ role, items: list.slice(i, i + BATCH) }); });
   todo.filter(solo).forEach(c => queue.push({ role: c.role, items: [c] }));
 
-  let first = true;
+  let first = true, job = null;
   try {
     while (queue.length) {
-      const job = queue.shift();
+      job = queue.shift();
       if (!first) await sleep(GAP_MS);
       first = false;
       console.log(`[${job.role}] 一次錄 ${job.items.length} 句（剩 ${queue.length} 組）`);
@@ -163,7 +192,11 @@ async function recordBatch(role, items, manifest, manifestPath) {
     }
   } catch (e) {
     console.error('\n停下來了：' + e.message);
-    process.exitCode = 2;
+    const rest = [...(job ? job.items : []), ...queue.flatMap(q => q.items)].filter(c => !manifest[c.role + '|' + c.text]);
+    if (e.exhausted && rest.length && hasEdge()) {
+      console.log(`剩下 ${rest.length} 句改用 edge-tts 錄`);
+      recordAllEdge(rest, manifest, manifestPath);
+    } else process.exitCode = 2;
   }
   const valid = new Set(catalog.map(c => c.role + '|' + c.text));
   Object.keys(manifest).forEach(k => { if (!valid.has(k)) delete manifest[k]; });

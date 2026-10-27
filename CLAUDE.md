@@ -43,6 +43,7 @@
 - 金鑰不要貼在對話或寫進檔案，要用環境變數。可以在終端機用 `read -rs GEMINI_API_KEY` 讓使用者自己貼。
 - 一次錄很多句再依停頓切開，有時會切錯（一句被切成兩段、或混到下一句）。現在含兩個以上短句的句子會單獨錄；錄完最好用 whisper 轉文字比對一次。使用者 Mac 上有 `whisper-cli` 和 `~/whisper-models/ggml-large-v3-turbo.bin`。
 - 切錯的句子：從 `audio/manifest.json` 刪掉那一行和 mp3，再跑一次錄音程式。剩很少句時用 `TTS_BATCH=1` 一句一句錄最穩。
+- Gemini 額度用完時，剩下的句子會自動改用 edge-tts（微軟免費語音，不用金鑰、沒有每日上限）一句一句錄，音量會調到跟 Gemini 差不多。只想用 edge-tts：`node tools/make-audio.js --edge`。使用者 Mac 已用 `uv tool install edge-tts` 裝好。edge-tts 的聲音跟 Gemini 不同人，所以 Gemini 還是第一選擇。
 
 ## 學生和課程
 
@@ -53,6 +54,7 @@
 
 ## 段考城堡（2026-10-26 做好，在 `beta/` 測試中）
 
+- 語音全部錄好（182 句）。其中 3 句是 edge-tts 錄的：I'd like some beef noodles, please.／We have sandwiches for breakfast.／Good. Sleep well, sweetie. Good night!，想統一聲音可以刪掉重錄 Gemini。
 - 一個 Review 是一次段考範圍（使用者確認）。WW7 五上：第一次段考 Unit 1–2＋Review 1（課本 p.15–46），第二次段考 Unit 3–4＋Review 2（p.47–78）。中秋節單元（p.79）沒放進去。
 - 課程在 `lessons.js` 的 `ww7t1`、`ww7t2`，地圖上的區域 id 是 `castle`。
 - 每堂六關：單字口說、句型問答、情境對話、聽力題、段考題型（文法選擇、句子重組、看圖拼字）、閱讀理解。
@@ -66,7 +68,6 @@
 
 ## 下一步
 
-1. 段考城堡還有 3 句語音沒錄（2026-10-27 免費額度用完）：I'd like some beef noodles, please.／We have sandwiches for breakfast.／Good. Sleep well, sweetie. Good night!（奶奶）。在 `dashboard` 分支用 `TTS_BATCH=1` 跑錄音程式，錄好複製 `audio/` 到 `main`。
-2. 使用者和 Taffy 測試 `beta/` 的段考城堡，修正回報的問題。
-3. 新版確認可以用之後，在非上課時段換上正式版。
-4. 下學期：Wonder World 8 的段考城堡。
+1. 使用者和 Taffy 測試 `beta/` 的段考城堡，修正回報的問題。
+2. 新版確認可以用之後，在非上課時段換上正式版。
+3. 下學期：Wonder World 8 的段考城堡。
