@@ -17,7 +17,7 @@
   - `beta/` 是測試版。
   - `audio/` 是 Google Gemini 預錄的語音，正式版和測試版共用。
 - `dashboard`：新版的原始碼，有 Firebase 老師後台、學生專屬連結、回家任務、練習時間軸。
-  - 檔案是 `index.html`、`app.js`、`lessons.js`、`bank.js`。課程內容在 `lessons.js`，段考題庫在 `bank.js`。
+  - 檔案是 `index.html`、`app.js`、`lessons.js`、`bank.js`。課程內容在 `lessons.js`，段考和英檢題庫在 `bank.js`。
   - 改新版一律改這個分支，再把四個檔案複製到 `main` 的 `beta/`；測試沒問題、使用者說「可以換」，再複製到 `main` 的根目錄。
 
 ## 換版規則（很重要）
@@ -43,6 +43,9 @@
 - 金鑰不要貼在對話或寫進檔案，要用環境變數。可以在終端機用 `read -rs GEMINI_API_KEY` 讓使用者自己貼。
 - 一次錄很多句再依停頓切開，有時會切錯（一句被切成兩段、或混到下一句）。現在含兩個以上短句的句子會單獨錄；錄完最好用 whisper 轉文字比對一次。使用者 Mac 上有 `whisper-cli` 和 `~/whisper-models/ggml-large-v3-turbo.bin`。
 - 切錯的句子：從 `audio/manifest.json` 刪掉那一行和 mp3，再跑一次錄音程式。剩很少句時用 `TTS_BATCH=1` 一句一句錄最穩。
+- 聲音角色：`teacher`（老師）、`word`（唸單字）、情境對話的角色，還有英檢山用的 `examiner`（Flyers 考官，英國腔）、`narrator`（GEPT 聽力唸題目的旁白）、`duo`（GEPT 對話，一男一女）。
+- GEPT 聽力的 `audio` 格式：`M: …`、`W: …` 開頭的行是對話（Gemini 用兩個聲音一次錄）；最後一行 `Q: …` 是題目，用旁白另外錄，網站播完對話再接著播題目（`audioParts()` 在 `lessons.js`）。含換行或兩句以上的句子、對話都單獨錄。
+- whisper 比對的小程式沒有放進 repo：把音檔轉 16 kHz wav，用 `whisper-cli -m ~/whisper-models/ggml-large-v3-turbo.bin -l en -nt -np -f 檔案` 轉文字，跟 `manifest.json` 的原句比對字的重合率（對話要先拿掉 M: W: Q:）。
 - Gemini 額度用完時，剩下的句子會自動改用 edge-tts（微軟免費語音，不用金鑰、沒有每日上限）一句一句錄，音量會調到跟 Gemini 差不多。只想用 edge-tts：`node tools/make-audio.js --edge`。使用者 Mac 已用 `uv tool install edge-tts` 裝好。edge-tts 只當臨時替代：錄過的句子記在 `audio/edge.json`，下次用 Gemini 金鑰執行時會自動換成 Gemini。Gemini 每日額度在太平洋時間午夜重置（台灣 15:00，冬令時間 16:00）。
 
 ## 學生和課程
@@ -70,12 +73,35 @@
 
 ## 段考刷題和題庫（2026-10-27 做好並上正式版）
 
-- 題庫在 `bank.js`，每份標年級、版本、冊次、第幾次段考：`kh5a-1`（第一次段考，127 題）、`kh5a-2`（第二次段考，118 題）。之後加國中、會考就再加一份。
+- 題庫在 `bank.js`，每份標年級、版本、冊次、第幾次段考：`kh5a-1`（第一次段考）、`kh5a-2`（第二次段考）。之後加國中、會考就再加一份。英檢的題庫 `gept-e1` 見「英檢山」。
+- 分頁名稱 2026-10-28 改成「刷題」（學生頁、後台都是）。每份題庫可以設 `drill` 決定按鈕叫什麼：沒設是「段考刷題」，英檢是「英檢刷題」。
 - 題目是自命題，用課本單字句型照模板產生，每題有 `source`。收進學校公開的真實考題時，`source` 寫學校＋學年＋段考，圖片換成我們的。
 - 學生：專屬連結 →「段考刷題」分頁。隨機刷題、錯題本（答錯放進來、答對拿掉）、老師指定的題目。
 - 老師：段考城堡課程卡的「段考刷題」「題庫・上課素材」。題庫可以依範圍、題型、學生答錯篩選，然後上課刷、印學習單（解答在最後一頁）、指定給學生回家刷。
 - 成績存在學生的 `practice/drill_題庫代號`（attempts 每次成績、stats 每題對錯、assigned 老師指定）。後台「段考刷題」分頁、練習時間軸、島上的學習紀錄都看得到。
 - 使用者想法：段考城堡不限國小，之後可以加國中；會考另外開一個區域（不放在段考城堡）。Taffy 可能會接一位國九學生（雙胞胎的哥哥），重點是會考。
+
+## 英檢山（2026-10-28 做好第一版，在測試版）
+
+- 地圖上的區域 id 是 `exam`，已開放。給週日的雙胞胎用（增能、超前）。
+- 題目全部自命題，沒有用劍橋或 LTTC 的考古題；題型和題數照官方格式（2026-10-28 查過官方說明）。
+- **Flyers 口說**：`lessons.js` 的 `flyers1`（一堂課，`voice: 'examiner'` 用考官的聲音唸題目）。
+  - Part 1 找不同 `diff`：1 個例子＋6 個不同（數量、動作、位置、顏色、外表、大小）。學生只看自己的圖，老師的圖可以打開對答案。圖用 emoji 拼，寫在關卡的 `diff.candidate` / `diff.examiner`，格式跟萬聖節的 scene 一樣：`[emoji, 左右%, 上下%, 大小 s/m/l/xl]`。
+  - Part 2 資訊交換 `info`：老師看學生的資訊卡問 5 題（`card: 'mine'`），學生看提示字問 5 題（`card: 'yours'`，`reply` 是考官的回答，學生說完才出現，問過的那行會填上答案）。
+  - Part 3 看圖說故事 `story`：5 張圖，`lead` 是考官先說的第 1 張，學生說第 2–5 張（沿用 panel 題型，要用過去式）。
+  - Part 4 個人問答 `talk`：5 題，最後一題 Tell me about …。
+  - 官方評分三項：字彙文法、發音、互動（各 0–5 分，換成最多 5 個盾牌）。我們的 skills 對到 vocab、grammar、pron、fluency、ideas。
+- **GEPT 初級聽讀**：`bank.js` 的 `gept-e1`（`grade: 5`、`gradeText: '國小五、六年級'`、`level: '初級'`、CEFR A2）。沒有掛在哪一堂課，英檢山的區域用 `banks: ['gept-e1']` 放一張題庫卡（`bankCard()`）。
+  - 照 2021 新制兩回的量：聽力 60 題（看圖辨義 10、問答 20、簡短對話 20、短文聽解 10，三選一）、閱讀 60 題（詞彙 20、段落填空 16＝4 篇×4 格、閱讀理解 24＝8 篇×3 題，四選一）。
+  - 官方一回：聽力 30 題約 20 分鐘（5／10／10／5，每題只播一次）、閱讀 30 題 35 分鐘（10／8／12）。通過：聽讀合計 160（各 120 滿分），兩項都不低於 72。
+  - 刷題首頁多「模擬考」：照 `mock` 的題型和題數出一整回，同一篇文章的題目一起出、照順序排。也可以只練一種題型。
+  - 題目欄位：`fixed`（選項不打亂，答案位置用題號決定）、`scene`（看圖辨義的圖）、`hideOpts`（選項用聽的，答完才顯示字）、`picOpts`（選項是圖）、`noRead`（閱讀文章不給「聽一次」）。
+- 出題原則照舊：答案都從題目的英文找得到。看圖辨義是把圖跟聽到的英文對起來；閱讀只看文章裡寫的。
+
+## 本機測試（不用真的雲端）
+
+- 用 `python3 -m http.server` 開 dashboard 的資料夾，網頁跑到登入畫面後，在瀏覽器把 `isleDebug.Cloud` 的方法（watchStudents、list、savePractice、saveSession、saveHomework、updateStudent、log、getStudent…）換成存在記憶體的假的，設 `Cloud.user`、`Cloud.isTeacher = true`，再呼叫 `startTeacher()`；學生頁面改呼叫 `startStudent(學生 id)`。
+- `isleDebug.say('…')` 模擬學生說了一句話。瀏覽器會快取 js，改完要先 `fetch(檔名, { cache: 'reload' })` 再重新整理。
 
 ## 考古題來源
 
@@ -92,3 +118,5 @@
 1. Taffy 在正式版測試新版（2026-10-27 換上），修正回報的問題；週五 19:00 上課前要處理完，不行就 revert 換回舊版。
 2. 舊版存在老師電腦瀏覽器的上課紀錄：登入後台會出現「上傳到雲端」。
 3. 下學期：Wonder World 8 的段考城堡。
+4. 英檢山：使用者和 Taffy 在測試版試用 Flyers 口說、GEPT 刷題；沒問題、使用者說「可以換」再上正式版。語音先用 edge-tts 錄好，Gemini 額度有了就重錄（跑一次 make-audio 就會換掉 `audio/edge.json` 裡的句子），錄完用 whisper 比對。
+5. 接下來的區域：閱讀燈塔 → 口說海灣 → 寫作森林 → 會考區；11/8 前另外做節慶廣場的感恩節課。

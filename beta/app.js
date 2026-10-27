@@ -117,7 +117,7 @@ const TTS = {
     if (!this.ok) return;
     try {
       speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(String(text).replace(/_{2,}/g, 'blank'));
+      const u = new SpeechSynthesisUtterance(String(text).replace(/_{2,}/g, 'blank').replace(/^[MWQ]: /gm, ''));  // 對話題的 M: W: Q: 不唸出來
       if (!this.voice) this.pick();
       if (this.voice) u.voice = this.voice;
       u.lang = 'en-US';
@@ -136,8 +136,28 @@ const VOICE = {
     catch (e) { /* 直接打開檔案時讀不到音檔清單，就用電腦語音 */ }
   },
   stop() {
-    if (this.audio) { try { this.audio.pause(); } catch (e) { /* 忽略 */ } }
+    this.chain = (this.chain || 0) + 1;
+    if (this.audio) { try { this.audio.onended = null; this.audio.pause(); } catch (e) { /* 忽略 */ } }
     if (TTS.ok) { try { speechSynthesis.cancel(); } catch (e) { /* 忽略 */ } }
+  },
+  /* 聽力題：對話和最後的題目分開錄（audioParts 在 lessons.js），這裡一段接一段播 */
+  listen(text) {
+    const parts = audioParts(text);
+    if (parts.length === 1) { this.say(parts[0].text, parts[0].role); return; }
+    const files = parts.map(p => this.manifest[this.key(p.role, p.text)]);
+    this.stop();
+    if (files.some(f => !f)) { TTS.say(parts.map(p => p.text).join('\n')); return; }
+    const a = this.audio || (this.audio = new Audio()), my = this.chain;
+    let i = 0;
+    const next = () => {
+      if (my !== this.chain) return;
+      a.src = ASSET_BASE + files[i++];
+      a.preservesPitch = true;
+      a.defaultPlaybackRate = a.playbackRate = state.settings.slow ? 0.8 : 1;
+      a.onended = i < files.length ? () => setTimeout(next, 700) : null;
+      a.play().catch(() => { if (my === this.chain) TTS.say(parts.slice(i - 1).map(p => p.text).join('\n')); });
+    };
+    next();
   },
   say(text, role) {
     this.stop();
@@ -445,11 +465,12 @@ function itemLabel(st, it, idx) {
   if (k === 'word') return it.word;
   if (k === 'shadow') return '跟讀：' + clip(it.text, 48);
   if (k === 'dialogue') return '敲門：' + it.who;
-  if (k === 'panel') return `故事第 ${idx + 1} 格`;
+  if (k === 'panel') return `故事第 ${idx + 1 + (st.lead ? 1 : 0)} 格`;
   if (k === 'catch') return '影片抓單字';
   if (k === 'order') return '句子重組：' + it.zh;
   if (k === 'spell') return '看圖拼字：' + it.zh;
   if (k === 'choice') return it.show ? `${it.tag}：${it.show}` : it.audio ? `${it.tag} 第 ${idx + 1} 題` : `${it.tag}：${clip(it.prompt, 48)}`;
+  if (it.reply) return '換你問：' + it.hint;  // Flyers Part 2：學生看提示字問問題
   return clip(it.prompt, 60);
 }
 
@@ -589,7 +610,7 @@ function lessonCard(L) {
         : D && D.loaded ? h('p', { class: 'lc-hist muted' }, `${state.student.name} 還沒上過這堂課`) : null,
       weak.length ? h('p', { class: 'record-work' }, h('span', { class: 'tag' }, '上次要加強'), weak.join('、')) : null),
     h('div', { class: 'lc-grid' },
-      L.scope ? h('div', null, h('h3', null, '段考範圍'), h('ul', null, L.scope.map(x => h('li', null, x)))) : null,
+      L.scope ? h('div', null, h('h3', null, L.scopeTitle || '段考範圍'), h('ul', null, L.scope.map(x => h('li', null, x)))) : null,
       h('div', null, h('h3', null, '學習目標'), h('ul', null, L.goals.map(g => h('li', null, g)))),
       h('div', null, h('h3', null, '課程流程'), h('ol', { class: 'flow' }, L.stages.map(st => h('li', null, `${st.zh} ${st.title} `, h('span', null, `${st.minutes} 分`))))),
       h('div', null, h('h3', null, '評量方式'), h('p', null, L.assess)),
@@ -597,7 +618,7 @@ function lessonCard(L) {
     h('div', { class: 'lc-actions' },
       hasDraft ? h('button', { class: 'btn primary', type: 'button', onclick: () => startLesson(L.id, true) }, `繼續上次的課（已評 ${done} 題）`) : null,
       h('button', { class: hasDraft ? 'btn' : 'btn primary', type: 'button', onclick: () => startLesson(L.id, false) }, hasDraft ? '重新開始' : '開始上課'),
-      L.bankId && BANKS[L.bankId] ? h('button', { class: 'btn', type: 'button', onclick: () => goDrillHome(L.bankId) }, '段考刷題') : null,
+      L.bankId && BANKS[L.bankId] ? h('button', { class: 'btn', type: 'button', onclick: () => goDrillHome(L.bankId) }, drillName(BANKS[L.bankId])) : null,
       L.bankId && BANKS[L.bankId] ? h('button', { class: 'btn ghost', type: 'button', onclick: () => openBank(L.bankId) }, '題庫・上課素材') : null,
       L.video && L.video.url ? h('a', { class: 'btn ghost', href: L.video.url, target: '_blank', rel: 'noopener noreferrer' }, svg(ICON.play), '先看影片') : null)
   );
@@ -754,26 +775,66 @@ function resultBox(k, opts = {}) {
 /* ---------- 開放題 ---------- */
 function renderQuestion(st, it, k) {
   const hint = reveal('看句型提示', h('p', { class: 'hint' }, it.hint), k);
+  const card = it.card && st.cards ? st.cards[it.card] : null;
+  // 學生問過的那一行，答案就填上去
+  const known = card && card.ask ? new Set(st.items.filter(x => x.card === it.card && (state.session.said[keyOf(st, x)] || state.replyOpen === keyOf(st, x))).map(x => x.row)) : null;
   const main = h('div', null,
     h('p', { class: 'eyebrow' }, `Question ${curPos() + 1} of ${curItems().length}`),
-    it.ctx ? h('div', { class: 'q-ctx-row' }, it.pic ? h('span', { class: 'q-pic', 'aria-hidden': 'true' }, it.pic) : null, h('p', { class: 'q-ctx' }, it.ctx))
+    card ? infoCard(card, it, known)
+      : it.ctx ? h('div', { class: 'q-ctx-row' }, it.pic ? h('span', { class: 'q-pic', 'aria-hidden': 'true' }, it.pic) : null, h('p', { class: 'q-ctx' }, it.ctx))
       : it.pic ? h('div', { class: 'q-cue' }, h('span', { class: 'q-pic', 'aria-hidden': 'true' }, it.pic), it.cue ? h('span', { class: 'q-cue-t' }, it.cue) : null) : null,
     h('p', { class: 'prompt' }, it.prompt),
-    h('div', { class: 'tools' }, speakBtn(it.prompt, '聽題目'), hint.btn),
+    h('div', { class: 'tools' }, speakBtn(it.prompt, '聽題目', lessonVoice()), hint.btn),
     hint.content,
-    micControl({ owner: k, silenceMs: 3000, maxMs: 45000, onDone: r => handleSpeech(k, r.text, r.alts, t => evalOpen(it.expect || {}, t)) }),
+    micControl({ owner: k, silenceMs: 3000, maxMs: 45000, onDone: r => { handleSpeech(k, r.text, r.alts, t => evalOpen(it.expect || {}, t)); if (it.reply) { paintStage(); VOICE.say(it.reply, lessonVoice()); } } }),
     resultBox(k),
+    it.reply ? replyBox(it, k) : null,
     it.follow && !inPractice() ? h('p', { class: 'follow' }, h('span', { class: 'tag' }, '老師'), it.follow) : null);
+  if (st.diff) return h('div', null, diffPics(st), main);
   if (!st.scene) return main;
   return h('div', { class: 'two' }, scene(), main);
 }
-function scene() {
-  const items = [['🏚️', 18, 44, 'xl'], ['👻', 22, 38, 's'], ['🕸️', 5, 14, 'm'], ['🦇', 42, 14, 'm'], ['🦇', 54, 24, 's'],
-    ['🎃', 34, 74, 'm'], ['🎃', 8, 80, 's'], ['🧙‍♀️', 58, 62, 'l'], ['🧛‍♂️', 72, 62, 'l'], ['🐈‍⬛', 88, 80, 'm'], ['🍬', 64, 86, 's'], ['🌳', 92, 44, 'l']];
-  return h('div', { class: 'scene', role: 'img', 'aria-label': '萬聖夜街景：月亮、老房子、南瓜燈、蝙蝠、穿變裝的兩個小孩和一隻黑貓' },
-    h('span', { class: 'moon' }), h('span', { class: 'ground' }),
-    items.map(([e, x, y, sz]) => h('span', { class: 'se ' + sz, style: `left:${x}%;top:${y}%` }, e)));
+/* 這段在做什麼：用 emoji 拼出來的場景圖。items 是 [emoji, 左右位置%, 上下位置%, 大小 s/m/l/xl] */
+const HALLOWEEN_SCENE = { night: true, label: '萬聖夜街景：月亮、老房子、南瓜燈、蝙蝠、穿變裝的兩個小孩和一隻黑貓',
+  items: [['🏚️', 18, 44, 'xl'], ['👻', 22, 38, 's'], ['🕸️', 5, 14, 'm'], ['🦇', 42, 14, 'm'], ['🦇', 54, 24, 's'],
+    ['🎃', 34, 74, 'm'], ['🎃', 8, 80, 's'], ['🧙‍♀️', 58, 62, 'l'], ['🧛‍♂️', 72, 62, 'l'], ['🐈‍⬛', 88, 80, 'm'], ['🍬', 64, 86, 's'], ['🌳', 92, 44, 'l']] };
+function scene(spec = HALLOWEEN_SCENE) {
+  return h('div', { class: 'scene' + (spec.night ? '' : ' day'), role: 'img', 'aria-label': spec.label },
+    spec.night ? h('span', { class: 'moon' }) : null, h('span', { class: 'ground' }),
+    spec.items.map(([e, x, y, sz]) => h('span', { class: 'se ' + sz, style: `left:${x}%;top:${y}%` }, e)));
 }
+/* 這段在做什麼：找不同（Flyers Part 1）。學生看自己的圖回答；老師的圖可以打開來對照 */
+function diffPics(st) {
+  const D = st.diff;
+  const theirs = h('div', { class: 'diff-other', hidden: !state.diffOpen },
+    h('p', { class: 'diff-cap' }, D.examiner.cap || "Examiner's picture 老師的圖"), scene(D.examiner));
+  const btn = h('button', { class: 'btn small ghost', type: 'button', 'aria-expanded': String(!theirs.hidden) }, theirs.hidden ? '打開老師的圖對照' : '收起老師的圖');
+  btn.addEventListener('click', () => { state.diffOpen = theirs.hidden; theirs.hidden = !theirs.hidden; btn.setAttribute('aria-expanded', String(!theirs.hidden)); btn.textContent = theirs.hidden ? '打開老師的圖對照' : '收起老師的圖'; });
+  return h('div', { class: 'diff-wrap' },
+    h('div', { class: 'diff-pics' },
+      h('div', null, h('p', { class: 'diff-cap' }, D.candidate.cap || 'Your picture 你的圖'), scene(D.candidate)),
+      theirs),
+    h('div', { class: 'tools' }, btn, h('span', { class: 'muted sm' }, '考試時只有老師（考官）看得到這張。說完再打開來對答案。')));
+}
+/* 這段在做什麼：資訊卡（Flyers Part 2）。ask 是學生要發問的卡：只看到提示字，答案藏起來 */
+function infoCard(card, it, known) {
+  return h('div', { class: 'info-card' + (card.ask ? ' ask' : '') },
+    h('div', { class: 'ic-head' }, h('span', { class: 'ic-pic', 'aria-hidden': 'true' }, card.pic), h('b', null, card.title)),
+    h('dl', null, card.rows.map(([k, v], i) => h('div', { class: 'ic-row' + (it && it.row === i ? ' on' : '') + (card.ask && known && known.has(i) ? ' known' : '') },
+      h('dt', null, k), h('dd', null, card.ask && !(known && known.has(i)) ? '?' : v)))));
+}
+/* 這段在做什麼：學生問完之後，聽老師（考官）的回答 */
+function replyBox(it, k) {
+  const role = lessonVoice();
+  const shown = !!(state.session.said[k] || state.replyOpen === k);
+  const box = h('div', { class: 'reply', hidden: !shown },
+    h('span', { class: 'tag' }, '老師回答'), h('span', { class: 'reply-t' }, it.reply), ' ', speakBtn(it.reply, '聽回答', role));
+  const btn = h('button', { class: 'btn small ghost', type: 'button', hidden: shown }, '先看老師的回答');
+  btn.addEventListener('click', () => { state.replyOpen = k; paintStage(); VOICE.say(it.reply, role); });
+  return [btn, box];
+}
+/* 這段在做什麼：這堂課用哪個聲音唸題目（英檢山用英國腔的考官） */
+const lessonVoice = () => (state.session && lessonOf(state.session).voice) || 'teacher';
 
 /* ---------- 單字 ---------- */
 function renderWord(st, it, k) {
@@ -935,18 +996,25 @@ function renderDialogue(st, it, k) {
 function renderPanel(st, it, k) {
   const s = state.session;
   const hits = new Set((s.evals[k] && s.evals[k].hits) || []);
-  const model = reveal('看示範句', h('p', { class: 'hint' }, it.model, ' ', speakBtn(it.model, '聽示範')), k);
+  const role = lessonVoice();
+  const model = reveal('看示範句', h('p', { class: 'hint' }, it.model, ' ', speakBtn(it.model, '聽示範', role)), k);
+  // lead：考官先說第 1 張（Flyers Part 3），學生從第 2 張開始說
+  const lead = st.lead, off = lead ? 1 : 0, all = itemsOf(st, state.session);
+  const pos = all.indexOf(it);
   return h('div', null,
     h('p', { class: 'story-title' }, st.storyTitle),
-    h('div', { class: 'strip' }, itemsOf(st, state.session).map((p, i) => h('button', { class: 'panel-mini', type: 'button', 'aria-current': String(p.id === it.id), disabled: inPractice(), onclick: inPractice() ? null : () => goItem(i), 'aria-label': `第 ${i + 1} 格` },
-      h('span', { class: 'pm-n' }, String(i + 1)), h('span', { 'aria-hidden': 'true' }, p.scene)))),
+    lead ? h('div', { class: 'lead' }, h('span', { class: 'tag' }, '老師先說第 1 張'), h('span', { class: 'lead-t' }, lead.text), ' ', speakBtn(lead.text, '聽老師說', role)) : null,
+    h('div', { class: 'strip' + (all.length + off === 5 ? ' five' : '') },
+      lead ? h('div', { class: 'panel-mini lead-mini', 'aria-label': '第 1 格（老師說）' }, h('span', { class: 'pm-n' }, '1'), h('span', { 'aria-hidden': 'true' }, lead.scene)) : null,
+      all.map((p, i) => h('button', { class: 'panel-mini', type: 'button', 'aria-current': String(p.id === it.id), disabled: inPractice(), onclick: inPractice() ? null : () => goItem(i), 'aria-label': `第 ${i + 1 + off} 格` },
+        h('span', { class: 'pm-n' }, String(i + 1 + off)), h('span', { 'aria-hidden': 'true' }, p.scene)))),
     h('div', { class: 'panel-big' },
       h('div', { class: 'pb-scene', 'aria-hidden': 'true' }, it.scene),
       h('div', null,
-        h('p', { class: 'eyebrow' }, `Picture ${curPos() + 1} of ${curItems().length}`),
+        h('p', { class: 'eyebrow' }, `Picture ${pos + 1 + off} of ${all.length + off}`),
         h('p', { class: 'prompt sm' }, it.prompt),
         h('div', { class: 'kw' }, it.keywords.map(w => h('span', { class: 'kw-chip' + (hits.has(w) ? ' hit' : '') }, w))),
-        h('div', { class: 'tools' }, speakBtn(it.prompt, '聽題目'), model.btn),
+        h('div', { class: 'tools' }, speakBtn(it.prompt, '聽題目', role), model.btn),
         model.content,
         micControl({ owner: k, silenceMs: 3000, maxMs: 45000, onDone: r => { handleSpeech(k, r.text, r.alts, t => evalPanel(it, t)); paintStage(); } }),
         resultBox(k))));
@@ -1009,7 +1077,7 @@ function renderChoice(st, it, k) {
     passage ? h('div', { class: 'passage' }, h('p', null, passage), h('div', { class: 'tools', style: 'margin:10px 0 0' }, speakBtn(passage, '聽文章'))) : null,
     testHead(it),
     it.audio ? h('div', { class: 'tools' },
-      h('button', { class: 'btn primary', type: 'button', onclick: () => VOICE.say(it.audio, audioRole(it.audio)) }, svg(ICON.play), '播放'),
+      h('button', { class: 'btn primary', type: 'button', onclick: () => VOICE.listen(it.audio) }, svg(ICON.play), '播放'),
       h('span', { class: 'muted sm' }, '可以重聽。開了慢速語音會唸慢一點。')) : null,
     it.show ? h('p', { class: 'mask' }, it.show) : null,
     h('p', { class: 'prompt sm' }, it.prompt),
@@ -1681,11 +1749,26 @@ function studentRecord() {
       statBox('上次上課', s.lastClass ? `${fmtShort(s.lastClass.at)}・${s.lastClass.title}・${s.lastClass.pct}%` : '還沒上過課'),
       statBox('回家任務', hw ? `完成 ${prog ? prog.done : 0} / ${hw.total}・${fmtShort(hw.dueAt)} 截止` : '沒有回家任務'),
       statBox('自己練習', `今天 ${mins((s.daily || {})[dayKey()])} 分・近 7 天 ${mins(weekMs(s))} 分`),
-      statBox('段考刷題', !D.loaded ? '…' : (Object.values(BANKS).map(B => ({ B, I: drillInfo(B.id) })).filter(x => x.I.attempts.length)
+      statBox('刷題', !D.loaded ? '…' : (Object.values(BANKS).map(B => ({ B, I: drillInfo(B.id) })).filter(x => x.I.attempts.length)
         .map(x => `${x.B.title} 最好 ${x.I.best} 分・錯題 ${x.I.wrong.length}`).join('；') || '還沒刷過'))),
     !D.loaded ? h('p', { class: 'muted sm' }, '正在讀取上課紀錄…')
       : D.error ? h('p', { class: 'mic-err' }, '讀不到上課紀錄：' + D.error)
       : work.length ? h('p', { class: 'record-work' }, h('span', { class: 'tag' }, '上次要加強'), work.join('、')) : null);
+}
+/* 這段在做什麼：不屬於哪一堂課的題庫（例如英檢山的 GEPT 聽讀），在區域裡放一張卡片 */
+function bankCard(B) {
+  const I = state.detail && state.detail.loaded && state.detail.sid === state.student.id ? drillInfo(B.id) : null;
+  return h('article', { class: 'lesson-card' },
+    h('div', null,
+      h('p', { class: 'eyebrow' }, B.sub),
+      h('h3', { class: 'lc-title' }, B.title, h('span', null, `題庫 ${B.questions.length} 題`)),
+      I ? h('p', { class: 'lc-hist' + (I.attempts.length ? '' : ' muted') }, I.attempts.length ? `${state.student.name} 刷過 ${I.attempts.length} 次・最好 ${I.best} 分・錯題本 ${I.wrong.length} 題` : `${state.student.name} 還沒刷過`) : null),
+    h('div', { class: 'lc-grid' },
+      B.parts ? h('div', null, h('h3', null, '官方題型'), h('ul', null, B.parts.map(x => h('li', null, x)))) : null,
+      B.about ? h('div', null, h('h3', null, '怎麼用'), h('ul', null, B.about.map(x => h('li', null, x)))) : null),
+    h('div', { class: 'lc-actions' },
+      h('button', { class: 'btn primary', type: 'button', onclick: () => goDrillHome(B.id) }, drillName(B)),
+      h('button', { class: 'btn ghost', type: 'button', onclick: () => openBank(B.id) }, '題庫・上課素材')));
 }
 function zonePanel(z) {
   const panel = h('section', { class: 'zone-panel', id: 'zone-panel' },
@@ -1694,6 +1777,7 @@ function zonePanel(z) {
       h('span', { class: 'status' + (z.open ? ' on' : '') }, z.open ? '開放中' : '即將開放')),
     h('p', { class: 'muted', style: 'margin-bottom:16px' }, z.desc));
   if (z.lessons) z.lessons.forEach(id => panel.append(lessonCard(LESSONS[id])));
+  if (z.banks) z.banks.forEach(id => { if (BANKS[id]) panel.append(bankCard(BANKS[id])); });
   if (z.plan) panel.append(h('div', { style: 'margin-top:18px' },
     h('p', { class: 'eyebrow' }, z.open ? '接下來的檔期' : '預計會有'),
     h('ul', { class: 'plan-list' }, z.plan.map(p => h('li', null, p)))));
@@ -1819,7 +1903,7 @@ function viewTStudent() {
   const s = state.students.find(x => x.id === state.student.id) || state.student;
   const D = state.detail, tab = state.tab || 'hw';
   const hwActive = s.homeworkActive;
-  const tabs = [['hw', '回家任務'], ['drill', '段考刷題'], ['class', '課堂報告'], ['log', '練習時間軸']];
+  const tabs = [['hw', '回家任務'], ['drill', '刷題'], ['class', '課堂報告'], ['log', '練習時間軸']];
   let body;
   if (!D.loaded) body = h('div', { class: 'empty' }, '載入中…');
   else if (D.error) body = h('div', { class: 'empty' }, '讀取失敗：' + D.error);
@@ -1897,7 +1981,7 @@ const LOG_TEXT = {
   pause: e => `離開練習（這次 ${mins(e.activeMs)} 分鐘）`,
   finish: e => `完成練習：${e.done} / ${e.total} 題，拿到 ${e.candies} 顆糖`,
   answer: e => e.label,
-  drill: e => `段考刷題：${e.title}，答對 ${e.correct} / ${e.n} 題（${e.score} 分）${e.mode === 'class' ? '・上課' : '・自學'}`
+  drill: e => `刷題：${e.title}，答對 ${e.correct} / ${e.n} 題（${e.score} 分）${e.mode === 'class' ? '・上課' : '・自學'}`
 };
 function tLog(s) {
   const D = state.detail;
@@ -2128,14 +2212,14 @@ function activeHomework() {
 }
 function viewSHome() {
   const st = state.student, hw = activeHomework(), tab = state.tab || 'hw';
-  const tabs = [['hw', '回家任務'], ['drill', '段考刷題'], ['class', '上課內容'], ['report', '我的報告']];
+  const tabs = [['hw', '回家任務'], ['drill', '刷題'], ['class', '上課內容'], ['report', '我的報告']];
   return h('div', null,
     h('div', { class: 's-hero' },
       h('div', null,
         h('p', { class: 'eyebrow' }, 'English Isle'),
         h('h1', { class: 'h1' }, `${st.name} 的英語島`),
         h('p', { class: 'lede' }, hw ? `下次上課前要完成「${hw.title}」，${fmtShort(hw.dueAt)} 截止。` : '目前沒有回家任務，可以到「上課內容」挑一關自由練習。'),
-        Object.values(BANKS).some(B => drillInfo(B.id).assigned) ? h('p', { class: 'hw-note' }, h('span', { class: 'tag' }, '老師說'), '有指定的段考刷題，到「段考刷題」看看。') : null),
+        Object.values(BANKS).some(B => drillInfo(B.id).assigned) ? h('p', { class: 'hw-note' }, h('span', { class: 'tag' }, '老師說'), '有指定的刷題題目，到「刷題」看看。') : null),
       h('div', { class: 's-map' }, islandMap(false))),
     h('nav', { class: 'tabs', 'aria-label': '我的島' }, tabs.map(([id, label], i) =>
       h('button', { class: 'tab', type: 'button', 'aria-current': String(tab === id), onclick: () => go('shome', id) },
@@ -2378,26 +2462,45 @@ function qText(q) {
   const oneLine = t => t.replace(/\n/g, ' / ');
   if (q.type === 'order') return '句子重組：' + (q.ctx ? oneLine(q.ctx) : q.zh);
   if (q.type === 'spell') return `聽寫拼字：${q.show}`;
-  return [q.audio ? '🔊 聽力' : '', q.passage ? '［閱讀］' : '', q.ctx ? oneLine(q.ctx) : '', q.show || '', q.prompt].filter(Boolean).join(' ');
+  return [q.audio ? '🔊 聽力' : '', q.scene ? '［圖］' + oneLine(q.scene) : '', q.passage ? '［閱讀］' : '', q.ctx ? oneLine(q.ctx) : '', q.show || '',
+    q.hideOpts ? '（選項用聽的）' + oneLine(q.audio) : q.prompt].filter(Boolean).join(' ');
 }
 const qAnswer = q => (q.type === 'choice' ? q.options[q.answer] : q.type === 'order' ? q.answer : q.word);
-// 選項順序每題固定（學習單和解答才對得起來）；閱讀判斷的 True / False / Not mentioned 不打亂
-const optOrder = q => (q.tag === '閱讀判斷' ? q.options.map((_, i) => i) : shuffled(q.options.length, q.id));
+// 英檢題的選項不打亂，答案前面加上 A、B、C、D
+const qAnswerFull = q => (q.fixed && q.type === 'choice' ? 'ABCD'[q.answer] + '. ' : '') + qAnswer(q);
+// 選項順序每題固定（學習單和解答才對得起來）；閱讀判斷的 True / False / Not mentioned、英檢題（fixed，選項有時是唸出來的）不打亂
+const optOrder = q => (q.tag === '閱讀判斷' || q.fixed ? q.options.map((_, i) => i) : shuffled(q.options.length, q.id));
+/* 這份題庫叫什麼刷題（段考刷題、英檢刷題） */
+const drillName = B => (B && B.drill) || '段考刷題';
 function splitPic(pic) { const i = pic.indexOf(' '); return i < 0 ? [pic, ''] : [pic.slice(0, i), pic.slice(i + 1)]; }
 
 function goDrillHome(bankId) { state.drillBank = bankId; go('drillhome'); }
+/* 這段在做什麼：模擬考照官方題型和題數出題（B.mock），同一篇文章的題目一起出、照順序排 */
+function mockQids(B, unit) {
+  const out = [], seed = String(Date.now());
+  B.mock[unit].forEach(([tag, n]) => {
+    const groups = [];
+    B.questions.filter(q => q.unit === unit && q.tag === tag).forEach(q => {
+      const key = q.passage || q.id, g = groups.find(x => x.key === key);
+      if (g) g.ids.push(q.id); else groups.push({ key, ids: [q.id] });
+    });
+    let got = 0;
+    shuffled(groups.length, seed + tag).forEach(i => { if (got < n && got + groups[i].ids.length <= n) { out.push(...groups[i].ids); got += groups[i].ids.length; } });
+  });
+  return out;
+}
 function startDrill(bankId, opts = {}) {
   const B = BANKS[bankId];
   let pool;
   if (opts.qids) pool = opts.qids.map(id => bankQ(B, id)).filter(Boolean);
   else {
-    const all = B.questions.filter(q => !opts.unit || q.unit === opts.unit);
+    const all = B.questions.filter(q => (!opts.unit || q.unit === opts.unit) && (!opts.tag || q.tag === opts.tag));
     pool = shuffled(all.length, bankId + Date.now()).map(i => all[i]);
     if (opts.n) pool = pool.slice(0, opts.n);
   }
   if (!pool.length) return;
   state.drill = { bankId, list: pool.map(q => q.id), idx: 0, ans: {}, work: {}, opts,
-    mode: opts.mode || (state.mode === 'student' ? 'self' : 'class'), title: opts.title || `${opts.unit ? opts.unit + ' ' : ''}隨機 ${pool.length} 題`, startedAt: Date.now(),
+    mode: opts.mode || (state.mode === 'student' ? 'self' : 'class'), title: opts.title || `${opts.unit ? opts.unit + ' ' : ''}${opts.tag ? opts.tag + ' ' : ''}隨機 ${pool.length} 題`, startedAt: Date.now(),
     from: { view: state.view === 'drilldone' ? 'drillhome' : state.view, tab: state.tab } };
   go('drill');
 }
@@ -2416,7 +2519,7 @@ function viewDrill() {
         answered ? confirmBtn('← 離開', '確定離開？這次不算成績', 'btn small ghost', leaveDrill)
                  : h('button', { class: 'btn small ghost', type: 'button', onclick: leaveDrill }, '← 離開'),
         h('div', null,
-          h('p', { class: 'eyebrow' }, `${D.mode === 'class' ? '上課刷題' : '段考刷題'}・${state.student.name}・${B.title}`),
+          h('p', { class: 'eyebrow' }, `${D.mode === 'class' ? '上課刷題' : drillName(B)}・${state.student.name}・${B.title}`),
           h('h1', { class: 'lesson-title' }, D.title))),
       h('div', { class: 'lh-right' },
         h('span', { class: 'counter', id: 'd-score', 'aria-label': '答對題數' }),
@@ -2467,19 +2570,22 @@ function drillAnswer(q, ok, said, extra) {
 function drillChoice(q, a) {
   const [pic, cue] = q.pic ? splitPic(q.pic) : ['', ''];
   return h('div', null,
-    q.passage ? h('div', { class: 'passage' }, h('p', null, q.passage), h('div', { class: 'tools', style: 'margin:10px 0 0' }, speakBtn(q.passage, '聽一次'))) : null,
+    q.passage ? h('div', { class: 'passage' }, h('p', null, q.passage), q.noRead ? null : h('div', { class: 'tools', style: 'margin:10px 0 0' }, speakBtn(q.passage, '聽一次'))) : null,
+    q.scene ? h('div', { class: 'q-scene', role: 'img', 'aria-label': '題目的圖' }, q.scene) : null,
     q.audio ? h('div', { class: 'tools' },
-      h('button', { class: 'btn primary', type: 'button', onclick: () => VOICE.say(q.audio, audioRole(q.audio)) }, svg(ICON.play), '播放'),
+      h('button', { class: 'btn primary', type: 'button', onclick: () => VOICE.listen(q.audio) }, svg(ICON.play), '播放'),
       h('span', { class: 'muted sm' }, '可以重聽')) : null,
     pic || q.ctx ? h('div', { class: 'q-ctx-row' },
       pic ? h('span', { class: 'q-pic', 'aria-hidden': 'true' }, pic) : null,
       q.ctx ? h('p', { class: 'q-ctx' }, q.ctx) : cue ? h('span', { class: 'q-cue-t' }, cue) : null) : null,
     q.show ? h('p', { class: 'mask' }, q.show) : null,
     h('p', { class: 'prompt sm' }, q.prompt),
-    h('div', { class: 'opts', role: 'group', 'aria-label': '選項' }, optOrder(q).map((oi, k) => {
+    // hideOpts：選項是唸出來的（GEPT 看圖辨義），答完才顯示文字；picOpts：選項是圖
+    h('div', { class: 'opts' + (q.picOpts ? ' pics' : '') + (q.hideOpts && !a ? ' letters' : ''), role: 'group', 'aria-label': '選項' }, optOrder(q).map((oi, k) => {
       const right = oi === q.answer, picked = a && a.pick === oi;
       return h('button', { class: 'opt' + (a && right ? ' ok' : '') + (picked && !right ? ' no' : ''), type: 'button', disabled: !!a,
-        onclick: () => drillAnswer(q, right, q.options[oi], { pick: oi }) }, h('span', { class: 'opt-n' }, 'ABCD'[k]), h('span', null, q.options[oi]));
+        onclick: () => drillAnswer(q, right, q.hideOpts ? 'ABCD'[k] + '. ' + q.options[oi] : q.options[oi], { pick: oi }) },
+        h('span', { class: 'opt-n' }, 'ABCD'[k]), q.hideOpts && !a ? null : h('span', null, q.options[oi]));
     })));
 }
 function drillOrder(q, a) {
@@ -2521,9 +2627,9 @@ function drillFeedback(q, a) {
   const caseOnly = q.type === 'spell' && !a.ok && a.said.toLowerCase() === q.word.toLowerCase();
   return h('div', { class: 'result', 'aria-live': 'polite' },
     h('p', { class: 'earn' + (a.ok ? '' : ' miss') }, a.ok ? '✓ 答對了！' : '✗ 答錯了，記一下正確答案'),
-    a.ok ? null : h('p', { class: 'heard' }, '正確答案：' + qAnswer(q)),
+    a.ok ? null : h('p', { class: 'heard' }, '正確答案：' + qAnswerFull(q)),
     caseOnly ? h('p', { class: 'explain' }, '字母都對了！國家名字的第一個字母要大寫。') : null,
-    q.audio ? h('p', { class: 'muted sm' }, '播放的是：' + q.audio) : null,
+    q.audio ? h('p', { class: 'muted sm script' }, '播放的是：' + (q.audio.includes('\n') ? '\n' : '') + q.audio) : null,
     q.explain ? h('p', { class: 'explain' }, q.explain) : null,
     q.type === 'order' ? h('div', { class: 'tools', style: 'margin:0' }, speakBtn(q.answer, '聽一次'), h('span', { class: 'muted sm' }, '聽完跟著唸一次')) : null);
 }
@@ -2555,9 +2661,9 @@ function viewDrillDone() {
   D.list.forEach(id => { const q = bankQ(B, id), t = byTag[q.tag] || (byTag[q.tag] = { n: 0, c: 0 }); t.n++; if (D.ans[id] && D.ans[id].ok) t.c++; });
   const wrong = D.list.map(id => bankQ(B, id)).filter(q => !(D.ans[q.id] && D.ans[q.id].ok));
   return h('div', null,
-    h('div', { class: 'report-tools' }, h('button', { class: 'btn small ghost', type: 'button', onclick: () => goDrillHome(bankId) }, '← 回段考刷題')),
+    h('div', { class: 'report-tools' }, h('button', { class: 'btn small ghost', type: 'button', onclick: () => goDrillHome(bankId) }, '← 回' + drillName(B))),
     h('article', { class: 'paper' },
-      h('header', null, h('p', { class: 'eyebrow' }, `段考刷題・${state.student.name}`), h('h1', null, `${B.title}・${D.title}`), h('div', { class: 'meta' }, h('span', null, fmtDate(Date.now())), h('span', null, B.sub))),
+      h('header', null, h('p', { class: 'eyebrow' }, `${drillName(B)}・${state.student.name}`), h('h1', null, `${B.title}・${D.title}`), h('div', { class: 'meta' }, h('span', null, fmtDate(Date.now())), h('span', null, B.sub))),
       h('section', { class: 'score' },
         h('p', { class: 'big' }, String(S.score), h('small', null, '分')),
         h('div', { class: 'score-meta' }, h('span', null, `答對 ${S.c} / ${S.n} 題`), S.done < S.n ? h('span', null, `有 ${S.n - S.done} 題沒做，算答錯`) : null)),
@@ -2567,7 +2673,7 @@ function viewDrillDone() {
       h('section', null, h('h3', null, wrong.length ? `要再記一下的 ${wrong.length} 題（已放進錯題本）` : '全部答對！'),
         wrong.length ? h('ul', { class: 'list' }, wrong.map(q => h('li', null,
           h('b', null, qText(q)),
-          h('p', { class: 'said' }, '正確答案：' + qAnswer(q)),
+          h('p', { class: 'said' }, '正確答案：' + qAnswerFull(q)),
           D.ans[q.id] ? h('p', { class: 'empty-note' }, '你的答案：' + D.ans[q.id].said) : h('p', { class: 'empty-note' }, '沒有作答'),
           q.explain ? h('p', { class: 'empty-note' }, q.explain) : null))) : null),
       h('section', { class: 'copy-row' },
@@ -2580,28 +2686,38 @@ function viewDrillHome() {
   const bankId = state.drillBank, B = BANKS[bankId];
   if (!B) return h('div', { class: 'empty' }, '找不到這份題庫。');
   const I = drillInfo(bankId), teacher = state.mode === 'teacher';
-  const pick = state.drillPick || (state.drillPick = { n: 20, unit: '' });
+  const pick = state.drillPick && state.drillPick.bankId === bankId ? state.drillPick : (state.drillPick = { bankId, n: 20, unit: '', tag: '' });
   const units = [...new Set(B.questions.map(q => q.unit))];
-  const avail = B.questions.filter(q => !pick.unit || q.unit === pick.unit).length;
+  const tags = [...new Set(B.questions.filter(q => !pick.unit || q.unit === pick.unit).map(q => q.tag))];
+  if (pick.tag && !tags.includes(pick.tag)) pick.tag = '';
+  const avail = B.questions.filter(q => (!pick.unit || q.unit === pick.unit) && (!pick.tag || q.tag === pick.tag)).length;
   const chip = (label, on, fn) => h('button', { class: 'flag', type: 'button', 'aria-pressed': String(on), onclick: fn }, label);
   return h('div', null,
     h('div', { class: 'report-tools' },
       h('button', { class: 'btn small ghost', type: 'button', onclick: () => (teacher ? go('map') : go('shome', 'drill')) }, teacher ? '← 回島上' : '← 回我的島'),
       teacher ? h('button', { class: 'btn small', type: 'button', onclick: () => openBank(bankId) }, '題庫・上課素材') : null),
     h('div', { class: 'page-head' },
-      h('div', null, h('p', { class: 'eyebrow' }, `段考刷題・${state.student.name}`), h('h1', { class: 'h1' }, B.title)),
+      h('div', null, h('p', { class: 'eyebrow' }, `${drillName(B)}・${state.student.name}`), h('h1', { class: 'h1' }, B.title)),
       h('p', { class: 'muted' }, `${B.sub}・題庫 ${B.questions.length} 題`)),
     h('div', { class: 'hw-cards' },
+      B.mock ? h('section', { class: 's-card' },
+        h('h2', null, '模擬考'),
+        h('p', { class: 'sm' }, B.mockNote || '照官方的題型和題數出題，題目每次隨機。'),
+        h('div', { class: 'lc-actions' }, Object.keys(B.mock).map(u => {
+          const n = B.mock[u].reduce((a, x) => a + x[1], 0);
+          return h('button', { class: 'btn primary', type: 'button', onclick: () => startDrill(bankId, { qids: mockQids(B, u), title: `${u}模擬考`, kind: 'mock' }) }, `${u}模擬考（${n} 題）`);
+        }))) : null,
       I.assigned ? h('section', { class: 's-card' },
         h('div', { class: 'zp-head' }, h('h2', null, '老師指定的題目'), h('span', { class: 'status on' }, `${I.assigned.qids.length} 題`)),
         I.assigned.note ? h('p', { class: 'hw-note' }, h('span', { class: 'tag' }, '老師說'), I.assigned.note) : null,
         h('div', { class: 'lc-actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => startDrill(bankId, { qids: I.assigned.qids, title: '老師指定的題目', kind: 'assigned' }) }, '開始練習'))) : null,
       h('section', { class: 's-card' },
-        h('h2', null, '隨機刷題'),
+        h('h2', null, B.mock ? '分題型練習' : '隨機刷題'),
         h('div', { class: 'flags' }, h('span', { class: 'label' }, '題數'), [10, 20, 30, 0].map(n => chip(n ? `${n} 題` : '全部', pick.n === n, () => { pick.n = n; render(); }))),
         h('div', { class: 'flags' }, h('span', { class: 'label' }, '範圍'), ['', ...units].map(u => chip(u || '全部', pick.unit === u, () => { pick.unit = u; render(); }))),
+        B.mock ? h('div', { class: 'flags' }, h('span', { class: 'label' }, '題型'), ['', ...tags].map(t => chip(t || '全部', pick.tag === t, () => { pick.tag = t; render(); }))) : null,
         h('div', { class: 'lc-actions' },
-          h('button', { class: 'btn primary', type: 'button', onclick: () => startDrill(bankId, { n: pick.n || undefined, unit: pick.unit || undefined }) }, `開始刷題（${pick.n ? Math.min(pick.n, avail) : avail} 題）`),
+          h('button', { class: 'btn primary', type: 'button', onclick: () => startDrill(bankId, { n: pick.n || undefined, unit: pick.unit || undefined, tag: pick.tag || undefined }) }, `開始刷題（${pick.n ? Math.min(pick.n, avail) : avail} 題）`),
           I.wrong.length ? h('button', { class: 'btn', type: 'button', onclick: () => startDrill(bankId, { qids: I.wrong, title: '錯題本', kind: 'wrong' }) }, `練錯題本（${I.wrong.length} 題）`)
                          : h('span', { class: 'muted sm' }, '錯題本是空的。答錯的題目會自動放進來，答對就拿掉。'))),
       h('section', { class: 's-card' },
@@ -2647,7 +2763,7 @@ function tDrill() {
       drillHistory(I.attempts),
       wrongQs.length ? h('details', { class: 'help' }, h('summary', null, `錯題本（${wrongQs.length} 題）`),
         h('ul', { class: 'stage-list', style: 'list-style:none;padding:0;margin-top:10px' }, wrongQs.map(q => h('li', { class: 'stage-li' },
-          h('span', null, h('span', { class: 'pill' }, q.tag), ' ', qText(q)), h('span', { class: 'muted sm' }, '答案：' + qAnswer(q)))))) : null);
+          h('span', null, h('span', { class: 'pill' }, q.tag), ' ', qText(q)), h('span', { class: 'muted sm' }, '答案：' + qAnswerFull(q)))))) : null);
   }));
 }
 
@@ -2655,7 +2771,8 @@ function tDrill() {
 function openBank(bankId) { state.bankView = { bankId, sel: new Set(), unit: '', tag: '', wrongOnly: false }; go('bank'); }
 function viewBank() {
   const V = state.bankView, B = BANKS[V.bankId], I = drillInfo(V.bankId), st = state.student;
-  const units = [...new Set(B.questions.map(q => q.unit))], tags = [...new Set(B.questions.map(q => q.tag))];
+  const units = [...new Set(B.questions.map(q => q.unit))], tags = [...new Set(B.questions.filter(q => !V.unit || q.unit === V.unit).map(q => q.tag))];
+  if (V.tag && !tags.includes(V.tag)) V.tag = '';
   const list = B.questions.filter(q => (!V.unit || q.unit === V.unit) && (!V.tag || q.tag === V.tag) && (!V.wrongOnly || I.wrong.includes(q.id)));
   const selQids = () => B.questions.filter(q => V.sel.has(q.id)).map(q => q.id);
   const chip = (label, on, fn) => h('button', { class: 'flag', type: 'button', 'aria-pressed': String(on), onclick: fn }, label);
@@ -2667,14 +2784,14 @@ function viewBank() {
     const doc = newDrillDoc(V.bankId);
     doc.assigned = { qids, at: Date.now(), by: Cloud.user ? Cloud.user.email : '', note: note.value.trim() };
     await saveDrillDoc(doc);
-    msg.textContent = `已指定 ${qids.length} 題給 ${st.name}。學生打開專屬連結，在「段考刷題」就會看到。`;
-    after.replaceChildren(copyBtn('複製 LINE 訊息', () => `${st.name} 的段考刷題：老師指定了 ${qids.length} 題（${B.title}）。請用 Chrome 打開專屬連結，到「段考刷題」練習：\n${studentLink(st.id)}`));
+    msg.textContent = `已指定 ${qids.length} 題給 ${st.name}。學生打開專屬連結，在「刷題」就會看到。`;
+    after.replaceChildren(copyBtn('複製 LINE 訊息', () => `${st.name} 的${drillName(B)}：老師指定了 ${qids.length} 題（${B.title}）。請用 Chrome 打開專屬連結，到「刷題」練習：\n${studentLink(st.id)}`));
   };
   const n = V.sel.size;
   return h('div', null,
     h('div', { class: 'report-tools' },
       h('button', { class: 'btn small ghost', type: 'button', onclick: () => go('map') }, '← 回島上'),
-      h('button', { class: 'btn small', type: 'button', onclick: () => goDrillHome(V.bankId) }, '段考刷題')),
+      h('button', { class: 'btn small', type: 'button', onclick: () => goDrillHome(V.bankId) }, drillName(B))),
     h('div', { class: 'page-head' },
       h('div', null, h('p', { class: 'eyebrow' }, `題庫・上課素材・${st.name}`), h('h1', { class: 'h1' }, B.title)),
       h('p', { class: 'muted' }, `${B.sub}・${B.questions.length} 題`)),
@@ -2701,7 +2818,7 @@ function viewBank() {
           h('span', { class: 'bank-tags' }, h('span', { class: 'pill' }, q.tag), h('span', { class: 'pill' }, q.unit),
             s ? h('span', { class: 'pill' + (s.last === 0 ? ' warn' : '') }, `${st.name}：對 ${s.r}・錯 ${s.w}`) : null),
           h('span', { class: 'bank-q' }, qText(q)),
-          h('span', { class: 'muted sm' }, `答案：${qAnswer(q)}・出處：${q.source}`))));
+          h('span', { class: 'muted sm' }, `答案：${qAnswerFull(q)}・出處：${q.source}`))));
     })));
 }
 
@@ -2717,8 +2834,9 @@ function viewSheet() {
   const item = q => h('li', { class: 'ws-q', value: num.get(q.id) },
     q.type === 'choice' ? [
       q.ctx ? h('p', { class: 'ws-ctx' }, (q.pic ? q.pic + ' ' : '') + q.ctx) : null,
+      q.scene ? h('p', { class: 'ws-scene' }, q.scene) : null,
       h('p', null, '(　　) ', q.show ? h('b', null, q.show + '　') : '', q.audio ? '（聽老師唸）' : '', q.prompt),
-      h('p', { class: 'ws-opts' }, optOrder(q).map((oi, j) => `(${'ABCD'[j]}) ${q.options[oi]}`).join('　　'))]
+      h('p', { class: 'ws-opts' + (q.picOpts ? ' pics' : '') }, q.hideOpts ? '(A)　　(B)　　(C)' : optOrder(q).map((oi, j) => `(${'ABCD'[j]}) ${q.options[oi]}`).join('　　'))]
     : q.type === 'order' ? [
       q.ctx ? h('p', { class: 'ws-ctx' }, q.ctx) : h('p', null, q.zh),
       h('p', { class: 'ws-opts' }, shuffled(words(q).length, q.id + q.answer).map(i => words(q)[i]).join(' / ')),
@@ -2737,7 +2855,7 @@ function viewSheet() {
   const key = h('section', { class: 'ws-key' }, h('h3', null, '解答（老師用）'),
     h('ol', { class: 'ws-list' }, qs.slice().sort((a, b) => num.get(a.id) - num.get(b.id)).map(q => h('li', { value: num.get(q.id) },
       q.type === 'choice' ? `(${letter(q)}) ${qAnswer(q)}` : qAnswer(q),
-      q.audio || q.type === 'spell' ? h('span', { class: 'ws-script' }, `　老師唸：${q.audio || q.word}`) : null))));
+      q.audio || q.type === 'spell' ? h('span', { class: 'ws-script' + (q.audio && q.audio.includes('\n') ? ' multi' : '') }, `　老師唸：${q.audio || q.word}`) : null))));
   return h('div', null,
     h('div', { class: 'report-tools no-print' },
       h('button', { class: 'btn small ghost', type: 'button', onclick: () => go('bank') }, '← 回題庫'),
@@ -2775,7 +2893,7 @@ window.isleDebug = {
   say(text) {
     const st = curStage(), it = curItem(), k = keyOf(st, it), kind = kindOf(st, it);
     const ev = kind === 'word' ? (t, a) => evalWord(it, t, a) : kind === 'shadow' ? t => evalShadow(it.text, t) : kind === 'panel' ? t => evalPanel(it, t) : t => evalOpen(it.expect || {}, t);
-    handleSpeech(k, text, [], ev); if (kind === 'panel') paintStage();
+    handleSpeech(k, text, [], ev); if (kind === 'panel' || it.reply) paintStage();
   },
   async emuTeacher(email) {
     const f = Cloud.fb;

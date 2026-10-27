@@ -192,6 +192,41 @@ label{font-size:13px;color:var(--muted);font-weight:600}
 .scene .ground{position:absolute;left:0;right:0;bottom:0;height:24%;background:var(--grass-2)}
 .se{position:absolute;transform:translate(-50%,-50%);line-height:1;z-index:1}
 .se.s{font-size:22px;font-size:6cqw} .se.m{font-size:30px;font-size:8cqw} .se.l{font-size:38px;font-size:10cqw} .se.xl{font-size:60px;font-size:17cqw}
+/* 這段在做什麼：白天的場景（英檢山找不同）、兩張圖、資訊卡、考官回答 */
+.scene.day{background:linear-gradient(#9fd6f2,#dff3fc)}
+.scene.day .ground{background:#7cc47a}
+.diff-wrap{margin-bottom:18px}
+.diff-pics{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;max-width:1100px}
+.diff-pics .scene{max-width:620px}
+.diff-cap{font-size:13px;font-weight:700;color:var(--moon);margin-bottom:6px;letter-spacing:.04em}
+.diff-wrap .tools{margin-top:10px}
+.info-card{background:var(--paper);color:var(--paper-ink);border-radius:16px;padding:14px 18px;margin:6px 0 14px;max-width:520px;font-family:var(--f-learn)}
+.ic-head{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.ic-head b{font-size:21px}
+.ic-pic{font-size:34px;line-height:1}
+.info-card dl{display:grid;gap:4px;margin:0}
+.ic-row{display:grid;grid-template-columns:minmax(110px,40%) minmax(0,1fr);gap:10px;align-items:baseline;border-radius:8px;padding:4px 8px;font-size:19px}
+.ic-row dt{font-weight:700;color:var(--paper-muted)}
+.ic-row dd{margin:0;font-weight:700}
+.ic-row.on{background:#ffe3a3}
+.ic-row.on dt::before{content:"👉 "}
+.info-card.ask dd{color:var(--paper-muted)}
+.info-card.ask .known dd{color:var(--paper-ink)}
+.reply{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--sea-deep);border-left:4px solid var(--r3);border-radius:12px;padding:10px 14px;margin-top:10px}
+.reply-t{font-family:var(--f-learn);font-size:20px;font-weight:700}
+.lead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--sea-deep);border-radius:12px;padding:10px 14px;margin-bottom:12px}
+.lead-t{font-family:var(--f-learn);font-size:18px}
+.lead-mini{opacity:.75;border-style:dashed}
+.strip.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:620px){.strip.five{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* 這段在做什麼：英檢聽力的圖（看圖辨義）、圖片選項（短文聽解）、只有字母的選項（選項用聽的） */
+.q-scene{font-size:clamp(46px,9vw,84px);line-height:1.25;text-align:center;background:var(--sea-deep);border-radius:18px;padding:16px 10px;margin:4px 0 14px;white-space:pre-line;max-width:560px}
+.opts.pics .opt{justify-content:flex-start;font-size:clamp(34px,6vw,48px);min-height:84px}
+.opts.letters{grid-template-columns:repeat(3,minmax(0,1fr));max-width:420px}
+.opts.letters .opt{justify-content:center}
+.script{white-space:pre-line}
+.ws-scene{font-size:40px;line-height:1.2;white-space:pre-line}
+.ws-opts.pics{font-size:30px}
 
 /* 這段在做什麼：單字卡 */
 .word{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:24px;align-items:start}
@@ -468,6 +503,7 @@ label{font-size:13px;color:var(--muted);font-weight:600}
 .ws-passage{white-space:pre-line;background:var(--paper-soft);border-radius:10px;padding:10px 14px;font-family:var(--f-learn)}
 .ws-key{border-top:2px dashed var(--paper-line);padding-top:16px}
 .ws-script{color:var(--paper-muted);font-size:14px}
+.ws-script.multi{display:block;white-space:pre-line;padding-left:1em}
 @media print{
   html,body{background:#fff}
   .topbar,.report-tools,.no-print,.banner{display:none!important}

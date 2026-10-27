@@ -270,4 +270,200 @@ addBank({
   ['pizza', 'rice', 'soup', 'steak', 'noodles', 'lunch', 'dinner', 'breakfast', 'home', 'school']
     .forEach((w, i) => add({ id: 'sp-' + w, type: 'spell', tag: '聽寫拼字', word: w, show: spellMask(w) }, i < 5 ? 'U3' : 'U4'));
 });
+/* ---------------- 英檢山・全民英檢初級 聽力＋閱讀（國小高年級・CEFR A2） ----------------
+   照 2021 年起的新制題型和題數出兩回的量：聽力 4 部分 30 題 ×2、閱讀 3 部分 30 題 ×2。
+   全部自命題，沒有用 LTTC 的考古題。fixed：選項照寫的順序，不打亂（看圖辨義的選項是唸出來的）。
+   聽力 audio：M: / W: 開頭是一男一女的對話；最後一行 Q: 是題目，用旁白的聲音另外錄。 */
+addBank({
+  id: 'gept-e1', title: 'GEPT 初級 聽力・閱讀', sub: '全民英檢初級（CEFR A2）・國小高年級・自命題',
+  grade: 5, gradeText: '國小五、六年級', exam: 'GEPT', level: '初級', drill: '英檢刷題',
+  parts: [
+    '聽力 30 題，約 20 分鐘：看圖辨義 5、問答 10、簡短對話 10、短文聽解 5（三選一，正式考試每題只播一次）',
+    '閱讀 30 題，35 分鐘：詞彙 10、段落填空 8（2 篇各 4 格）、閱讀理解 12（4 組各 3 題）（四選一）',
+    '通過標準：聽力＋閱讀 160 分（各 120 分滿分），而且兩項都不能低於 72 分'
+  ],
+  about: [
+    '題庫有兩回的量：聽力 60 題、閱讀 60 題，題目每次隨機組合',
+    '「模擬考」照官方的題型和題數出一整回；「分題型練習」可以只練一種題型',
+    '跟段考刷題一樣：答錯的進錯題本，老師可以挑題上課、印學習單、指定回家刷'
+  ],
+  mock: { '聽力': [['看圖辨義', 5], ['問答', 10], ['簡短對話', 10], ['短文聽解', 5]], '閱讀': [['詞彙', 10], ['段落填空', 8], ['閱讀理解', 12]] },
+  mockNote: '照全民英檢初級的題型和題數：聽力 30 題（看圖辨義 5、問答 10、簡短對話 10、短文聽解 5），閱讀 30 題（詞彙 10、段落填空 8、閱讀理解 12）。正式考試聽力每題只播一次，這裡可以重聽。'
+}, add => {
+  // 出題原則：每一題都要能從題目裡的英文（聽到的、讀到的）找到答案。不考地理常識、不考背課本、不考中翻英。
+  // 正確答案寫在第一個，再用題號決定放在 A、B、C、D 的哪一格，答案位置才不會都一樣。
+  const hash = s => { let x = 7; for (const ch of s) x = (x * 31 + ch.charCodeAt(0)) >>> 0; return x; };
+  const place = (id, opts) => {
+    const k = hash(id) % opts.length, rest = opts.slice(1);
+    return { options: [...rest.slice(0, k), opts[0], ...rest.slice(k)], answer: k };
+  };
+  const g = (q, unit) => add(Object.assign({ fixed: true }, q), unit);
+
+  // ---------- 聽力 第一部分：看圖辨義（看圖，聽一個問題和三個句子，選跟圖最相符的）----------
+  [['pic-1', '👧 📖 🛋️', 'What is the girl doing?', ['She is reading a book on the sofa.', 'She is writing a letter at her desk.', 'She is cleaning the sofa.']],
+   ['pic-2', '🕖\n7:15', 'What time is it?', ["It's seven fifteen.", "It's seven fifty.", "It's eleven fifteen."]],
+   ['pic-3', '🍎🍎🍎\n🍌🍌🍌🍌🍌', 'How many bananas are there?', ['There are five.', 'There are three.', 'There are eight.']],
+   ['pic-4', '🌧️ ☂️ 🧒', "What's the weather like?", ["It's rainy, so the boy has an umbrella.", "It's sunny and very hot.", "It's snowing, and the boy is cold."]],
+   ['pic-5', '👕 NT$250\n👟 NT$520', 'How much are the shoes?', ['They are five hundred and twenty dollars.', 'They are two hundred and fifty dollars.', 'They are five hundred and fifty dollars.']],
+   ['pic-6', '👨‍🍳 🍳 🥕', 'Where is the man?', ['He is in the kitchen.', 'He is in the bathroom.', 'He is in the garden.']],
+   ['pic-7', '🎂\nMay 12', 'When is the birthday party?', ["It's on May twelfth.", "It's on March twelfth.", "It's on May twentieth."]],
+   ['pic-8', '🧒 🚲 ➡️ 🏫', 'How does the boy go to school?', ['He goes to school by bike.', 'He walks to school.', 'He goes to school by bus.']],
+   ['pic-9', '👩 🤧 🤒', "What's wrong with the woman?", ['She has a cold.', 'She has a toothache.', 'She is very hungry.']],
+   ['pic-10', '🏊‍♀️ 🌊', 'What is the woman doing?', ['She is swimming in the sea.', 'She is walking on the beach.', 'She is fishing on a boat.']]]
+    .forEach(([id, scene, q, opts]) => {
+      const p = place(id, opts);
+      g({ id, tag: '看圖辨義', scene, hideOpts: true, prompt: 'Look at the picture. Listen and choose.', ...p,
+        audio: `${q}\n` + p.options.map((o, i) => `${'ABC'[i]}. ${o}`).join('\n') }, '聽力');
+    });
+
+  // ---------- 聽力 第二部分：問答（聽一句話，選最適當的回應）----------
+  [['qa-1', 'What time do you usually get up on Sundays?', ["At eight o'clock.", 'On Sunday.', 'For two hours.'], '問 What time，回答時間。'],
+   ['qa-2', 'Can I borrow your eraser?', ['Sure. Here you are.', 'Yes, I can.', "It's a red one."], '借東西，回答 Sure. Here you are.'],
+   ['qa-3', 'How was the movie last night?', ['It was really funny.', "I'm going to the movies.", 'At seven thirty.'], '問電影怎麼樣，回答好不好看。'],
+   ['qa-4', 'Whose bag is this?', ["It's Kevin's.", "It's on the chair.", "It's very heavy."], 'Whose 問是誰的。'],
+   ['qa-5', 'I have a headache.', ['You should get some rest.', "That's great!", "Me too. I'm full."], '對方不舒服，給建議。'],
+   ['qa-6', 'Would you like some more soup?', ["No, thanks. I'm full.", 'Yes, I do.', 'I like hot dogs.'], 'Would you like …? 用 Yes, please. / No, thanks. 回答。'],
+   ['qa-7', 'Where did you go last summer?', ['We went to Kenting.', "I'm going to Japan.", 'It was in July.'], '問過去去了哪裡，用過去式 went 回答。'],
+   ['qa-8', 'How often do you play basketball?', ['Twice a week.', 'For two years.', 'With my brother.'], 'How often 問多常。'],
+   ['qa-9', "Let's go to the park after school.", ['OK. That sounds like fun.', "No, it isn't.", "It's next to the school."], "Let's … 是邀請，回答好或不好。"],
+   ['qa-10', 'Why are you so happy today?', ['Because I got a new puppy.', "Yes, I'm very happy.", "I'm sorry to hear that."], 'Why 問原因，用 Because 回答。'],
+   ['qa-11', 'Which do you like better, cats or dogs?', ['I like dogs better.', 'Yes, I like them.', 'They are cute animals.'], 'Which 問兩個選一個。'],
+   ['qa-12', 'Thank you for the birthday card.', ["You're welcome.", 'Happy birthday to you.', 'No, thank you.'], '別人道謝，回答 You\'re welcome.'],
+   ['qa-13', 'Is this seat taken?', ['No. You can sit here.', "Yes, I'll take it.", "It's a big seat."], '問位子有沒有人坐。'],
+   ['qa-14', 'How much is this notebook?', ["It's forty dollars.", 'I have many notebooks.', "It's blue and white."], 'How much 問價錢。'],
+   ['qa-15', 'Did you finish your homework?', ["Not yet. I'm still doing it.", 'Yes, I do.', "It's math homework."], 'Did 問句，不能用 Yes, I do. 回答。'],
+   ['qa-16', "What's your sister like?", ["She's tall and friendly.", 'She likes reading.', "She's at school."], "What's she like? 問她是什麼樣的人；What does she like? 才是問喜歡什麼。"],
+   ['qa-17', 'Excuse me. Where is the library?', ["It's next to the post office.", 'I like reading books.', 'It opens at nine.'], 'Where 問地點。'],
+   ['qa-18', "Don't forget to bring your swimsuit tomorrow.", ["OK, I won't.", 'Yes, I forgot it.', 'I can swim very well.'], "Don't forget … 回答 OK, I won't."],
+   ['qa-19', 'How long does it take to get to your school?', ['About ten minutes.', "It's very long.", 'By MRT.'], 'How long does it take 問要花多久時間。'],
+   ['qa-20', 'May I speak to Mr. Chen, please?', ["Sorry, he isn't here right now.", 'Yes, you may speak English.', 'He is a teacher.'], '電話裡找人，回答他在不在。']]
+    .forEach(([id, audio, opts, explain]) => g({ id, tag: '問答', audio, prompt: 'Listen and choose the best response.', ...place(id, opts), explain }, '聽力'));
+
+  // ---------- 聽力 第三部分：簡短對話（聽一段對話和一個問題）----------
+  const CONV = [
+    ['conv-1', "W: Jason, do you want to go to the bookstore with me after school?\nM: Sorry, I can't. I have a piano lesson at four.\nW: How about tomorrow?\nM: Sure. Tomorrow is fine.", 'When will they go to the bookstore?', ['Tomorrow.', 'This afternoon at four.', 'After the piano lesson today.'], 'Jason 最後說 Tomorrow is fine.'],
+    ['conv-2', "M: Mom, I can't find my soccer shoes.\nW: Did you look under your bed?\nM: Yes, but they're not there.\nW: Oh, I put them by the front door this morning.", "Where are the boy's soccer shoes?", ['By the front door.', 'Under his bed.', 'In his school bag.'], '媽媽說 I put them by the front door.'],
+    ['conv-3', 'W: What would you like for lunch, Tom? We have noodles and fried rice.\nM: Fried rice, please. I had noodles for breakfast.', 'What will Tom have for lunch?', ['Fried rice.', 'Noodles.', 'Noodles and fried rice.'], 'Tom 說 Fried rice, please. 麵是早餐吃的。'],
+    ['conv-4', 'M: Lisa, you look tired today.\nW: Yes. I went to bed at midnight. I was studying for my English test.', 'Why is Lisa tired?', ['She went to bed late.', 'She got up very early.', 'She played games all night.'], 'midnight 是半夜十二點，所以是很晚睡。'],
+    ['conv-5', "W: How much are these pencils?\nM: They're ten dollars each. But if you buy five, it's only forty dollars.\nW: Great. I'll take five, please.", 'How much will the girl pay?', ['Forty dollars.', 'Ten dollars.', 'Fifty dollars.'], '買五枝只要 forty dollars。'],
+    ['conv-6', "M: Excuse me. Is there a convenience store near here?\nW: Yes. Go straight and turn left at the bank. It's next to the park.", 'Where is the convenience store?', ['Next to the park.', 'Next to the bank.', 'Across from the school.'], "在銀行左轉，店是 next to the park。"],
+    ['conv-7', 'W: Do you have any pets, Ben?\nM: I have a dog and two fish. My sister wants a cat, but my dad says no.', 'How many pets does Ben have?', ['Three.', 'Two.', 'Four.'], '一隻狗加兩條魚，共三隻。貓沒有養。'],
+    ['conv-8', "M: What are you going to do this weekend?\nW: On Saturday, I'm going to visit my grandma. On Sunday, I'll stay home and clean my room.", 'What will the girl do on Sunday?', ['Clean her room.', 'Visit her grandma.', 'Go to the park.'], 'On Sunday 後面說 clean my room。'],
+    ['conv-9', "W: Is your brother taller than you?\nM: Not now. He's only eight. But he eats a lot, so maybe he will be taller one day.", 'Who is taller now?', ['The boy.', "The boy's brother.", 'They are the same.'], 'Not now 代表弟弟現在沒有比較高。'],
+    ['conv-10', "M: Hello, this is Peter. Can I speak to Amy?\nW: Sorry, she's taking a shower. Can she call you back?\nM: Sure. Thank you.", 'What is Amy doing now?', ['Taking a shower.', 'Calling Peter.', 'Doing her homework.'], "she's taking a shower。"],
+    ['conv-11', "W: Let's take the bus to the zoo.\nM: The bus is too slow. Let's take the MRT. It's faster.\nW: OK.", 'How will they go to the zoo?', ['By MRT.', 'By bus.', 'On foot.'], '男生說公車太慢，坐捷運，女生說 OK。'],
+    ['conv-12', 'M: Did you enjoy the school trip yesterday?\nW: Yes! We saw many animals at the farm, and I fed the baby goats.', 'Where did the girl go yesterday?', ['To a farm.', 'To the zoo.', 'To a pet shop.'], 'at the farm。'],
+    ['conv-13', 'W: Your shirt is really nice. Is it new?\nM: Thanks. My aunt gave it to me for my birthday.', 'Who gave the boy the shirt?', ['His aunt.', 'His mother.', 'His friend.'], 'My aunt gave it to me.'],
+    ['conv-14', "M: It's so hot today. Let's go swimming.\nW: Good idea, but I need to finish my science report first. Can we go at three?\nM: OK.", 'What does the girl need to do first?', ['Finish her report.', 'Go swimming.', 'Buy a swimsuit.'], 'I need to finish my science report first.'],
+    ['conv-15', 'W: Excuse me. When does the library close?\nM: It closes at nine on weekdays and at five on weekends.\nW: Today is Saturday, so I need to hurry.', 'When does the library close today?', ['At five.', 'At nine.', 'At three.'], '今天是星期六（週末），週末五點關。'],
+    ['conv-16', "M: Which club do you want to join, Mia?\nW: I like drawing, but the art club is full. So I'll join the dance club.", 'Which club will Mia join?', ['The dance club.', 'The art club.', 'The music club.'], "美術社滿了，所以 I'll join the dance club."],
+    ['conv-17', "W: Can you help me carry these boxes, Dad?\nM: Sure. Where do you want to put them?\nW: In my bedroom, please. They're full of books.", 'What is in the boxes?', ['Books.', 'Toys.', 'Clothes.'], "They're full of books."],
+    ['conv-18', "M: Why didn't you come to basketball practice yesterday?\nW: I had a fever, so I stayed home. I feel much better today.", 'Why did the girl stay home yesterday?', ['She was sick.', 'She had basketball practice.', 'It was raining.'], 'had a fever 就是生病了。'],
+    ['conv-19', 'W: How was your trip to Tainan?\nM: Great! The food was delicious, but it rained every day.', 'What was the weather like during the trip?', ['It was rainy.', 'It was sunny.', 'It was snowy.'], 'it rained every day。'],
+    ['conv-20', "M: Hurry up, Lucy! The movie starts at seven.\nW: Don't worry. It's only six thirty, and the theater is five minutes away.", 'What time is it now?', ['Six thirty.', 'Seven.', 'Six thirty-five.'], "It's only six thirty."]];
+  CONV.forEach(([id, talk, q, opts, explain]) => g({ id, tag: '簡短對話', audio: `${talk}\nQ: ${q}`, prompt: 'Listen to the conversation and the question. Choose the best answer.', ...place(id, opts), explain }, '聽力'));
+
+  // ---------- 聽力 第四部分：短文聽解（聽一段短文和問題，選圖）----------
+  const TALK = [
+    ['talk-1', "Good morning, everyone. Today is Sports Day. Please don't forget your water bottles and caps. It's going to be very hot and sunny this afternoon.", 'What will the weather be like this afternoon?', ['☀️', '🌧️', '❄️'], 'very hot and sunny。'],
+    ['talk-2', "Hi, Grandma. It's Kevin. Thank you for the birthday present. I wanted a new bike, but a skateboard is even better! I'll ride it to the park tomorrow.", 'What present did Kevin get?', ['🛹', '🚲', '⚽'], '他想要腳踏車，但收到的是 skateboard。'],
+    ['talk-3', 'Attention, please. The school library will be closed this Friday. You can return your books on Thursday or next Monday.', 'Which day will the library be closed?', ['🗓️ FRI', '🗓️ THU', '🗓️ MON'], 'closed this Friday；星期四和下星期一可以還書。'],
+    ['talk-4', "Hello, class. For homework tonight, please read page twenty-five and draw a picture of your family. You don't need to write anything.", 'What do the students need to do tonight?', ['📖 🎨', '📖 ✏️', '✏️ 🎨'], 'read（讀）和 draw（畫），不用 write（寫）。'],
+    ['talk-5', 'My name is Sandy. Every morning, I walk my dog in the park. After that, I eat breakfast and take the bus to school.', 'What does Sandy do first every morning?', ['🐕 🌳', '🍳', '🚌'], '先遛狗，After that 才吃早餐、坐公車。'],
+    ['talk-6', 'Welcome to Happy Zoo. The zoo opens at nine. You can watch the monkeys eat lunch at twelve and see the penguins swim at two.', 'What can you see at two?', ['🐧', '🐒', '🦁'], 'the penguins swim at two。'],
+    ['talk-7', "Hi, Mom. This is Amy. I'm at Jenny's house now. We're making cookies for the school party. I'll be home at five thirty.", 'What is Amy making?', ['🍪', '🎂', '🍕'], "We're making cookies。"],
+    ['talk-8', "Hi, I'm Mr. Lin, the music teacher. The school band needs new students. If you can play the drums or the violin, please come to the music room after school.", 'Which instruments does the band need?', ['🥁 🎻', '🎹 🎸', '🎺 🥁'], 'the drums or the violin。'],
+    ['talk-9', 'Tomorrow will be cloudy in the morning. In the afternoon, it will rain a lot, so take an umbrella with you.', 'What should you take tomorrow?', ['☂️', '🧢', '🧣'], 'take an umbrella with you。'],
+    ['talk-10', 'I love Sundays. In the morning, I play basketball with my brother. In the afternoon, we help Dad in the garden. At night, our family watches a movie together.', 'What does the speaker do on Sunday afternoon?', ['🧑‍🌾 🌱', '🏀', '🎬'], 'In the afternoon, we help Dad in the garden.']];
+  TALK.forEach(([id, talk, q, opts, explain]) => g({ id, tag: '短文聽解', audio: `${talk}\nQ: ${q}`, picOpts: true, prompt: 'Listen and choose the right picture.', ...place(id, opts), explain }, '聽力'));
+
+  // ---------- 閱讀 第一部分：詞彙（一個句子一個空格，從句子裡的線索選）----------
+  [['voc-1', "It's raining hard. Don't forget to take your ___.", ['umbrella', 'sunglasses', 'swimsuit', 'kite'], '下大雨要帶傘。'],
+   ['voc-2', "My little brother is only three, so he can't ___ yet.", ['read', 'eat', 'sleep', 'cry'], '三歲還不會的是 read。'],
+   ['voc-3', "We need some eggs and milk. Let's go to the ___.", ['supermarket', 'library', 'hospital', 'post office'], '買蛋和牛奶要去超市。'],
+   ['voc-4', 'Ken was ___ because he lost his new watch.', ['sad', 'proud', 'excited', 'lucky'], '弄丟新手錶會難過。'],
+   ['voc-5', 'The soup is too ___. Please wait a minute before you eat it.', ['hot', 'salty', 'cheap', 'empty'], '要等一下才能喝，因為太燙。'],
+   ['voc-6', 'Kelly ___ her homework before dinner yesterday.', ['finished', 'finishes', 'will finish', 'finishing'], '有 yesterday，用過去式。'],
+   ['voc-7', 'There ___ many people at the night market last Saturday.', ['were', 'was', 'are', 'is'], 'many people 是複數，last Saturday 是過去，用 were。'],
+   ['voc-8', 'Jack runs ___ than his older brother.', ['faster', 'fast', 'fastest', 'more fast'], '有 than，用比較級 faster。'],
+   ['voc-9', 'My mom is a ___. She works at a hospital and helps sick people.', ['nurse', 'cook', 'farmer', 'driver'], '在醫院照顧病人的是 nurse。'],
+   ['voc-10', 'Please be ___ in the library. People are reading.', ['quiet', 'loud', 'hungry', 'busy'], '別人在看書，要安靜。'],
+   ['voc-11', 'I usually ___ my teeth after breakfast.', ['brush', 'cut', 'comb', 'wear'], '刷牙是 brush my teeth。'],
+   ['voc-12', 'Tina is good at ___. She can play the guitar and the piano.', ['music', 'math', 'sports', 'art'], '會彈吉他和鋼琴，擅長音樂。'],
+   ['voc-13', "We can't play outside now. It's ___ dark.", ['too', 'many', 'enough', 'much'], 'too dark 太暗了，所以不能出去玩。'],
+   ['voc-14', 'How ___ water do you drink every day?', ['much', 'many', 'long', 'old'], 'water 不能一個一個數，用 How much。'],
+   ['voc-15', "Sam isn't at home. He ___ soccer in the park now.", ['is playing', 'plays', 'played', 'play'], '有 now，用現在進行式。'],
+   ['voc-16', 'The store opens ___ ten in the morning.', ['at', 'on', 'in', 'for'], '幾點用 at。'],
+   ['voc-17', "Look at the sky! There are no clouds. It's a ___ day.", ['sunny', 'rainy', 'snowy', 'cloudy'], '沒有雲是晴天。'],
+   ['voc-18', "I'm ___. Can I have a glass of water?", ['thirsty', 'sleepy', 'full', 'angry'], '想喝水是因為口渴。'],
+   ['voc-19', 'Peter ___ to Japan two years ago.', ['went', 'goes', 'is going', 'will go'], '有 two years ago，用過去式。'],
+   ['voc-20', 'This box is very heavy. Can you ___ me carry it?', ['help', 'tell', 'give', 'ask'], '箱子很重，請人幫忙。']]
+    .forEach(([id, prompt, opts, explain]) => g({ id, tag: '詞彙', prompt, ...place(id, opts), explain }, '閱讀'));
+
+  // ---------- 閱讀 第二部分：段落填空（一篇短文 4 個空格，最後一格常常是填一整句）----------
+  const CLOZE = [
+    ["Dear Grandma,\nThank you (1)___ the books. I love them! Last night, I read the one about a little bear. He (2)___ lost in the forest. My favorite part is when he meets a (3)___ owl. The owl is very kind and helps him find his way home. Next month, our school is having a book fair. (4)___ Can you come with me?\nLove,\nLucy",
+      [['for', 'to', 'with', 'at', 'Thank you for … 謝謝你的…'],
+       ['got', 'gets', 'get', 'getting', '故事是過去發生的，用 got lost。'],
+       ['friendly', 'scary', 'lazy', 'sleepy', '後面說貓頭鷹 very kind，所以是 friendly。'],
+       ['I want to buy more books there.', "I don't like reading at all.", 'The bear is my favorite animal.', 'My school is very small.', '前一句說書展，接「我想在那裡買更多書」最通順。']]],
+    ["Summer Swimming Class\nDo you want to learn to swim? Come to Sunshine Pool! Classes are (5)___ Monday, Wednesday, and Friday afternoons. Each class is one hour (6)___. Children from 6 to 12 years old can join. Please bring a swimsuit, a towel, (7)___ a swimming cap. (8)___ Call 2345-6789 to join today!",
+      [['on', 'in', 'at', 'by', '星期幾用 on。'],
+       ['long', 'old', 'far', 'much', '一小時長：one hour long。'],
+       ['and', 'but', 'or', 'so', '三樣東西都要帶，用 and。'],
+       ['The class is only 200 dollars a month.', 'The pool is closed every day.', "You can't swim at Sunshine Pool.", "We don't have any classes.", '其他三句跟廣告的意思相反。']]],
+    ["Saturday, May 10\nToday was my mom's birthday. My dad and I got up early (9)___ we wanted to make breakfast for her. Dad made pancakes, and I made orange juice. When Mom came into the kitchen, she was very (10)___. She said, \"Thank you! This is the best breakfast ever!\" In the afternoon, we (11)___ to the movies together. (12)___ I hope Mom had a wonderful day.",
+      [['because', 'but', 'or', 'if', '早起的原因是想做早餐：because。'],
+       ['surprised', 'bored', 'tired', 'angry', '媽媽說 Thank you! 是驚喜。'],
+       ['went', 'go', 'going', 'will go', '日記寫今天發生的事，用過去式 went。'],
+       ['After that, we had dinner at her favorite restaurant.', "Mom doesn't like movies at all.", 'I forgot her birthday this year.', 'Dad was at work all day.', '其他三句都跟日記前面寫的不合。']]],
+    ["Hi Ben,\nOur class is going to clean the beach this Sunday. We will meet at the school gate (13)___ 8:00 a.m. and take a bus there. Please wear old clothes and comfortable shoes. Don't forget to bring (14)___ water, because it may be hot. We will pick up bottles, bags, and other (15)___ on the beach. (16)___\nMs. Wang",
+      [['at', 'on', 'in', 'for', '幾點用 at。'],
+       ['some', 'many', 'a', 'an', 'water 不能數，用 some。'],
+       ['trash', 'fish', 'sand', 'friends', '瓶子、袋子都是垃圾：trash。'],
+       ['See you on Sunday!', 'The beach is very clean now.', "Please don't come.", 'We will go swimming at night.', '信的最後跟對方說星期天見。']]]];
+  CLOZE.forEach(([passage, blanks], pi) => blanks.forEach((b, bi) => {
+    const n = pi * 4 + bi + 1, id = 'cloze-' + n;
+    g({ id, tag: '段落填空', passage, noRead: true, prompt: `Choose the best answer for (${n}).`, ...place(id, b.slice(0, 4)), explain: b[4] }, '閱讀');
+  }));
+
+  // ---------- 閱讀 第三部分：閱讀理解（菜單、公告、信、故事、表格……每篇 3 題）----------
+  const READ = [
+    ["Lucky Burger Menu\nHamburger ........ $65\nChicken burger ... $70\nFrench fries ..... $40\nCorn soup ........ $35\nCola / Tea ....... $25\n★ Kids' Meal (hamburger + French fries + tea): $110\nOpen 10:00 a.m. – 9:00 p.m. every day",
+      [['How much is a chicken burger?', ['$70', '$65', '$40', '$110'], '菜單上 Chicken burger 是 $70。'],
+       ["What comes with the Kids' Meal?", ['A hamburger, French fries, and tea', 'A chicken burger and cola', 'Corn soup and French fries', 'A hamburger and corn soup'], "Kids' Meal 後面的括號寫了內容。"],
+       ['When can you NOT buy food at Lucky Burger?', ['At 9:30 p.m.', 'At 10:00 a.m.', 'At noon on Sunday', 'At 8:00 p.m.'], '晚上九點就關門了。']]],
+    ["From: Jenny\nTo: Lisa\nSubject: Pajama party!\n\nHi Lisa,\nI'm having a pajama party at my house next Saturday night, July 20. Can you come? Mia and Kate will come, too. We will make pizza, watch movies, and sleep in the living room. Please bring your sleeping bag. The next morning, my mom will drive us to the swimming pool.\nJenny",
+      [['What should Lisa bring?', ['A sleeping bag', 'A movie', 'Some pizza', 'A pillow'], 'Please bring your sleeping bag.'],
+       ['How many girls will be at the party?', ['Four', 'Three', 'Two', 'Five'], 'Jenny、Lisa、Mia、Kate，一共四個人。'],
+       ['What will happen on July 21?', ["Jenny's mom will drive the girls to the pool.", 'The girls will make pizza.', 'Lisa will have a party.', 'The girls will go to school.'], '派對是 7/20 晚上，The next morning 就是 7/21。']]],
+    ['CITY PARK RULES\n• Open from 6:00 a.m. to 10:00 p.m.\n• Dogs are welcome, but please keep them close to you.\n• No bikes on the grass.\n• Please put your trash in the trash cans.\n• Do not feed the ducks.\nThank you!',
+      [['What can you do in City Park?', ['Walk your dog', 'Ride a bike on the grass', 'Give bread to the ducks', 'Stay there at midnight'], 'Dogs are welcome。其他三個都是規定不能做的。'],
+       ['Ben gets to the park at 5:30 a.m. What will happen?', ['He has to wait for thirty minutes.', 'He can feed the ducks.', 'He can ride his bike on the grass.', 'He has to go home at 6:00.'], '公園六點才開，要等三十分鐘。'],
+       ['Where is this sign?', ['In a park', 'In a school', 'In a zoo', 'In a restaurant'], '標題是 CITY PARK RULES。']]],
+    ["Tim's New Friend\nTim moved to a new town last month. At his new school, he didn't know anyone, so he ate lunch alone every day. One day, a boy sat next to him. \"Hi, I'm Leo. Do you like comics?\" he asked. Tim had a comic book in his bag. They read it together and laughed a lot. Now Tim and Leo eat lunch together every day, and they are making their own comic book.",
+      [['Why did Tim eat lunch alone?', ["He didn't know anyone at his new school.", "He didn't like Leo.", 'He was reading comics.', 'His friends were sick.'], "he didn't know anyone, so he ate lunch alone。"],
+       ['What did Tim and Leo do together first?', ['They read a comic book.', 'They made a comic book.', 'They moved to a new town.', 'They played basketball.'], '先一起看漫畫，現在才在畫自己的漫畫。'],
+       ['How does Tim probably feel now?', ['Happy', 'Lonely', 'Angry', 'Scared'], '現在每天跟朋友一起吃午餐，應該很開心。']]],
+    ['Sunshine English Camp – Day 1\n8:30  Meet at the school gate\n9:00  Games and songs\n10:30  English drama\n12:00  Lunch\n1:30  Make a robot\n3:30  Show time! (Parents are welcome.)\n4:00  Go home',
+      [['What will the students do after lunch?', ['Make a robot', 'Play games', 'Practice drama', 'Go home'], '12:00 午餐，下一個是 1:30 Make a robot。'],
+       ['When can parents come to see the students?', ['At 3:30', 'At 8:30', 'At 12:00', 'At 4:00'], 'Show time 後面寫 Parents are welcome.'],
+       ['How long is the English drama class?', ['An hour and a half', 'One hour', 'Two hours', 'Half an hour'], '10:30 到 12:00，一個半小時。']]],
+    ['What do students in Class 5A do after school?\n(Each student chose one answer.)\n⚽ Play sports: 12 students\n📚 Go to cram school: 9 students\n🎮 Play video games: 6 students\n📖 Read books: 3 students',
+      [['How many students go to cram school after school?', ['Nine', 'Twelve', 'Six', 'Three'], 'Go to cram school: 9。'],
+       ['Which is the most popular after-school activity?', ['Playing sports', 'Going to cram school', 'Playing video games', 'Reading books'], '12 個人最多。'],
+       ['How many students are there in Class 5A?', ['Thirty', 'Twelve', 'Twenty-seven', 'Twenty'], '每個人選一個：12＋9＋6＋3＝30。']]],
+    ['LOST CAT!\nOur cat, Coco, has been lost since Tuesday. She is white with a black tail. She has a red ribbon with a small bell around her neck. Coco is very shy, so she may hide under cars. If you see her, please call Mrs. Lee at 0912-345-678. Thank you!',
+      [['What does Coco look like?', ['She is white with a black tail.', 'She is black with a white tail.', 'She is brown and white.', 'She is all black.'], 'She is white with a black tail.'],
+       ['Where might Coco hide?', ['Under cars', 'In trees', 'In the river', 'On the roof'], 'she may hide under cars。'],
+       ['Why did Mrs. Lee write this?', ['She wants to find her cat.', 'She wants to sell her cat.', 'She found a cat.', 'She wants a new cat.'], '標題 LOST CAT! 是在找走丟的貓。']]],
+    ["Hi Grandpa,\nI'm in Hualien with my class. Yesterday, we rode bikes along the sea. Today, we visited a farm and drank fresh milk. Tomorrow, we will go home by train. I'll show you my photos on Sunday!\nLove, David\n\nDear David,\nThank you for your postcard. Grandma and I are excited to see your photos. We will make dumplings for you on Sunday. Don't forget to bring your camera!\nLove, Grandpa",
+      [['What did David do yesterday?', ['He rode a bike along the sea.', 'He drank fresh milk.', 'He took a train home.', 'He made dumplings.'], 'Yesterday, we rode bikes along the sea.'],
+       ['How will David go home?', ['By train', 'By bike', 'By car', 'By plane'], 'we will go home by train。'],
+       ['What will happen on Sunday?', ['David will show his photos to his grandparents.', 'David will visit a farm.', 'Grandpa will go to Hualien.', 'David will buy a camera.'], "I'll show you my photos on Sunday!"]]]];
+  READ.forEach(([passage, qs], pi) => qs.forEach(([prompt, opts, explain], qi) => {
+    const id = `read-${pi + 1}-${qi + 1}`;
+    g({ id, tag: '閱讀理解', passage, noRead: true, prompt, ...place(id, opts), explain }, '閱讀');
+  }));
+});
 })();
