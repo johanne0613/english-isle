@@ -185,7 +185,6 @@
  "word|clerk": "audio/word-48c802d8.mp3",
  "word|girl": "audio/word-ebcd4cd1.mp3",
  "word|shirt": "audio/word-36636ad5.mp3",
- "word|nurse": "audio/word-88384c18.mp3",
  "word|purple": "audio/word-b9c09251.mp3",
  "word|car": "audio/word-954cd883.mp3",
  "word|park": "audio/word-a9f6499f.mp3",
@@ -230,5 +229,6 @@
  "teacher|I'd like some dumplings, please.": "audio/teacher-aee23709.mp3",
  "teacher|No, thank you.": "audio/teacher-13e619e3.mp3",
  "teacher|What time does Ben have lunch?": "audio/teacher-4f84813d.mp3",
- "teacher|She goes to school at seven twenty.": "audio/teacher-c0c5407d.mp3"
+ "teacher|She goes to school at seven twenty.": "audio/teacher-c0c5407d.mp3",
+ "word|nurse": "audio/word-88384c18.mp3"
 }
