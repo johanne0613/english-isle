@@ -5,6 +5,7 @@
 // 已經錄好的會跳過，新增課程後再跑一次，只會錄新的句子。金鑰只從環境變數讀，不會寫進任何檔案。
 // Gemini 額度用完時，剩下的句子自動改用微軟 Edge 的免費語音（edge-tts，不用金鑰、沒有每日上限）一句一句錄。
 // 只想用 edge-tts：node tools/make-audio.js --edge（安裝：uv tool install edge-tts）
+// edge-tts 錄的句子記在 audio/edge.json；下次用 Gemini 金鑰執行時，會自動換成 Gemini 版本（Gemini 的聲音比較自然）。
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -123,13 +124,21 @@ async function recordBatch(role, items, manifest, manifestPath) {
     const flag = d < expect * 0.4 || d > expect * 2.6 ? '  ← 長度怪怪的，請試聽' : '';
     console.log(`    ${d.toFixed(1)}s  ${c.text.slice(0, 60)}${flag}`);
     manifest[c.role + '|' + c.text] = rel;
+    edgeKeys.delete(c.role + '|' + c.text);
   });
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 1));
+  saveEdgeKeys();
   return { ok: true, model };
 }
 
 // 這段在做什麼：用 edge-tts 錄一句（一句一個檔，不用切）
 function hasEdge() { try { execFileSync(EDGE, ['--version'], { stdio: 'ignore' }); return true; } catch (e) { return false; } }
+const edgePath = path.join(OUT, 'edge.json');
+const edgeKeys = new Set(fs.existsSync(edgePath) ? JSON.parse(fs.readFileSync(edgePath, 'utf8')) : []);
+function saveEdgeKeys() {
+  if (edgeKeys.size) fs.writeFileSync(edgePath, JSON.stringify([...edgeKeys].sort(), null, 1));
+  else fs.rmSync(edgePath, { force: true });
+}
 function recordEdge(c, manifest, manifestPath) {
   const r = ROLES[c.role] || ROLES.teacher;
   fs.mkdirSync(TMP, { recursive: true });
@@ -139,6 +148,7 @@ function recordEdge(c, manifest, manifestPath) {
   saveClip(tmp, { a: 0, b: dur(tmp) }, path.join(ROOT, rel), 'loudnorm=I=-17.5:TP=-1.5:LRA=11,aresample=24000,');
   manifest[c.role + '|' + c.text] = rel;
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 1));
+  edgeKeys.add(c.role + '|' + c.text); saveEdgeKeys();
   console.log(`    ${dur(path.join(ROOT, rel)).toFixed(1)}s  ${c.text.slice(0, 60)}（edge-tts）`);
 }
 function recordAllEdge(items, manifest, manifestPath) {
@@ -154,7 +164,9 @@ function recordAllEdge(items, manifest, manifestPath) {
 
   const manifestPath = path.join(OUT, 'manifest.json');
   const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : {};
-  const todo = catalog.filter(c => !(manifest[c.role + '|' + c.text] === relOf(c) && fs.existsSync(path.join(ROOT, relOf(c)))));
+  const done = c => manifest[c.role + '|' + c.text] === relOf(c) && fs.existsSync(path.join(ROOT, relOf(c)));
+  // 用 Gemini 錄的時候，之前 edge-tts 錄的句子也重錄一次
+  const todo = catalog.filter(c => !done(c) || (!USE_EDGE && edgeKeys.has(c.role + '|' + c.text)));
   // 一句裡有兩個以上短句（例如 Yes, please. 前面還有一句）會被切錯，所以這種句子單獨錄
   const solo = c => /[.?!]\s+\S/.test(c.text);
   const batches = todo.filter(solo).length + Object.values(todo.filter(c => !solo(c)).reduce((a, c) => { a[c.role] = (a[c.role] || 0) + 1; return a; }, {})).reduce((a, n) => a + Math.ceil(n / BATCH), 0);
@@ -192,7 +204,7 @@ function recordAllEdge(items, manifest, manifestPath) {
     }
   } catch (e) {
     console.error('\n停下來了：' + e.message);
-    const rest = [...(job ? job.items : []), ...queue.flatMap(q => q.items)].filter(c => !manifest[c.role + '|' + c.text]);
+    const rest = [...(job ? job.items : []), ...queue.flatMap(q => q.items)].filter(c => !done(c));
     if (e.exhausted && rest.length && hasEdge()) {
       console.log(`剩下 ${rest.length} 句改用 edge-tts 錄`);
       recordAllEdge(rest, manifest, manifestPath);
@@ -200,6 +212,7 @@ function recordAllEdge(items, manifest, manifestPath) {
   }
   const valid = new Set(catalog.map(c => c.role + '|' + c.text));
   Object.keys(manifest).forEach(k => { if (!valid.has(k)) delete manifest[k]; });
+  [...edgeKeys].forEach(k => { if (!valid.has(k)) edgeKeys.delete(k); }); saveEdgeKeys();
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 1));
   fs.rmSync(TMP, { recursive: true, force: true });
   console.log(`\n已錄好 ${Object.keys(manifest).length} / ${catalog.length} 句`);
