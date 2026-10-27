@@ -133,7 +133,9 @@ async function recordBatch(role, items, manifest, manifestPath) {
   const manifestPath = path.join(OUT, 'manifest.json');
   const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : {};
   const todo = catalog.filter(c => !(manifest[c.role + '|' + c.text] === relOf(c) && fs.existsSync(path.join(ROOT, relOf(c)))));
-  const batches = Object.values(todo.reduce((a, c) => { a[c.role] = (a[c.role] || 0) + 1; return a; }, {})).reduce((a, n) => a + Math.ceil(n / BATCH), 0);
+  // 一句裡有兩個以上短句（例如 Yes, please. 前面還有一句）會被切錯，所以這種句子單獨錄
+  const solo = c => /[.?!]\s+\S/.test(c.text);
+  const batches = todo.filter(solo).length + Object.values(todo.filter(c => !solo(c)).reduce((a, c) => { a[c.role] = (a[c.role] || 0) + 1; return a; }, {})).reduce((a, n) => a + Math.ceil(n / BATCH), 0);
   console.log(`共 ${catalog.length} 句，要錄 ${todo.length} 句（大約要叫 Google ${batches} 次）`);
   if (!todo.length) return;
   if (!KEY) { console.error('請先設定 GEMINI_API_KEY'); process.exit(1); }
@@ -141,8 +143,9 @@ async function recordBatch(role, items, manifest, manifestPath) {
   // 這段在做什麼：同一個角色的句子分組，一組一次錄
   const queue = [];
   const byRole = {};
-  todo.forEach(c => (byRole[c.role] = byRole[c.role] || []).push(c));
+  todo.filter(c => !solo(c)).forEach(c => (byRole[c.role] = byRole[c.role] || []).push(c));
   Object.entries(byRole).forEach(([role, list]) => { for (let i = 0; i < list.length; i += BATCH) queue.push({ role, items: list.slice(i, i + BATCH) }); });
+  todo.filter(solo).forEach(c => queue.push({ role: c.role, items: [c] }));
 
   let first = true;
   try {
