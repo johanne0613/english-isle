@@ -202,7 +202,7 @@ const LESSONS = {
      段考題型：choice 選擇題（有 audio 就是聽力題）、order 句子重組、spell 看圖拼字
      ========================================================== */
   ww7t1: {
-    id: 'ww7t1', zone: 'castle',
+    id: 'ww7t1', zone: 'castle', bankId: 'kh5a-1',
     title: 'Test 1 Review', zh: '第一次段考：Unit 1–2',
     level: '康軒 Wonder World 7・五上', minutes: 75,
     format: '段考複習課（口說＋段考題型）',
@@ -378,7 +378,7 @@ const LESSONS = {
   },
 
   ww7t2: {
-    id: 'ww7t2', zone: 'castle',
+    id: 'ww7t2', zone: 'castle', bankId: 'kh5a-2',
     title: 'Test 2 Review', zh: '第二次段考：Unit 3–4',
     level: '康軒 Wonder World 7・五上', minutes: 75,
     format: '段考複習課（口說＋段考題型）',
@@ -591,5 +591,11 @@ function speechCatalog() {
     if (kind === 'order') add('teacher', it.answer);
     if (kind === 'spell') add('word', it.word);
   })));
+  // 段考題庫（bank.js）裡的聽力、重組、拼字也要錄
+  if (typeof BANKS !== 'undefined') Object.values(BANKS).forEach(B => B.questions.forEach(q => {
+    if (q.audio) add(audioRole(q.audio), q.audio);
+    if (q.type === 'order') add('teacher', q.answer);
+    if (q.type === 'spell') add('word', q.word);
+  }));
   return out;
 }

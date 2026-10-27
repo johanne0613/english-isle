@@ -441,6 +441,38 @@ label{font-size:13px;color:var(--muted);font-weight:600}
 .note-text{white-space:pre-wrap;font-size:16px}
 @media (max-width:620px){.hw-meta{grid-template-columns:1fr}}
 
+/* 這段在做什麼：段考刷題、題庫、學習單 */
+.src{font-size:12px;color:var(--muted)}
+.passage p{white-space:pre-line}
+.build.bad{border-style:solid;border-color:var(--r1)}
+.earn.miss{color:var(--r1)}
+.pill.warn{background:var(--r2);border-color:var(--r2);color:var(--pumpkin-ink)}
+.bank-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bank-list{list-style:none;padding:0;display:grid;gap:8px;margin-top:16px}
+.bank-item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;cursor:pointer;color:var(--ink);font-weight:400;font-size:15px}
+.bank-item.on{border-color:var(--pumpkin)}
+.bank-item input{width:20px;height:20px;margin-top:2px;accent-color:var(--pumpkin);flex:none}
+.bank-main{display:grid;gap:4px;min-width:0}
+.bank-tags{display:flex;flex-wrap:wrap;gap:6px}
+.bank-q{font-family:var(--f-learn);font-size:17px;white-space:pre-line}
+.sheet h3{margin-top:6px}
+.ws-list{display:grid;gap:12px;padding-left:1.6em}
+.ws-q p{margin:2px 0}
+.ws-opts{color:var(--paper-ink)}
+.ws-line{border-bottom:1px solid var(--paper-ink);height:28px;max-width:560px}
+.ws-line.short{max-width:220px}
+.ws-passage{white-space:pre-line;background:var(--paper-soft);border-radius:10px;padding:10px 14px;font-family:var(--f-learn)}
+.ws-key{border-top:2px dashed var(--paper-line);padding-top:16px}
+.ws-script{color:var(--paper-muted);font-size:14px}
+@media print{
+  html,body{background:#fff}
+  .topbar,.report-tools,.no-print,.banner{display:none!important}
+  .wrap{padding:0;max-width:none}
+  .paper{border-radius:0;padding:0;max-width:none}
+  .ws-key{break-before:page}
+  .ws-q{break-inside:avoid}
+}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -448,6 +480,7 @@ label{font-size:13px;color:var(--muted);font-weight:600}
 <div id="app" class="wrap"></div>
 
 <script src="lessons.js"></script>
+<script src="bank.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
