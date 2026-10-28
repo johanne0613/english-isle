@@ -273,7 +273,6 @@
  "teacher|What's the weather like?\nA. It's rainy, so the boy has an umbrella.\nB. It's sunny and very hot.\nC. It's snowing, and the boy is cold.": "audio/teacher-40180b48.mp3",
  "teacher|How much are the shoes?\nA. They are two hundred and fifty dollars.\nB. They are five hundred and twenty dollars.\nC. They are five hundred and fifty dollars.": "audio/teacher-0131445d.mp3",
  "teacher|Where is the man?\nA. He is in the bathroom.\nB. He is in the garden.\nC. He is in the kitchen.": "audio/teacher-2e710bfe.mp3",
- "teacher|When is the birthday party?\nA. It's on May twelfth.\nB. It's on March twelfth.\nC. It's on May twentieth.": "audio/teacher-76caa443.mp3",
  "teacher|How does the boy go to school?\nA. He walks to school.\nB. He goes to school by bike.\nC. He goes to school by bus.": "audio/teacher-81a85b56.mp3",
  "teacher|What's wrong with the woman?\nA. She has a toothache.\nB. She is very hungry.\nC. She has a cold.": "audio/teacher-13c5a568.mp3",
  "teacher|What is the woman doing?\nA. She is walking on the beach.\nB. She is swimming in the sea.\nC. She is fishing on a boat.": "audio/teacher-c5dc311e.mp3",
@@ -339,7 +338,6 @@
  "narrator|What time is it now?": "audio/narrator-0a6d90e7.mp3",
  "teacher|Good morning, everyone. Today is Sports Day. Please don't forget your water bottles and caps. It's going to be very hot and sunny this afternoon.": "audio/teacher-d69d5ac1.mp3",
  "narrator|What will the weather be like this afternoon?": "audio/narrator-9187d888.mp3",
- "teacher|Hi, Grandma. It's Kevin. Thank you for the birthday present. I wanted a new bike, but a skateboard is even better! I'll ride it to the park tomorrow.": "audio/teacher-3e45c584.mp3",
  "narrator|What present did Kevin get?": "audio/narrator-95c00d82.mp3",
  "teacher|Attention, please. The school library will be closed this Friday. You can return your books on Thursday or next Monday.": "audio/teacher-0614655c.mp3",
  "narrator|Which day will the library be closed?": "audio/narrator-f2a089ab.mp3",
@@ -347,7 +345,6 @@
  "narrator|What do the students need to do tonight?": "audio/narrator-821fd880.mp3",
  "teacher|My name is Sandy. Every morning, I walk my dog in the park. After that, I eat breakfast and take the bus to school.": "audio/teacher-bd652c51.mp3",
  "narrator|What does Sandy do first every morning?": "audio/narrator-cf039aef.mp3",
- "teacher|Welcome to Happy Zoo. The zoo opens at nine. You can watch the monkeys eat lunch at twelve and see the penguins swim at two.": "audio/teacher-333f0ef5.mp3",
  "narrator|What can you see at two?": "audio/narrator-60fdb98c.mp3",
  "teacher|Hi, Mom. This is Amy. I'm at Jenny's house now. We're making cookies for the school party. I'll be home at five thirty.": "audio/teacher-31941405.mp3",
  "narrator|What is Amy making?": "audio/narrator-464802bd.mp3",
@@ -356,5 +353,8 @@
  "teacher|Tomorrow will be cloudy in the morning. In the afternoon, it will rain a lot, so take an umbrella with you.": "audio/teacher-3c7eea33.mp3",
  "narrator|What should you take tomorrow?": "audio/narrator-ce13be99.mp3",
  "teacher|I love Sundays. In the morning, I play basketball with my brother. In the afternoon, we help Dad in the garden. At night, our family watches a movie together.": "audio/teacher-55f0cf39.mp3",
- "narrator|What does the speaker do on Sunday afternoon?": "audio/narrator-d0337612.mp3"
+ "narrator|What does the speaker do on Sunday afternoon?": "audio/narrator-d0337612.mp3",
+ "teacher|When is the birthday party?\nA. It's on May second.\nB. It's on March second.\nC. It's on May third.": "audio/teacher-2443c16e.mp3",
+ "teacher|Hi, Grandma. It's Kevin. Thank you for the birthday present. I wanted a new bike, but a basketball is even better! I'll play with it in the park tomorrow.": "audio/teacher-ceb4b41f.mp3",
+ "teacher|Welcome to Happy Zoo. The zoo opens at nine. You can watch the monkeys eat lunch at twelve and see the elephants take a bath at two.": "audio/teacher-3a018a25.mp3"
 }
