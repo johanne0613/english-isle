@@ -468,7 +468,7 @@ function itemLabel(st, it, idx) {
   if (k === 'panel') return `故事第 ${idx + 1 + (st.lead ? 1 : 0)} 格`;
   if (k === 'catch') return '影片抓單字';
   if (k === 'order') return '句子重組：' + it.zh;
-  if (k === 'spell') return '看圖拼字：' + it.zh;
+  if (k === 'spell') return it.noAudio ? '對話填空：' + clip(it.ctx.replace(/\n/g, ' / '), 48) : '看圖拼字：' + it.zh;
   if (k === 'choice') return it.show ? `${it.tag}：${it.show}` : it.audio ? `${it.tag} 第 ${idx + 1} 題` : `${it.tag}：${clip(it.prompt, 48)}`;
   if (it.reply) return '換你問：' + it.hint;  // Flyers Part 2：學生看提示字問問題
   return clip(it.prompt, 60);
@@ -1074,8 +1074,10 @@ function renderChoice(st, it, k) {
       h('span', { class: 'opt-n' }, 'ABCD'[i]), h('span', null, o));
   }));
   return h('div', null,
-    passage ? h('div', { class: 'passage' }, h('p', null, passage), h('div', { class: 'tools', style: 'margin:10px 0 0' }, speakBtn(passage, '聽文章'))) : null,
+    passage ? h('div', { class: 'passage' }, h('p', null, passage), it.noRead ? null : h('div', { class: 'tools', style: 'margin:10px 0 0' }, speakBtn(passage, '聽文章'))) : null,
     testHead(it),
+    it.scene ? h('div', { class: 'q-scene', role: 'img', 'aria-label': '題目的圖' }, it.scene) : null,
+    it.ctx ? h('p', { class: 'q-ctx' }, it.ctx) : null,
     it.audio ? h('div', { class: 'tools' },
       h('button', { class: 'btn primary', type: 'button', onclick: () => VOICE.listen(it.audio) }, svg(ICON.play), '播放'),
       h('span', { class: 'muted sm' }, '可以重聽。開了慢速語音會唸慢一點。')) : null,
@@ -1139,19 +1141,22 @@ function renderSpell(st, it, k) {
   const input = h('input', { type: 'text', class: 'spell-in', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false',
     'aria-label': '拼出這個字', disabled: solved, value: solved ? it.word : '' });
   const check = () => {
-    const v = input.value.trim().replace(/\s+/g, ' ');
+    const v = input.value.trim().replace(/\s+/g, ' ').replace(/[’‘]/g, "'");
     if (!v) { input.focus(); return; }
     testTry(k, v, it.caps ? v === it.word : v.toLowerCase() === it.word.toLowerCase());
   };
   input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
   const tries = (ev && ev.tries) || [];
   const last = tries[tries.length - 1] || '';
-  const wrongMsg = last.toLowerCase() === it.word.toLowerCase() ? '字母都對了！國家名字的第一個字母要大寫。' : '還不對。按「聽發音」再聽一次，一個一個字母對對看。';
+  const wrongMsg = it.noAudio ? '還不對。再讀一次對話，想想空格要填哪個字。'
+    : last.toLowerCase() === it.word.toLowerCase() ? '字母都對了！國家名字的第一個字母要大寫。' : '還不對。按「聽發音」再聽一次，一個一個字母對對看。';
   return h('div', null,
     h('div', null,
       testHead(it),
-      h('p', { class: 'prompt sm' }, 'Listen and spell.'),
-      h('div', { class: 'tools' }, h('button', { class: 'btn primary', type: 'button', onclick: () => VOICE.say(it.word, 'word') }, svg(ICON.play), '播放'), h('span', { class: 'muted sm' }, '可以重聽')),
+      // 對話填空（noAudio）：讀對話寫出空格的字；聽寫：聽發音拼出來
+      it.noAudio ? [h('p', { class: 'prompt sm' }, 'Read and fill in the blank.'), h('p', { class: 'q-ctx' }, it.ctx)]
+        : [h('p', { class: 'prompt sm' }, 'Listen and spell.'),
+          h('div', { class: 'tools' }, h('button', { class: 'btn primary', type: 'button', onclick: () => VOICE.say(it.word, 'word') }, svg(ICON.play), '播放'), h('span', { class: 'muted sm' }, '可以重聽'))],
       h('p', { class: 'mask' }, solved ? it.word : it.show),
       h('div', { class: 'spell-row' }, input,
         h('button', { class: 'btn primary', type: 'button', disabled: solved, onclick: check }, '檢查'),
@@ -2491,7 +2496,7 @@ const newDrillDoc = bankId => Object.assign({ id: drillDocId(bankId), kind: 'dri
 function qText(q) {
   const oneLine = t => t.replace(/\n/g, ' / ');
   if (q.type === 'order') return '句子重組：' + (q.ctx ? oneLine(q.ctx) : q.zh);
-  if (q.type === 'spell') return `聽寫拼字：${q.show}`;
+  if (q.type === 'spell') return q.noAudio ? '對話填空：' + oneLine(q.ctx) : `聽寫拼字：${q.show}`;
   return [q.audio ? '🔊 聽力' : '', q.scene ? '［圖］' + oneLine(q.scene) : '', q.passage ? '［閱讀］' : '', q.ctx ? oneLine(q.ctx) : '', q.show || '',
     q.hideOpts ? '（選項用聽的）' + oneLine(q.audio) : q.prompt].filter(Boolean).join(' ');
 }
@@ -2638,11 +2643,17 @@ function drillSpell(q, a) {
   const input = h('input', { type: 'text', class: 'spell-in', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false',
     'aria-label': '拼出這個字', disabled: !!a, value: a ? a.said : '' });
   const check = () => {
-    const v = input.value.trim().replace(/\s+/g, ' ');
+    const v = input.value.trim().replace(/\s+/g, ' ').replace(/[’‘]/g, "'");
     if (!v) { input.focus(); return; }
     drillAnswer(q, q.caps ? v === q.word : v.toLowerCase() === q.word.toLowerCase(), v);
   };
   input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  // 對話填空（noAudio）：讀對話，把空格那個字寫出來，不用聽
+  if (q.noAudio) return h('div', null,
+    h('p', { class: 'prompt sm' }, 'Read and fill in the blank.'),
+    h('p', { class: 'q-ctx' }, q.ctx),
+    h('p', { class: 'mask' }, q.show),
+    h('div', { class: 'spell-row' }, input, h('button', { class: 'btn primary', type: 'button', disabled: !!a, onclick: check }, '確定')));
   // 聽寫：聽發音拼出來（考字母和發音的對應，不考中翻英）
   return h('div', null,
     h('p', { class: 'prompt sm' }, 'Listen and spell.'),
@@ -2871,6 +2882,7 @@ function viewSheet() {
       q.ctx ? h('p', { class: 'ws-ctx' }, q.ctx) : h('p', null, q.zh),
       h('p', { class: 'ws-opts' }, shuffled(words(q).length, q.id + q.answer).map(i => words(q)[i]).join(' / ')),
       h('p', { class: 'ws-line' }, '')]
+    : q.noAudio ? [h('p', { class: 'ws-ctx' }, q.ctx), h('p', null, '提示：', h('b', null, q.show)), h('p', { class: 'ws-line short' }, '')]
     : [h('p', null, '（聽老師唸）　', h('b', null, q.show)), h('p', { class: 'ws-line short' }, '')]);
   const body = [];
   groups.forEach((g, gi) => {
@@ -2885,7 +2897,7 @@ function viewSheet() {
   const key = h('section', { class: 'ws-key' }, h('h3', null, '解答（老師用）'),
     h('ol', { class: 'ws-list' }, qs.slice().sort((a, b) => num.get(a.id) - num.get(b.id)).map(q => h('li', { value: num.get(q.id) },
       q.type === 'choice' ? `(${letter(q)}) ${qAnswer(q)}` : qAnswer(q),
-      q.audio || q.type === 'spell' ? h('span', { class: 'ws-script' + (q.audio && q.audio.includes('\n') ? ' multi' : '') }, `　老師唸：${q.audio || q.word}`) : null))));
+      q.audio || (q.type === 'spell' && !q.noAudio) ? h('span', { class: 'ws-script' + (q.audio && q.audio.includes('\n') ? ' multi' : '') }, `　老師唸：${q.audio || q.word}`) : null))));
   return h('div', null,
     h('div', { class: 'report-tools no-print' },
       h('button', { class: 'btn small ghost', type: 'button', onclick: () => go('bank') }, '← 回題庫'),
