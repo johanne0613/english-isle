@@ -197,14 +197,14 @@ const LESSONS = {
   },
 
   /* ==========================================================
-     這段在做什麼：段考城堡・康軒 Wonder World 7（新北市五上；英語從低年級開始的學校，五上用 WW7、六上用 WW9）
+     這段在做什麼：段考城堡・康軒 Wonder World 7（六上，週五那位六年級學生的學校用這本）
      一個 Review 是一次段考範圍。題目用課本的單字和句型自己出，不照抄課文。
      段考題型：choice 選擇題（有 audio 就是聽力題）、order 句子重組、spell 看圖拼字
      ========================================================== */
   ww7t1: {
     id: 'ww7t1', zone: 'castle', bankId: 'kh5a-1',
-    title: 'Test 1 Review', zh: '五上・第一次段考：Unit 1–2',
-    level: '康軒 Wonder World 7・五上', minutes: 75,
+    title: 'Test 1 Review', zh: 'WW7・第一次段考：Unit 1–2',
+    level: '康軒 Wonder World 7・六上', minutes: 75,
     format: '段考複習課（口說＋段考題型）',
     audience: '程度普通，在補學校進度、為國中打底。',
     scope: [
@@ -373,14 +373,14 @@ const LESSONS = {
     },
     materials: [
       { id: 'knsh', kind: '其他', title: '康軒數位高手（WW7 電子書）', url: 'https://digitalmaster.knsh.com.tw/', note: '老師帳號登入後，電子書 → 英語 WW7，對照課本頁碼。' },
-      { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：五上康軒英語・期中考（第一次段考）', url: 'https://www.tcool.cc/mock/-23/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
+      { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：六上康軒英語・期中考（第一次段考）', url: 'https://www.tcool.cc/mock/-12/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
     ]
   },
 
   ww7t2: {
     id: 'ww7t2', zone: 'castle', bankId: 'kh5a-2',
-    title: 'Test 2 Review', zh: '五上・第二次段考：Unit 3–4',
-    level: '康軒 Wonder World 7・五上', minutes: 75,
+    title: 'Test 2 Review', zh: 'WW7・第二次段考：Unit 3–4',
+    level: '康軒 Wonder World 7・六上', minutes: 75,
     format: '段考複習課（口說＋段考題型）',
     audience: '程度普通，在補學校進度、為國中打底。',
     scope: [
@@ -549,18 +549,18 @@ const LESSONS = {
     },
     materials: [
       { id: 'knsh', kind: '其他', title: '康軒數位高手（WW7 電子書）', url: 'https://digitalmaster.knsh.com.tw/', note: '老師帳號登入後，電子書 → 英語 WW7，對照課本頁碼。' },
-      { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：五上康軒英語・期末考（第二次段考）', url: 'https://www.tcool.cc/mock/-501/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
+      { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：六上康軒英語・期末考（第二次段考）', url: 'https://www.tcool.cc/mock/-615/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
     ]
   },
 
   /* ==========================================================
-     這段在做什麼：段考城堡・康軒 Wonder World 9（新北市六上；英語從低年級開始的學校，六上用 WW9）
+     這段在做什麼：段考城堡・康軒 Wonder World 9（有些學校六上用 WW9，看學生課本封面的冊次）
      一個 Review 是一次段考範圍。題目用課本的單字和句型自己出，不照抄課文。
      課本 Unit 3 的景點是台灣真實地名，我們不考地理：只用 beach、lake 這類單字，答案都寫在題目的英文裡。
      ========================================================== */
   ww9t1: {
     id: 'ww9t1', zone: 'castle', bankId: 'kh6a-1',
-    title: 'Test 1 Review', zh: '六上・第一次段考：Unit 1–2',
+    title: 'Test 1 Review', zh: 'WW9・第一次段考：Unit 1–2',
     level: '康軒 Wonder World 9・六上', minutes: 75,
     format: '段考複習課（口說＋段考題型）',
     audience: '六年級，程度普通，在補學校進度、為國中打底。',
@@ -737,7 +737,7 @@ const LESSONS = {
 
   ww9t2: {
     id: 'ww9t2', zone: 'castle', bankId: 'kh6a-2',
-    title: 'Test 2 Review', zh: '六上・第二次段考：Unit 3–4',
+    title: 'Test 2 Review', zh: 'WW9・第二次段考：Unit 3–4',
     level: '康軒 Wonder World 9・六上', minutes: 75,
     format: '段考複習課（口說＋段考題型）',
     audience: '六年級，程度普通，在補學校進度、為國中打底。',
@@ -1086,7 +1086,7 @@ const ZONES = [
     desc: '跟著節日換主題，每個月一檔。這個月是萬聖節。', lessons: ['halloween'],
     plan: ['11 月 Thanksgiving 感恩節', '12 月 Christmas 聖誕節', '1–2 月 Lunar New Year 農曆新年'] },
   { id: 'castle', name: 'Exam Castle', zh: '段考城堡', x: 72, y: 70.2, open: true,
-    desc: '康軒 Wonder World 段考複習：課本單字、句型口說、段考題型。一個 Review 是一次段考範圍。六上用 WW9，五上用 WW7。', lessons: ['ww9t1', 'ww9t2', 'ww7t1', 'ww7t2'],
+    desc: '康軒 Wonder World 段考複習：課本單字、句型口說、段考題型。一個 Review 是一次段考範圍。六上依學校用 WW7 或 WW9，看學生課本封面的冊次。', lessons: ['ww7t1', 'ww7t2', 'ww9t1', 'ww9t2'],
     plan: ['下學期：五下 Wonder World 8、六下 Wonder World 10', '錯題本：把答錯的題目集中再練一次'] },
   { id: 'speaking', name: 'Speaking Bay', zh: '口說海灣', x: 24, y: 58.1, open: false,
     desc: '日常口說練習。', plan: ['情境角色扮演', 'Show and Tell 上台報告', '看圖說故事題庫'] },
