@@ -2206,26 +2206,41 @@ async function startStudent(sid) {
     go('error');
   }
 }
+/* ==========================================================
+   這段在做什麼：訪客練習（網址最後加 #guest）：不用登入、不用學生資料，打開就能刷題
+   #guest=kh5a-1 直接打開那一份題庫。成績和錯題本只存在這台電腦的瀏覽器，不會上傳，老師看不到
+   ========================================================== */
+function startGuest(bankId) {
+  state.mode = 'student'; state.guest = true;
+  state.student = { id: 'guest', name: '訪客' };
+  state.me = { student: { name: '訪客' }, sessions: [], homework: [], practice: LS.get('guest:practice', {}) };
+  // 原本要存到雲端的，改成只存在瀏覽器
+  Cloud.savePractice = () => { LS.set('guest:practice', state.me.practice); return Promise.resolve(); };
+  Cloud.log = () => Promise.resolve();
+  Cloud.touch = () => Promise.resolve();
+  if (bankId && BANKS[bankId]) goDrillHome(bankId); else go('shome', 'drill');
+}
 function activeHomework() {
   const a = state.me.student && state.me.student.homeworkActive;
   return (a && state.me.homework.find(x => x.id === a.hwId)) || null;
 }
 function viewSHome() {
-  const st = state.student, hw = activeHomework(), tab = state.tab || 'hw';
-  const tabs = [['hw', '回家任務'], ['drill', '刷題'], ['class', '上課內容'], ['report', '我的報告']];
+  const st = state.student, hw = activeHomework(), tab = state.guest ? 'drill' : state.tab || 'hw';
+  const tabs = state.guest ? [['drill', '刷題']] : [['hw', '回家任務'], ['drill', '刷題'], ['class', '上課內容'], ['report', '我的報告']];
   return h('div', null,
     h('div', { class: 's-hero' },
       h('div', null,
         h('p', { class: 'eyebrow' }, 'English Isle'),
-        h('h1', { class: 'h1' }, `${st.name} 的英語島`),
-        h('p', { class: 'lede' }, hw ? `下次上課前要完成「${hw.title}」，${fmtShort(hw.dueAt)} 截止。` : '目前沒有回家任務，可以到「上課內容」挑一關自由練習。'),
+        h('h1', { class: 'h1' }, state.guest ? '英語島・訪客練習' : `${st.name} 的英語島`),
+        h('p', { class: 'lede' }, state.guest ? '不用登入，選一份題庫就能開始刷題。成績和錯題本只存在這台電腦，換電腦或清除瀏覽器資料就會不見。'
+          : hw ? `下次上課前要完成「${hw.title}」，${fmtShort(hw.dueAt)} 截止。` : '目前沒有回家任務，可以到「上課內容」挑一關自由練習。'),
         Object.values(BANKS).some(B => drillInfo(B.id).assigned) ? h('p', { class: 'hw-note' }, h('span', { class: 'tag' }, '老師說'), '有指定的刷題題目，到「刷題」看看。') : null),
-      h('div', { class: 's-map' }, islandMap(false))),
+      state.guest ? null : h('div', { class: 's-map' }, islandMap(false))),
     h('nav', { class: 'tabs', 'aria-label': '我的島' }, tabs.map(([id, label], i) =>
       h('button', { class: 'tab', type: 'button', 'aria-current': String(tab === id), onclick: () => go('shome', id) },
         h('span', { class: 'tab-n' }, String(i + 1)), h('span', { class: 'tab-t' }, h('b', null, label))))),
     tab === 'hw' ? sHomework(hw) : tab === 'drill' ? sDrill() : tab === 'class' ? sClasses() : sReports(),
-    h('details', { class: 'help', style: 'margin-top:22px' }, h('summary', null, '麥克風測試（第一次練習前先試一次）'), micTestPanel()));
+    state.guest ? null : h('details', { class: 'help', style: 'margin-top:22px' }, h('summary', null, '麥克風測試（第一次練習前先試一次）'), micTestPanel()));
 }
 function sHomework(hw) {
   if (!hw) return h('div', { class: 'empty' }, '目前沒有回家任務。可以到「上課內容」挑一關自由練習。');
@@ -2874,9 +2889,11 @@ function viewSheet() {
    ========================================================== */
 (async function boot() {
   const m = location.hash.match(/s=([a-z0-9]{12,40})/);
-  state.mode = m ? 'student' : 'teacher';
+  const g = location.hash.match(/guest(?:=([a-z0-9-]+))?/);
+  state.mode = m || g ? 'student' : 'teacher';
   render();
   VOICE.load();
+  if (g) { startGuest(g[1]); return; }
   if (!Cloud.configured()) { go('setup'); return; }
   try { await Cloud.init(); }
   catch (e) { state.error = '連不上雲端：' + errText(e) + '。請確認網路，再重新整理。'; go('error'); return; }
