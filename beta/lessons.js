@@ -1136,10 +1136,11 @@ function audioParts(text) {
   if (m) out.push({ role: 'narrator', text: m[2] });
   return out;
 }
-function speechCatalog() {
+/* only：只列出這幾堂課、這幾份題庫的句子（錄音程式 --only=ww7t1,kh5a-1 用來先錄急用的） */
+function speechCatalog(only) {
   const out = [], seen = new Set();
   const add = (role, text) => { const k = role + '|' + text; if (text && !seen.has(k)) { seen.add(k); out.push({ role, text }); } };
-  Object.values(LESSONS).forEach(L => L.stages.forEach(st => {
+  Object.values(LESSONS).filter(L => !only || only.includes(L.id)).forEach(L => L.stages.forEach(st => {
    const V = L.voice || 'teacher';  // 英檢山用考官的聲音
    if (st.lead) add(V, st.lead.text);
    st.items.forEach(it => {
@@ -1151,13 +1152,15 @@ function speechCatalog() {
     if (kind === 'shadow') add('teacher', it.text);
     if (kind === 'dialogue') it.lines.forEach(l => { if (l.s === 'n') add(it.voice || 'teacher', l.t); });
     if (kind === 'choice' && it.audio) audioParts(it.audio).forEach(p => add(p.role, p.text));
+    if (kind === 'choice' && it.passage && !it.noRead && L.passages) add('teacher', L.passages[it.passage]);  // 「聽文章」
     if (kind === 'order') add('teacher', it.answer);
     if (kind === 'spell' && !it.noAudio) add('word', it.word);
    });
   }));
   // 題庫（bank.js）裡的聽力、重組、拼字也要錄
-  if (typeof BANKS !== 'undefined') Object.values(BANKS).forEach(B => B.questions.forEach(q => {
+  if (typeof BANKS !== 'undefined') Object.values(BANKS).filter(B => !only || only.includes(B.id)).forEach(B => B.questions.forEach(q => {
     if (q.audio) audioParts(q.audio).forEach(p => add(p.role, p.text));
+    if (q.passage && !q.noRead) add('teacher', q.passage);  // 刷題的「聽一次」
     if (q.type === 'order') add('teacher', q.answer);
     if (q.type === 'spell' && !q.noAudio) add('word', q.word);  // 對話填空（noAudio）不用錄
   }));
