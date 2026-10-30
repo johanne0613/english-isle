@@ -204,7 +204,7 @@ const LESSONS = {
   ww7t1: {
     id: 'ww7t1', zone: 'castle', bankId: 'kh5a-1',
     title: 'Test 1 Review', zh: 'WW7・第一次段考：Unit 1–2',
-    level: '康軒 Wonder World 7・六上', minutes: 75,
+    level: '康軒 Wonder World 7・六上', minutes: 85,
     format: '段考複習課（口說＋段考題型）',
     audience: '程度普通，在補學校進度、為國中打底。',
     scope: [
@@ -317,7 +317,7 @@ const LESSONS = {
         ]
       },
       {
-        id: 'listen', kind: 'choice', title: 'Listening', zh: '聽力題', minutes: 10,
+        id: 'listen', kind: 'choice', title: 'Listening', zh: '聽力題', minutes: 12,
         skills: ['listening'],
         intro: 'Press the play button. Listen and choose.',
         items: [
@@ -330,11 +330,18 @@ const LESSONS = {
           { id: 'l7', tag: '聽句子', audio: 'Tom has a toothache.', prompt: "What's wrong with Tom?", options: ['🤕 headache', '🦷 toothache', '🤢 stomachache'], answer: 1 },
           { id: 'l8', tag: '聽問句選回答', audio: 'Where are you from?', prompt: 'Choose the best answer.', options: ["I'm from Japan.", 'Yes, I am.', 'I have a cold.'], answer: 0 },
           { id: 'l9', tag: '聽問句選回答', audio: 'Does she have a fever?', prompt: 'Choose the best answer.', options: ['Yes, she is.', "No, she doesn't.", "She's from Canada."], answer: 1, explain: "Does 開頭的問句，用 does / doesn't 回答。" },
-          { id: 'l10', tag: '聽問句選回答', audio: "What's wrong?", prompt: 'Choose the best answer.', options: ["I'm from India.", "No, I don't.", 'I have a runny nose.'], answer: 2 }
+          { id: 'l10', tag: '聽問句選回答', audio: "What's wrong?", prompt: 'Choose the best answer.', options: ["I'm from India.", "No, I don't.", 'I have a runny nose.'], answer: 2 },
+          // 2026-10-30 補：康軒段考常見的聽力題型（題目和題庫 kh5a-1 一樣，語音共用）
+          { id: 'l11', tag: '聽音選同音', audio: 'nurse', prompt: 'Which word has the same sound?', options: ['bird', 'park', 'fork'], answer: 0, explain: 'nurse 跟 bird 唸起來一樣。er、ir、ur 的發音相同。' },
+          { id: 'l12', tag: '聽音判斷 O/X', audio: 'car ... corn', prompt: 'Listen to the two words. Same sound → O. Different sound → X.', options: ['O', 'X'], answer: 1, explain: 'car 的 ar 和 corn 的 or 不一樣，畫 X。' },
+          { id: 'l13', tag: '聽音判斷 O/X', audio: 'bird ... nurse', prompt: 'Listen to the two words. Same sound → O. Different sound → X.', options: ['O', 'X'], answer: 0, explain: 'bird 的 ir、nurse 的 ur 唸起來一樣，畫 O。' },
+          { id: 'l14', tag: '聽句選字', audio: 'Does your dad have a sore throat?', prompt: 'Which word do you hear?', options: ['runny nose', 'sore throat', 'cough'], answer: 1 },
+          { id: 'l15', tag: '聽對話選答', audio: "W: What's wrong, Tom?\nM: I have a cough and a runny nose.\nQ: What's wrong with Tom?", prompt: 'Listen to the conversation and answer the question.', options: ['He has a cough and a runny nose.', 'He has a cough and a fever.', 'He has a headache.'], answer: 0 },
+          { id: 'l16', tag: '聽對話選答', audio: "M: Where are you from, Lisa?\nW: I'm from Australia. My friend Ken is from Japan.\nQ: Where is Ken from?", prompt: 'Listen to the conversation and answer the question.', options: ['Australia', 'Japan', 'Canada'], answer: 1 }
         ]
       },
       {
-        id: 'exam', kind: 'choice', title: 'Test Practice', zh: '段考題型', minutes: 15,
+        id: 'exam', kind: 'choice', title: 'Test Practice', zh: '段考題型', minutes: 20,
         skills: ['grammar'],
         intro: 'Choose, build, or spell. Just like the school test!',
         items: [
@@ -353,22 +360,39 @@ const LESSONS = {
           { id: 's2', kind: 'spell', tag: '聽寫拼字', word: 'France', caps: true, pic: '🥐', zh: '法國', show: 'F r _ _ c e', skills: ['vocab'] },
           { id: 's3', kind: 'spell', tag: '聽寫拼字', word: 'fever', pic: '🤒', zh: '發燒', show: 'f _ v _ r', skills: ['vocab'] },
           { id: 's4', kind: 'spell', tag: '聽寫拼字', word: 'headache', pic: '🤕', zh: '頭痛', show: 'h _ _ d _ c h e', skills: ['vocab'] },
-          { id: 's5', kind: 'spell', tag: '聽寫拼字', word: 'cough', pic: '😷', zh: '咳嗽', show: 'c _ _ g h', skills: ['vocab'] }
+          { id: 's5', kind: 'spell', tag: '聽寫拼字', word: 'cough', pic: '😷', zh: '咳嗽', show: 'c _ _ g h', skills: ['vocab'] },
+          // 2026-10-30 補：看圖題（emoji 只表示男生女生和病痛）、選出不同類、對話填空、克漏字
+          { id: 'p1', tag: '看圖判斷 O/X', scene: '👧🦷', prompt: 'She has a headache.', options: ['O', 'X'], answer: 1, explain: '圖是牙痛（toothache），不是頭痛，畫 X。' },
+          { id: 'p2', tag: '看圖判斷 O/X', scene: '👦👧😷', prompt: 'They have a cough.', options: ['O', 'X'], answer: 0, explain: '兩個人都在咳嗽，圖和句子相符，畫 O。' },
+          { id: 'p3', tag: '看圖選句', scene: '👦👧🤧', prompt: 'Which sentence matches the picture?', options: ['They has a cold.', 'They have a cold.', 'We have a fever.'], answer: 1, explain: '兩個人用 they，they 後面用 have。' },
+          { id: 'p4', tag: '看圖選單字', scene: '🤒', prompt: "What's wrong?", options: ['cough', 'fever', 'toothache'], answer: 1 },
+          { id: 'd1', tag: '選出不同類', prompt: 'Which word is different from the other two?', options: ['Japan', 'India', 'fever'], answer: 2, explain: 'Japan、India 是國家，fever 是身體不舒服。' },
+          { id: 'f1', kind: 'spell', noAudio: true, tag: '對話填空', ctx: "A: Is Emma from Canada?\nB: No, she's ___. She's from the UK.", word: 'not', show: 'n _ _', zh: '對話填空', skills: ['grammar'] },
+          { id: 'f2', kind: 'spell', noAudio: true, tag: '對話填空', ctx: "A: What's wrong with Amy?\nB: She ___ a fever.", word: 'has', show: 'h _ _', zh: '對話填空', skills: ['grammar'] },
+          { id: 'c1', tag: '克漏字', passage: 'cz', noRead: true, prompt: 'Choose the best answer for (1).', options: ['is', 'am', 'are'], answer: 2, explain: 'classmates 是很多人，用 are。' },
+          { id: 'c2', tag: '克漏字', passage: 'cz', noRead: true, prompt: 'Choose the best answer for (2).', options: ['have', 'has', 'is'], answer: 1, explain: 'she 用 has。' },
+          { id: 'c3', tag: '克漏字', passage: 'cz', noRead: true, prompt: 'Choose the best answer for (3).', options: ['Is', 'Are', 'Do'], answer: 1, explain: 'you 用 Are。' },
+          { id: 'c4', tag: '克漏字', passage: 'cz', noRead: true, prompt: 'Choose the best answer for (4).', options: ['Do', 'Does', 'Is'], answer: 1, explain: 'he 用 Does。' }
         ]
       },
       {
-        id: 'read', kind: 'choice', title: 'Reading', zh: '閱讀理解', minutes: 8,
+        id: 'read', kind: 'choice', title: 'Reading', zh: '閱讀理解', minutes: 10,
         skills: ['reading'],
         intro: 'Read the short letter. Then answer the questions.',
         items: [
           { id: 'r1', tag: '閱讀理解', passage: 'nina', prompt: 'Where is Nina from?', options: ['Taiwan', 'Canada', 'Japan'], answer: 1 },
           { id: 'r2', tag: '閱讀理解', passage: 'nina', prompt: "What's wrong with Nina?", options: ['She has a fever.', 'She has a cold.', 'She has a toothache.'], answer: 1 },
           { id: 'r3', tag: '閱讀理解', passage: 'nina', prompt: 'Does Nina have a fever?', options: ['Yes, she does.', "No, she doesn't.", "No, she isn't."], answer: 1 },
-          { id: 'r4', tag: '閱讀理解', passage: 'nina', prompt: 'Is Haruto from Japan?', options: ['Yes, he is.', "No, he isn't.", 'Yes, he does.'], answer: 0 }
+          { id: 'r4', tag: '閱讀理解', passage: 'nina', prompt: 'Is Haruto from Japan?', options: ['Yes, he is.', "No, he isn't.", 'Yes, he does.'], answer: 0 },
+          { id: 'r5', tag: '閱讀測驗', passage: 'max', prompt: "What's wrong with Max?", options: ['He has a fever.', 'He has a stomachache.', 'He has a headache.'], answer: 1 },
+          { id: 'r6', tag: '閱讀測驗', passage: 'max', prompt: 'Who has a fever?', options: ['Max.', "Max's dad.", "Max's sister."], answer: 2 },
+          { id: 'r7', tag: '閱讀測驗', passage: 'max', prompt: "Where is Max's sister?", options: ['At home.', 'At school.', "At the doctor's."], answer: 0 }
         ]
       }
     ],
     passages: {
+      max: "Doctor: Hello, Max. What's wrong?\nMax: I have a stomachache.\nDoctor: Do you have a fever, too?\nMax: No, I don't. But my little sister has a fever.\nDoctor: Oh, no. Is she here today?\nMax: No, she's at home with my dad.",
+      cz: "Hi, I'm Kevin. I'm from the USA. My new classmates (1)___ from Japan and India. Today my classmate Yui is not at school. She (2)___ a cold and a sore throat. My friend Raj is at school, but his head hurts. \"(3)___ you OK, Raj?\" I ask. \"No, I'm not. I have a headache,\" he says. (4)___ he have a fever? No, he doesn't.",
       nina: "Hi! I'm Nina. I'm from Canada, but now I live in Taipei. Today I'm not at school. I have a cold and a sore throat. I don't have a fever. My friend Haruto is from Japan. He visits me after school. He has a book for me. Thank you, Haruto!"
     },
     materials: [
@@ -1128,14 +1152,14 @@ function speechCatalog() {
     if (kind === 'dialogue') it.lines.forEach(l => { if (l.s === 'n') add(it.voice || 'teacher', l.t); });
     if (kind === 'choice' && it.audio) audioParts(it.audio).forEach(p => add(p.role, p.text));
     if (kind === 'order') add('teacher', it.answer);
-    if (kind === 'spell') add('word', it.word);
+    if (kind === 'spell' && !it.noAudio) add('word', it.word);
    });
   }));
   // 題庫（bank.js）裡的聽力、重組、拼字也要錄
   if (typeof BANKS !== 'undefined') Object.values(BANKS).forEach(B => B.questions.forEach(q => {
     if (q.audio) audioParts(q.audio).forEach(p => add(p.role, p.text));
     if (q.type === 'order') add('teacher', q.answer);
-    if (q.type === 'spell') add('word', q.word);
+    if (q.type === 'spell' && !q.noAudio) add('word', q.word);  // 對話填空（noAudio）不用錄
   }));
   return out;
 }

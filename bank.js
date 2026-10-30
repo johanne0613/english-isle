@@ -147,6 +147,77 @@ addBank({
   // 聽寫拼字：聽發音拼出來（考字母和發音的對應，不考中翻英）
   [['Canada', 1], ['France', 1], ['India', 1], ['Japan', 1], ['Taiwan', 1], ['cold'], ['fever'], ['cough'], ['headache'], ['toothache']]
     .forEach(([w, caps], i) => add({ id: 'sp-' + w.toLowerCase(), type: 'spell', tag: '聽寫拼字', word: w, caps: !!caps, show: spellMask(w) }, i < 5 ? 'U1' : 'U2'));
+
+  /* ---------- 2026-10-30 補：康軒段考常見、原本沒有的題型 ----------
+     對照康軒出題高手 WW7 期中考範圍的題型清單（只看題型和題數，題目全部自己出）。
+     看圖題的圖只用 emoji 表示病痛和男生女生，不放國旗、地圖（不考地理）。 */
+  const OX = ['O', 'X'];
+  // 發音：聽一個字，選唸起來一樣的字（er、ir、ur 一樣；ar、or 不一樣）
+  [['nurse', ['bird', 'park', 'fork'], 0], ['shirt', ['corn', 'her', 'star'], 1], ['turtle', ['car', 'horse', 'girl'], 2], ['park', ['farm', 'fork', 'purple'], 0],
+   ['corn', ['clerk', 'short', 'star'], 1], ['star', ['turn', 'sport', 'card'], 2], ['sister', ['purse', 'horse', 'arm'], 0], ['fork', ['bird', 'dark', 'storm'], 2]]
+    .forEach(([w, o, a]) => add({ id: 'ph2-' + w, tag: '聽音選同音', audio: w, prompt: 'Which word has the same sound?', options: o, answer: a,
+      explain: `${w} 跟 ${o[a]} 唸起來一樣。er、ir、ur 的發音相同；ar 和 or 不一樣。` }, '發音'));
+  // 發音：聽兩個字，發音一樣畫 O，不一樣畫 X（錄音時兩個字中間用 ... 停久一點，才不會黏在一起）
+  [['bird, nurse', 1, 'bird 的 ir、nurse 的 ur 唸起來一樣，畫 O。'], ['car, corn', 0, 'car 的 ar 和 corn 的 or 不一樣，畫 X。'], ['her, purple', 1, 'her 的 er、purple 的 ur 一樣，畫 O。'],
+   ['park, star', 1, '都是 ar，畫 O。'], ['fork, farm', 0, 'fork 的 or 和 farm 的 ar 不一樣，畫 X。'], ['shirt, short', 0, 'shirt 的 ir 和 short 的 or 不一樣，畫 X。'],
+   ['horse, corn', 1, '都是 or，畫 O。'], ['clerk, card', 0, 'clerk 的 er 和 card 的 ar 不一樣，畫 X。']]
+    .forEach(([pair, same, e], i) => add({ id: 'phox-' + i, tag: '聽音判斷 O/X', audio: pair.replace(', ', ' ... '), prompt: 'Listen to the two words. Same sound → O. Different sound → X.', options: OX, answer: same ? 0 : 1, fixed: true, explain: e }, '發音'));
+  // 發音：長母音複習（康軒題庫的 Unit 1 也考 ai、ay、ea、ee）
+  [['rain', 'ai', ['ai', 'ee', 'oa']], ['play', 'ay', ['ay', 'ee', 'ow']], ['leaf', 'ea', ['ea', 'ai', 'oa']], ['tree', 'ee', ['ee', 'ai', 'oo']], ['sheep', 'ee', ['ee', 'ai', 'oa']], ['tea', 'ea', ['ea', 'ay', 'oo']]]
+    .forEach(([w, pat, o]) => add({ id: 'ph3-' + w, tag: '聽音辨字', audio: w, show: phonicsMask(w, pat), prompt: 'Which letters are missing?', options: o, answer: 0,
+      explain: `${w} 的 ${pat}。ai、ay 唸 /e/，ea、ee 唸 /i/。` }, '發音'));
+  // 聽力：聽一句話，選出聽到的字
+  [['Mia has a toothache today.', ['toothache', 'headache', 'stomachache']], ['Ben is from Canada.', ['Canada', 'India', 'Japan']],
+   ['Does your dad have a sore throat?', ['sore throat', 'runny nose', 'cough']], ['Yui and Haruto are from Japan.', ['Japan', 'France', 'Taiwan']],
+   ['My sister has a fever.', ['fever', 'cold', 'cough']], ["Leo isn't from the USA.", ['the USA', 'the UK', 'Australia']]]
+    .forEach(([a, o], i) => add({ id: 'lw-' + i, tag: '聽句選字', audio: a, prompt: 'Which word do you hear?', options: o, answer: 0 }, '聽力'));
+  // 聽力：聽一段對話（一男一女），回答問題
+  [["W: What's wrong, Tom?\nM: I have a cough and a runny nose.\nQ: What's wrong with Tom?", ['He has a cough and a runny nose.', 'He has a cough and a fever.', 'He has a headache.']],
+   ["M: Where are you from, Lisa?\nW: I'm from Australia. My friend Ken is from Japan.\nQ: Where is Ken from?", ['Japan', 'Australia', 'Canada']],
+   ["W: Does your brother have a fever?\nM: No, he doesn't. He has a stomachache.\nQ: What's wrong with the man's brother?", ['He has a stomachache.', 'He has a fever.', 'He has a toothache.']],
+   ["M: Is Sophie from France?\nW: No, she's not. She's from Canada.\nQ: Where is Sophie from?", ['Canada', 'France', 'India']],
+   ["W: I have a headache. Do you have a headache, too?\nM: No, I don't. I have a sore throat.\nQ: What's wrong with the man?", ['He has a sore throat.', 'He has a headache.', 'He has a cold.']]]
+    .forEach(([a, o], i) => add({ id: 'ld-' + i, tag: '聽對話選答', audio: a, prompt: 'Listen to the conversation and answer the question.', options: o, answer: 0 }, '聽力'));
+  // 單字：選出不同類的字
+  [[['Japan', 'India', 'fever'], 2, 'Japan、India 是國家，fever 是身體不舒服。'], [['cough', 'headache', 'Canada'], 2, 'cough、headache 是身體不舒服，Canada 是國家。'],
+   [['France', 'toothache', 'Australia'], 1, 'France、Australia 是國家，toothache 是身體不舒服。'], [['cold', 'the UK', 'sore throat'], 1, 'cold、sore throat 是身體不舒服，the UK 是國家。'],
+   [['Taiwan', 'runny nose', 'the USA'], 1, 'Taiwan、the USA 是國家，runny nose 是身體不舒服。']]
+    .forEach(([o, a, e], i) => add({ id: 'odd-' + i, tag: '選出不同類', prompt: 'Which word is different from the other two?', options: o, answer: a, explain: e }, 'R1'));
+  // 看圖：圖和句子相符畫 O，不符畫 X（👦 男生、👧 女生，旁邊的 emoji 是哪裡不舒服）
+  [['👦🤒', 'He has a fever.', 1, ''], ['👧🦷', 'She has a headache.', 0, '圖是牙痛（toothache），不是頭痛。'], ['👦🤕', 'She has a headache.', 0, '圖是男生，要用 he。'],
+   ['👧🤧', 'She has a cold.', 1, ''], ['👦👧😷', 'They have a cough.', 1, ''], ['👧🤢', 'She has a toothache.', 0, '圖是肚子痛（stomachache），不是牙痛。'],
+   ['👦🦷', 'He has a toothache.', 1, ''], ['👦👧🤒', 'They have a stomachache.', 0, '圖是發燒（fever），不是肚子痛。']]
+    .forEach(([scene, s, ok, e], i) => add({ id: 'pox-' + i, tag: '看圖判斷 O/X', scene, prompt: s, options: OX, answer: ok ? 0 : 1, fixed: true, explain: e || '圖和句子相符，畫 O。' }, 'U2'));
+  // 看圖：選出跟圖一樣的句子
+  [['👧🤒', ['She has a fever.', 'He has a fever.', 'She has a cough.']], ['👦🦷', ['He has a toothache.', 'He has a headache.', 'She has a toothache.']],
+   ['👦👧🤧', ['They have a cold.', 'They has a cold.', 'We have a fever.']], ['👦🤢', ['He has a stomachache.', 'He have a stomachache.', 'He has a sore throat.']]]
+    .forEach(([scene, o], i) => add({ id: 'pch-' + i, tag: '看圖選句', scene, prompt: 'Which sentence matches the picture?', options: o, answer: 0, explain: '先看是男生、女生還是兩個人，再看哪裡不舒服；he、she 用 has，they 用 have。' }, 'U2'));
+  // 看圖：選出圖代表的單字
+  [['🤒', ['fever', 'cough', 'toothache']], ['🤕', ['headache', 'stomachache', 'runny nose']], ['🦷', ['toothache', 'headache', 'cold']], ['🤢', ['stomachache', 'toothache', 'fever']]]
+    .forEach(([scene, o], i) => add({ id: 'pw-' + i, tag: '看圖選單字', scene, prompt: "What's wrong?", options: o, answer: 0 }, 'U2'));
+  // 對話填空：讀對話，寫出空格的字
+  [["A: Where ___ Raj from?\nB: He's from India.", 'is', 'U1', 'Raj 是一個人（he），用 is。'],
+   ["A: Is Emma from Canada?\nB: No, she's ___. She's from the UK.", 'not', 'U1', "否定的簡答：No, she's not."],
+   ["A: ___ are you from?\nB: I'm from Taiwan.", 'Where', 'U1', '問「從哪裡來」用 Where，句首要大寫。'],
+   ['A: Are Yui and Haruto from Japan?\nB: Yes, ___ are.', 'they', 'U1', '兩個人用 they。'],
+   ["A: What's wrong?\nB: I ___ a headache.", 'have', 'U2', 'I 用 have。'],
+   ['A: Does Ben have a cough?\nB: Yes, he ___.', 'does', 'U2', 'Does 問，就用 does 答。'],
+   ["A: What's wrong with Amy?\nB: She ___ a fever.", 'has', 'U2', 'she 用 has。'],
+   ['A: Do you have a cold?\nB: No, I ___.', "don't", 'U2', "Do 問，就用 don't 答。"]]
+    .forEach(([ctx, w, u, e], i) => add({ id: 'fill-' + i, type: 'spell', noAudio: true, tag: '對話填空', ctx, word: w, show: [...w].map((c, j) => (j === 0 || c === "'" ? c : '_')).join(' '), explain: e }, u));
+  // 閱讀測驗：讀短文或對話，選出答案
+  const RC1 = "Hello! My name is Ana. I'm from Brazil, but now I live in Taipei with my family. My best friend at school is Mei. She's from Taiwan. Today Mei isn't at school. She has a fever and a cough. After school, I want to visit her with some fruit.";
+  [['Where is Ana from?', ['Brazil.', 'Taiwan.', 'Japan.']], ["Why isn't Mei at school today?", ['She has a fever and a cough.', 'She has a toothache.', 'She is in Brazil.']],
+   ['What does Ana want to do after school?', ['Visit Mei.', 'Go to Brazil.', 'Buy some medicine.']]]
+    .forEach(([q, o], i) => add({ id: 'rc1-' + i, tag: '閱讀測驗', passage: RC1, prompt: q, options: o, answer: 0 }, '閱讀'));
+  const RC2 = "Doctor: Hello, Max. What's wrong?\nMax: I have a stomachache.\nDoctor: Do you have a fever, too?\nMax: No, I don't. But my little sister has a fever.\nDoctor: Oh, no. Is she here today?\nMax: No, she's at home with my dad.";
+  [["What's wrong with Max?", ['He has a stomachache.', 'He has a fever.', 'He has a headache.']], ['Who has a fever?', ["Max's sister.", 'Max.', "Max's dad."]],
+   ["Where is Max's sister?", ['At home.', 'At school.', 'At the doctor\'s.']]]
+    .forEach(([q, o], i) => add({ id: 'rc2-' + i, tag: '閱讀測驗', passage: RC2, prompt: q, options: o, answer: 0 }, '閱讀'));
+  // 克漏字：一篇短文 4 個空格
+  const CZ = "Hi, I'm Kevin. I'm from the USA. My new classmates (1)___ from Japan and India. Today my classmate Yui is not at school. She (2)___ a cold and a sore throat. My friend Raj is at school, but his head hurts. \"(3)___ you OK, Raj?\" I ask. \"No, I'm not. I have a headache,\" he says. (4)___ he have a fever? No, he doesn't.";
+  [[['is', 'am', 'are'], 2, 'classmates 是很多人，用 are。'], [['have', 'has', 'is'], 1, 'she 用 has。'], [['Is', 'Are', 'Do'], 1, 'you 用 Are。'], [['Do', 'Does', 'Is'], 1, 'he 用 Does。']]
+    .forEach(([o, a, e], i) => add({ id: 'cz-' + (i + 1), tag: '克漏字', passage: CZ, noRead: true, prompt: `Choose the best answer for (${i + 1}).`, options: o, answer: a, fixed: true, explain: e }, '閱讀'));
 });
 
 /* ---------------- 六上・康軒 Wonder World 7・第二次段考（Unit 3–4＋Review 2） ---------------- */
