@@ -2208,6 +2208,7 @@ async function startStudent(sid) {
 }
 /* ==========================================================
    這段在做什麼：訪客練習（網址最後加 #guest）：不用登入、不用學生資料，打開就能刷題
+   有兩個分頁：刷題、上課內容（段考城堡的複習課，一關一關自己練）。
    #guest=kh5a-1 直接打開那一份題庫。成績和錯題本只存在這台電腦的瀏覽器，不會上傳，老師看不到
    ========================================================== */
 function startGuest(bankId) {
@@ -2215,32 +2216,35 @@ function startGuest(bankId) {
   state.student = { id: 'guest', name: '訪客' };
   state.me = { student: { name: '訪客' }, sessions: [], homework: [], practice: LS.get('guest:practice', {}) };
   // 原本要存到雲端的，改成只存在瀏覽器
-  Cloud.savePractice = () => { LS.set('guest:practice', state.me.practice); return Promise.resolve(); };
+  Cloud.savePractice = () => {
+    const keep = Object.entries(state.me.practice).filter(([id]) => id.startsWith('drill_'));  // 上課內容的練習不留，只留刷題成績和錯題本
+    LS.set('guest:practice', Object.fromEntries(keep)); return Promise.resolve();
+  };
   Cloud.log = () => Promise.resolve();
   Cloud.touch = () => Promise.resolve();
-  if (bankId && BANKS[bankId]) goDrillHome(bankId); else go('shome', 'drill');
+  if (bankId && BANKS[bankId]) goDrillHome(bankId); else go('shome', bankId === 'class' ? 'class' : 'drill');  // #guest=class 直接打開上課內容
 }
 function activeHomework() {
   const a = state.me.student && state.me.student.homeworkActive;
   return (a && state.me.homework.find(x => x.id === a.hwId)) || null;
 }
 function viewSHome() {
-  const st = state.student, hw = activeHomework(), tab = state.guest ? 'drill' : state.tab || 'hw';
-  const tabs = state.guest ? [['drill', '刷題']] : [['hw', '回家任務'], ['drill', '刷題'], ['class', '上課內容'], ['report', '我的報告']];
+  const st = state.student, hw = activeHomework(), tab = state.guest ? (state.tab === 'class' ? 'class' : 'drill') : state.tab || 'hw';
+  const tabs = state.guest ? [['drill', '刷題'], ['class', '上課內容']] : [['hw', '回家任務'], ['drill', '刷題'], ['class', '上課內容'], ['report', '我的報告']];
   return h('div', null,
     h('div', { class: 's-hero' },
       h('div', null,
         h('p', { class: 'eyebrow' }, 'English Isle'),
         h('h1', { class: 'h1' }, state.guest ? '英語島・訪客練習' : `${st.name} 的英語島`),
-        h('p', { class: 'lede' }, state.guest ? '不用登入，選一份題庫就能開始刷題。成績和錯題本只存在這台電腦，換電腦或清除瀏覽器資料就會不見。'
+        h('p', { class: 'lede' }, state.guest ? '不用登入就能練習：「刷題」做段考題型，「上課內容」用口說複習段考。刷題成績和錯題本只存在這台電腦，換電腦或清除瀏覽器資料就會不見。'
           : hw ? `下次上課前要完成「${hw.title}」，${fmtShort(hw.dueAt)} 截止。` : '目前沒有回家任務，可以到「上課內容」挑一關自由練習。'),
         Object.values(BANKS).some(B => drillInfo(B.id).assigned) ? h('p', { class: 'hw-note' }, h('span', { class: 'tag' }, '老師說'), '有指定的刷題題目，到「刷題」看看。') : null),
       state.guest ? null : h('div', { class: 's-map' }, islandMap(false))),
     h('nav', { class: 'tabs', 'aria-label': '我的島' }, tabs.map(([id, label], i) =>
       h('button', { class: 'tab', type: 'button', 'aria-current': String(tab === id), onclick: () => go('shome', id) },
         h('span', { class: 'tab-n' }, String(i + 1)), h('span', { class: 'tab-t' }, h('b', null, label))))),
-    tab === 'hw' ? sHomework(hw) : tab === 'drill' ? sDrill() : tab === 'class' ? sClasses() : sReports(),
-    state.guest ? null : h('details', { class: 'help', style: 'margin-top:22px' }, h('summary', null, '麥克風測試（第一次練習前先試一次）'), micTestPanel()));
+    tab === 'hw' ? sHomework(hw) : tab === 'drill' ? sDrill() : tab === 'class' ? (state.guest ? sGuestClasses() : sClasses()) : sReports(),
+    state.guest && tab === 'drill' ? null : h('details', { class: 'help', style: 'margin-top:22px' }, h('summary', null, '麥克風測試（第一次練習前先試一次）'), micTestPanel()));
 }
 function sHomework(hw) {
   if (!hw) return h('div', { class: 'empty' }, '目前沒有回家任務。可以到「上課內容」挑一關自由練習。');
@@ -2292,6 +2296,17 @@ function sReports() {
       h('div', { class: 'hist-pct' }, h('span', null, `${sm.candies} / ${sm.max} 顆糖・${sm.pct}%`), h('span', { class: 'bar' }, h('i', { style: `width:${sm.pct}%` }))),
       h('div', { class: 'hist-actions' }, h('button', { class: 'btn small primary', type: 'button', onclick: () => { state.reportSession = se; go('sreport'); } }, '看報告')));
   }));
+}
+
+/* 訪客的「上課內容」：段考城堡的每一堂複習課，每一關都可以自己練（不用老師先上過） */
+function sGuestClasses() {
+  const castle = ZONES.find(z => z.id === 'castle');
+  return h('div', { class: 'hw-cards' }, castle.lessons.map(id => LESSONS[id]).filter(Boolean).map(L =>
+    h('section', { class: 's-card' },
+      h('div', { class: 'zp-head' }, h('div', null, h('p', { class: 'eyebrow' }, L.level), h('h2', null, `${L.title} ${L.zh}`))),
+      h('div', { class: 'stage-list' }, L.stages.map(st => h('div', { class: 'stage-li' },
+        h('div', null, h('b', null, st.zh), h('span', { class: 'muted sm' }, ` ${st.title}・${st.items.length} 題`)),
+        h('button', { class: 'btn small primary', type: 'button', onclick: () => startFree({ lessonId: L.id, extra: [] }, st) }, '練習這一關')))))));
 }
 
 /* ==========================================================
@@ -2437,8 +2452,8 @@ function viewPracticeDone() {
     h('p', { class: 'eyebrow' }, D.kind === 'hw' ? '回家任務' : '自由練習'),
     h('h1', { class: 'h1' }, all ? 'Great job! 全部完成了' : `完成 ${D.done} / ${D.total} 題`),
     h('p', { class: 'earn' }, candyRow(3), `這次練習拿到 ${D.gained} 顆糖，總共 ${D.candies} 顆`),
-    h('p', { class: 'lede' }, `練習了 ${fmtMin(D.ms)}。${all ? '老師會看到你的練習紀錄。' : '還沒做完的題目，下次打開會從那裡繼續。'}`),
-    h('div', { class: 'lc-actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => go('shome', 'hw') }, '回我的島')));
+    h('p', { class: 'lede' }, state.guest ? `練習了 ${fmtMin(D.ms)}。` : `練習了 ${fmtMin(D.ms)}。${all ? '老師會看到你的練習紀錄。' : '還沒做完的題目，下次打開會從那裡繼續。'}`),
+    h('div', { class: 'lc-actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => go('shome', state.guest ? 'class' : 'hw') }, state.guest ? '回上課內容' : '回我的島')));
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden' && state.view === 'practice') { Practice.flushTime(); Practice.save(); }
