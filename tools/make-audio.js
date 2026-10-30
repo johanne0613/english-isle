@@ -35,6 +35,11 @@ const ROLES = {
   nurse: { voice: 'Achernar', edge: 'en-US-MichelleNeural', edgeRate: '-8%', who: 'Nurse Lin, a gentle school nurse.', style: 'calm, kind and caring, speaking slowly to a sick child.' },
   waiter: { voice: 'Iapetus', edge: 'en-US-BrianNeural', who: 'A polite restaurant waiter.', style: 'polite, clear and friendly.' },
   grandma: { voice: 'Gacrux', edge: 'en-US-AriaNeural', edgeRate: '-12%', edgePitch: '-6Hz', who: 'A loving grandma calling her grandchild on the phone.', style: 'warm, gentle and a little slow.' },
+  // 段考城堡 WW9（六上）的情境對話
+  classmate: { voice: 'Leda', edge: 'en-US-AnaNeural', who: 'Emma, a cheerful 12-year-old girl talking to her classmate on Monday morning.', style: 'bright, friendly and natural, like a kid chatting at school.' },
+  dad: { voice: 'Umbriel', edge: 'en-US-SteffanNeural', who: 'A kind dad who just came home from a business trip, talking to his child.', style: 'warm, relaxed and clear.' },
+  uncle: { voice: 'Sadachbia', edge: 'en-US-GuyNeural', who: 'Uncle Sam, a cheerful American uncle on a video call with his niece or nephew in Taiwan.', style: 'lively, happy and clear.' },
+  tourist: { voice: 'Callirrhoe', edge: 'en-US-EmmaNeural', who: 'A friendly tourist visiting Taiwan for the first time, asking a child for directions.', style: 'polite, a little unsure, clear and friendly.' },
   // 英檢山：Flyers 口說的考官（英國腔）、GEPT 聽力的旁白（唸題目）、GEPT 對話（一男一女，M: / W:）
   examiner: { voice: 'Erinome', edge: 'en-GB-SoniaNeural', who: 'Ms. Erin, a friendly Cambridge English speaking examiner from London, with a clear British English accent.', style: 'kind, encouraging and clear, at a calm pace, talking to a 10-year-old candidate in a speaking test.' },
   narrator: { voice: 'Charon', edge: 'en-US-ChristopherNeural', who: 'The narrator of an English listening test for children.', style: 'neutral, clear and steady, at a calm pace, like reading test questions aloud.' },

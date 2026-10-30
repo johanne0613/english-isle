@@ -270,6 +270,340 @@ addBank({
   ['pizza', 'rice', 'soup', 'steak', 'noodles', 'lunch', 'dinner', 'breakfast', 'home', 'school']
     .forEach((w, i) => add({ id: 'sp-' + w, type: 'spell', tag: '聽寫拼字', word: w, show: spellMask(w) }, i < 5 ? 'U3' : 'U4'));
 });
+
+/* ---------------- 六上（新北）・康軒 Wonder World 9・第一次段考（Unit 1–2＋Review 1） ---------------- */
+addBank({
+  id: 'kh6a-1', title: '六上 第一次段考', sub: '康軒 Wonder World 9・Unit 1–2＋Review 1',
+  grade: 6, term: '上', publisher: '康軒', book: 'Wonder World 9', exam: 1, lessonId: 'ww9t1'
+}, add => {
+  // Unit 1 是規則動詞過去式（加 -ed），Unit 2 是不規則的 did、had、went。
+  // 出題原則同上：答案都在題目的英文裡。描述題不用看圖猜，讀英文描述再選。
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const other = g => (g === 'he' ? 'she' : 'he');
+  const kid = g => (g === 'he' ? '👦' : '👧');
+  const posOf = g => (g === 'he' ? 'his' : 'her');
+  const my = (x, g) => x.replace('my ', posOf(g) + ' ');  // visited my grandparents → visited his grandparents
+  // v 原形、s 現在式（he / she）、p 過去式
+  const A = [
+    { v: 'clean the room', s: 'cleans the room', p: 'cleaned the room' },
+    { v: 'cook dinner', s: 'cooks dinner', p: 'cooked dinner' },
+    { v: 'play the recorder', s: 'plays the recorder', p: 'played the recorder' },
+    { v: 'visit my grandparents', s: 'visits my grandparents', p: 'visited my grandparents' },
+    { v: 'walk the dog', s: 'walks the dog', p: 'walked the dog' },
+    { v: 'watch a movie', s: 'watches a movie', p: 'watched a movie' },
+    { v: 'listen to music', s: 'listens to music', p: 'listened to music' },
+    { v: 'water the flowers', s: 'waters the flowers', p: 'watered the flowers' }];
+  const B = [
+    { v: 'do the dishes', s: 'does the dishes', p: 'did the dishes' },
+    { v: 'do the laundry', s: 'does the laundry', p: 'did the laundry' },
+    { v: 'have breakfast', s: 'has breakfast', p: 'had breakfast' },
+    { v: 'have lunch', s: 'has lunch', p: 'had lunch' },
+    { v: 'have dinner', s: 'has dinner', p: 'had dinner' },
+    { v: 'go shopping', s: 'goes shopping', p: 'went shopping' },
+    { v: 'go swimming', s: 'goes swimming', p: 'went swimming' },
+    { v: 'do my homework', s: 'does my homework', p: 'did my homework' }];
+  const K = [['Kevin', 'he'], ['Emma', 'she'], ['Ben', 'he'], ['Amy', 'she'], ['Leo', 'he'], ['Mia', 'she'], ['Tom', 'he'], ['Lily', 'she']];
+  const T = ['yesterday', 'last night', 'last Friday', 'this morning', 'an hour ago', 'last weekend', 'last Sunday', 'yesterday'];
+  const TD = ['last Friday', 'last night', 'an hour ago', 'last weekend', 'last Sunday', 'yesterday', 'yesterday', 'this morning'];  // Did 題的時間（不會出現「今天早上煮晚餐」）
+
+  // Unit 1・讀描述選做了什麼（描述裡不出現答案的動詞）
+  const D1 = [
+    (n, P, pos) => `${n}'s room was messy. ${P} put away ${pos} toys and books.`,
+    (n, P, pos) => `It was six in the evening. ${n} made rice and soup for ${pos} family.`,
+    (n, P) => `${n} practiced a song for music class. ${P} used a long, thin instrument.`,
+    (n, P) => `${n} went to Grandpa and Grandma's house. ${P} had lunch with them.`,
+    (n, P, pos) => `${n} and ${pos} dog, Lucky, went to the park. Lucky ran and played there.`,
+    (n, P) => `${n} sat in a dark room with some popcorn. ${P} saw a funny film on a big screen.`,
+    (n, P, pos) => `${n} put on ${pos} headphones. ${P} enjoyed ${pos} favorite songs.`,
+    n => `The flowers in the garden were dry. ${n} gave them some water.`];
+  const DIS1 = [[1, 5], [0, 4], [4, 7], [5, 1], [3, 6], [2, 0], [7, 1], [6, 4]];
+  A.forEach((a, i) => {
+    const [n, g] = K[i], P = cap(g), pos = posOf(g);
+    add({ id: 'u1-def-' + i, tag: '情境選答', pic: kid(g), ctx: D1[i](n, P, pos), prompt: `What did ${n} do yesterday?`,
+      options: [`${P} ${my(a.p, g)}.`, `${P} ${my(A[DIS1[i][0]].p, g)}.`, `${P} ${my(A[DIS1[i][1]].p, g)}.`, `${P} ${my(a.s, g)}.`], answer: 0,
+      explain: `讀描述判斷是 ${a.p.replace('my ', pos + ' ')}；昨天的事，動詞用過去式。` }, 'U1');
+  });
+  // Unit 1・What did … do?（把 I 換成 he / she，動詞維持過去式）
+  A.forEach((a, i) => {
+    const [n, g] = K[(i + 3) % 8], P = cap(g), t = T[i];
+    add({ id: 'u1-what-' + i, tag: '對話選答', pic: kid(g), ctx: `${n}: I ${a.p} ${t}.`, prompt: `What did ${n} do ${t}?`,
+      options: [`${P} ${my(a.p, g)}.`, `${cap(other(g))} ${my(a.p, other(g))}.`, `${P} ${my(a.s, g)}.`, `Yes, ${g} did.`], answer: 0,
+      explain: `${n} 說 I ${a.p}。別人問的時候換成 ${P} ${my(a.p, g)}.，動詞還是過去式。` }, 'U1');
+  });
+  // Unit 1・Did … ? 簡答
+  A.forEach((a, i) => {
+    const [n, g] = K[(i + 5) % 8], P = cap(g), t = TD[i], b = A[(i + 3) % 8], yes = i % 2 === 0;
+    add({ id: 'u1-did-' + i, tag: '對話選答', pic: kid(g), ctx: yes ? `${n}: I ${a.p} ${t}.` : `${n}: I didn't ${a.v} ${t}. I ${b.p}.`, prompt: `Did ${n} ${my(a.v, g)} ${t}?`,
+      options: yes ? [`Yes, ${g} did.`, `No, ${g} didn't.`, `Yes, ${g} does.`, `Yes, ${other(g)} did.`]
+        : [`No, ${g} didn't. ${P} ${my(b.p, g)}.`, `Yes, ${g} did.`, `No, ${g} doesn't. ${P} ${my(b.p, g)}.`, `No, ${g} didn't. ${P} ${my(b.s, g)}.`],
+      answer: 0, explain: "Did 開頭的問句，用 did / didn't 回答；過去的事，動詞用過去式。" }, 'U1');
+  });
+  // Unit 1・現在式還是過去式？（看時間的字）
+  [['I ___ the dog every morning.', ['walk', 'walks', 'walked'], 0, 'every morning 是每天的習慣，用現在式；I 後面不加 s。'],
+   ['Kevin ___ a movie last night.', ['watch', 'watches', 'watched'], 2, 'last night 是過去，用 watched。'],
+   ['My dad ___ dinner every Sunday.', ['cook', 'cooks', 'cooked'], 1, 'every Sunday 是習慣，用現在式；my dad 是 he，加 s。'],
+   ['We ___ our grandparents last weekend.', ['visit', 'visits', 'visited'], 2, 'last weekend 是過去，用 visited。'],
+   ['Amy ___ the recorder an hour ago.', ['play', 'plays', 'played'], 2, 'an hour ago（一小時前）是過去，用 played。'],
+   ['They ___ the room on Fridays.', ['clean', 'cleans', 'cleaned'], 0, 'on Fridays 是每個星期五，用現在式；they 後面不加 s。'],
+   ['Emma ___ to music yesterday.', ['listen', 'listens', 'listened'], 2, 'yesterday 是過去，用 listened。'],
+   ['My grandma ___ the flowers every day.', ['water', 'waters', 'watered'], 1, 'every day 是習慣，用現在式；my grandma 是 she，加 s。'],
+   ['I ___ TV this morning.', ['watch', 'watches', 'watched'], 2, 'this morning 已經過去了，用 watched。'],
+   ['Ben ___ the dog last Friday.', ['walk', 'walks', 'walked'], 2, 'last Friday 是過去，用 walked。']]
+    .forEach(([s, o, a, e], i) => add({ id: 'u1-tense-' + i, tag: '文法選擇', prompt: s, options: o, answer: a, explain: e }, 'U1'));
+  [['___ you clean the room yesterday?', ['Do', 'Does', 'Did', 'Are'], 2, 'yesterday 是過去，問句用 Did。'],
+   ['What ___ Emma do last night?', ['do', 'does', 'did', 'is'], 2, 'last night 是過去，用 did。'],
+   ['Did he walk the dog? No, he ___.', ["don't", "doesn't", "didn't", "isn't"], 2, "Did 問，就用 didn't 答。"],
+   ['Did you ___ a movie last night?', ['watch', 'watched', 'watches', 'watching'], 0, 'Did 後面的動詞用原形，不加 -ed。'],
+   ["She didn't ___ dinner yesterday.", ['cook', 'cooked', 'cooks', 'cooking'], 0, "didn't 後面的動詞用原形。"],
+   ['Did they visit their grandparents? Yes, they ___.', ['do', 'did', 'are', 'does'], 1, 'Did 問，就用 did 答。']]
+    .forEach(([s, o, a, e], i) => add({ id: 'u1-dq-' + i, tag: '文法選擇', prompt: s, options: o, answer: a, explain: e }, 'U1'));
+
+  // Unit 2・讀描述選做了什麼
+  const D2 = [
+    n => `After dinner, ${n} washed the plates, bowls, and chopsticks.`,
+    (n, P, pos) => `${n} put ${pos} dirty clothes in the washing machine.`,
+    n => `It was seven in the morning. ${n} ate eggs and toast.`,
+    n => `It was twelve o'clock. ${n} ate rice and fish at school.`,
+    (n, P, pos) => `It was six thirty in the evening. ${n} ate noodles with ${pos} family.`,
+    (n, P) => `${n} went to the mall. ${P} bought a new T-shirt and some shoes.`,
+    (n, P) => `${n} jumped into the pool. ${P} swam for an hour.`];
+  const DIS2 = [[1, 6], [0, 5], [4, 6], [2, 5], [3, 1], [6, 0], [5, 1]];
+  D2.forEach((d, i) => {
+    const b = B[i], [n, g] = K[(i + 1) % 8], P = cap(g), pos = posOf(g);
+    add({ id: 'u2-def-' + i, tag: '情境選答', pic: kid(g), ctx: d(n, P, pos), prompt: `What did ${n} do?`,
+      options: [`${P} ${b.p}.`, `${P} ${B[DIS2[i][0]].p}.`, `${P} ${B[DIS2[i][1]].p}.`, `${P} ${b.s}.`], answer: 0,
+      explain: `讀描述判斷是 ${b.p}。${b.v.split(' ')[0]} 的過去式是 ${b.p.split(' ')[0]}。` }, 'U2');
+  });
+  // Unit 2・What time did …?（看他昨天的時間表）
+  const TM = [['7:30', 'seven thirty', 'eight thirty'], ['9:00', 'nine', 'ten'], ['6:45', 'six forty-five', 'seven forty-five'], ['12:15', 'twelve fifteen', 'twelve fifty'],
+    ['6:00', 'six', 'seven'], ['3:00', 'three', 'two'], ['4:30', 'four thirty', 'five thirty'], ['8:00', 'eight', 'nine']];
+  B.forEach((b, i) => {
+    const [n, g] = K[i], P = cap(g), [clock, t, wrong] = TM[i];
+    add({ id: 'u2-time-' + i, tag: '對話選答', pic: kid(g), ctx: `${n}'s day yesterday:\n${my(b.v, g)} — ${clock}`, prompt: `What time did ${n} ${my(b.v, g)} yesterday?`,
+      options: [`${P} ${my(b.p, g)} at ${t}.`, `${P} ${my(b.s, g)} at ${t}.`, `${P} ${my(b.p, g)} at ${wrong}.`, `Yes, ${g} did.`], answer: 0,
+      explain: `${clock} 唸作 ${t}；昨天的事，${b.v.split(' ')[0]} 要變 ${b.p.split(' ')[0]}。` }, 'U2');
+  });
+  [['Your day yesterday:\nhave lunch — 12:00', 'What time did you have lunch yesterday?', 'I had lunch at twelve.', ['I have lunch at twelve.', 'I had lunch at two.', 'Yes, I did.']],
+   ['Your day yesterday:\ngo swimming — 5:30', 'What did you do at five thirty yesterday?', 'I went swimming.', ['I go swimming.', 'I went shopping.', "No, I didn't."]],
+   ['Your day yesterday:\ndo the dishes — 7:00', 'Did you do the dishes at seven yesterday?', 'Yes, I did.', ['Yes, I do.', "No, I didn't.", 'Yes, I am.']],
+   ['Your day yesterday:\ndo the laundry — 10:00', 'Did you do the laundry at nine yesterday?', "No, I didn't. I did the laundry at ten.", ['Yes, I did.', "No, I don't. I do the laundry at ten.", "No, I didn't. I did the laundry at nine."]]]
+    .forEach(([ctx, q, a, d], i) => add({ id: 'u2-you-' + i, tag: '對話選答', pic: '🗓️', ctx, prompt: q, options: [a, ...d], answer: 0, explain: '看時間表回答；昨天的事用過去式，Did 問就用 did / didn\'t 答。' }, 'U2'));
+  // Unit 2・do / have / go 的過去式
+  [['I ___ the dishes after dinner last night.', ['do', 'does', 'did'], 2, 'last night 是過去，do 的過去式是 did。'],
+   ['My mom ___ the laundry every Sunday.', ['do', 'does', 'did'], 1, 'every Sunday 是習慣，用現在式；my mom 是 she，用 does。'],
+   ['We ___ lunch at school yesterday.', ['have', 'has', 'had'], 2, 'yesterday 是過去，have 的過去式是 had。'],
+   ['Ben ___ breakfast at seven every day.', ['have', 'has', 'had'], 1, 'every day 是習慣，用現在式；Ben 是 he，用 has。'],
+   ['They ___ swimming last Saturday.', ['go', 'goes', 'went'], 2, 'last Saturday 是過去，go 的過去式是 went。'],
+   ['Amy ___ shopping on Sundays.', ['go', 'goes', 'went'], 1, 'on Sundays 是每個星期日，用現在式；Amy 是 she，用 goes。'],
+   ['I ___ dinner at six thirty yesterday.', ['have', 'has', 'had'], 2, 'yesterday 是過去，用 had。'],
+   ['He ___ his homework an hour ago.', ['do', 'does', 'did'], 2, 'an hour ago 是過去，用 did。'],
+   ['What time did you ___ home?', ['go', 'goes', 'went'], 0, 'did 後面的動詞用原形 go。'],
+   ['Did she ___ the laundry this morning?', ['do', 'does', 'did'], 0, 'Did 後面的動詞用原形 do。']]
+    .forEach(([s, o, a, e], i) => add({ id: 'u2-irr-' + i, tag: '文法選擇', prompt: s, options: o, answer: a, explain: e }, 'U2'));
+  [['👧', 'Mia: I went swimming yesterday afternoon.', 'Did Mia go swimming yesterday?', 'Yes, she did.', ['Yes, she does.', 'Yes, he did.', "No, she didn't."]],
+   ['👦', "Ken: I didn't do the dishes. I did the laundry.", 'Did Ken do the dishes?', "No, he didn't. He did the laundry.", ["No, he doesn't. He did the laundry.", 'Yes, he did.', "No, he didn't. He does the laundry."]],
+   ['🙂', 'You: I had lunch at 12:00.', 'Did you have lunch at twelve thirty?', "No, I didn't. I had lunch at twelve.", ['Yes, I did.', "No, I don't. I have lunch at twelve.", "No, I didn't. I had lunch at twelve thirty."]],
+   ['👦👧', 'Tom and Amy: We went shopping last Sunday.', 'Did Tom and Amy go shopping last Sunday?', 'Yes, they did.', ['Yes, they do.', 'Yes, we did.', "No, they didn't."]],
+   ['👧', 'Lily: I had breakfast at 6:30 this morning.', 'Did Lily have breakfast at seven this morning?', "No, she didn't. She had breakfast at six thirty.", ['Yes, she did.', "No, she doesn't. She has breakfast at six thirty.", "No, she didn't. She had breakfast at seven."]],
+   ['👦', 'Leo: I did my homework at 8:00 last night.', 'What time did Leo do his homework?', 'He did his homework at eight.', ['He does his homework at eight.', 'He did his homework at nine.', 'Yes, he did.']]]
+    .forEach(([pic, ctx, q, a, d], i) => add({ id: 'u2-short-' + i, tag: '對話選答', pic, ctx, prompt: q, options: [a, ...d], answer: 0, explain: "Did 問句用 did / didn't 回答；過去的事，動詞用過去式（did、had、went）。" }, 'U2'));
+
+  // 發音（聽力）：-ed 的三種唸法，選項固定是 played（/d/）、cooked（/t/）、visited（/ɪd/）
+  const ED = [['d', ['listened', 'rained', 'stayed', 'cleaned', 'called']], ['t', ['helped', 'watched', 'laughed', 'walked', 'talked']], ['id', ['landed', 'shouted', 'invited', 'wanted', 'painted']]];
+  const EDX = { d: ['/d/', 'played'], t: ['/t/', 'cooked'], id: ['/ɪd/', 'visited'] };
+  ED.forEach(([k, words], a) => words.forEach(w => add({ id: 'ph-' + w, tag: '聽音辨字', audio: w, prompt: 'Which word has the same -ed sound?', options: ['played', 'cooked', 'visited'], answer: a, fixed: true,
+    explain: `${w} 的 -ed 唸 ${EDX[k][0]}，跟 ${EDX[k][1]} 一樣。${k === 'id' ? '字的最後是 t 或 d，-ed 就唸 /ɪd/。' : ''}` }, '發音')));
+  [['king', 'ing'], ['ring', 'ing'], ['sing', 'ing'], ['wing', 'ing'], ['long', 'ong'], ['strong', 'ong'], ['wrong', 'ong'], ['song', 'ong']]
+    .forEach(([w, pat]) => add({ id: 'ph-' + w, tag: '聽音辨字', audio: w, show: phonicsMask(w, pat), prompt: 'Which letters are missing?',
+      options: pat === 'ing' ? ['ing', 'ong', 'ang'] : ['ong', 'ing', 'ung'], answer: 0, explain: `${w} 的 ${pat}。-ing 跟 king 一樣，-ong 跟 long 一樣。` }, '發音'));
+  // 聽句子
+  [['Kevin cleaned the room yesterday.', 'What did Kevin do yesterday?', ['🧹 cleaned the room', '🍳 cooked dinner', '🐕 walked the dog']],
+   ['Emma played the recorder last night.', 'What did Emma do last night?', ['🎶 played the recorder', '🎬 watched a movie', '👵 visited her grandparents']],
+   ['I had lunch at twelve thirty.', 'What time did she have lunch?', ['12:30', '12:00', '2:30']],
+   ['We went swimming last Saturday.', 'What did they do last Saturday?', ['🏊 went swimming', '🛍️ went shopping', '🧺 did the laundry']],
+   ['My dad did the dishes after dinner.', 'What did her dad do after dinner?', ['🍽️ did the dishes', '🍲 had dinner', '🍳 cooked dinner']],
+   ['Ben went home at five yesterday.', 'What time did Ben go home yesterday?', ['5:00', '4:00', '5:30']]]
+    .forEach(([a, q, o], i) => add({ id: 'ls-' + i, tag: '聽句子', audio: a, prompt: q, options: o, answer: 0 }, '聽力'));
+  [['What did you do yesterday?', ['I visited my grandparents.', 'Yes, I did.', 'I visit my grandparents every Sunday.']],
+   ['Did you watch a movie last night?', ["No, I didn't.", "No, I don't.", 'Yes, I was.']],
+   ['What time did you have dinner?', ['I had dinner at seven.', 'I have dinner every day.', 'Yes, I did.']],
+   ['Did your mom cook dinner yesterday?', ['Yes, she did.', 'Yes, she does.', 'Yes, I did.']],
+   ['What did Ben do last weekend?', ['He went shopping.', 'He goes shopping.', "No, he didn't."]]]
+    .forEach(([a, o], i) => add({ id: 'lq-' + i, tag: '聽問句選回答', audio: a, prompt: 'Choose the best answer.', options: o, answer: 0 }, '聽力'));
+  // 閱讀（True / False / Not mentioned）
+  const R1 = "Amy: What did you do last weekend, Kevin?\nKevin: I visited my grandparents. I played the recorder for them.\nAmy: Did you walk your dog, too?\nKevin: No, I didn't. My sister walked the dog.\nAmy: I watched a movie with my mom.";
+  [['Kevin visited his grandparents.', 0], ['Kevin walked the dog.', 1], ["Amy's mom cooked dinner.", 2]]
+    .forEach(([s, a], i) => add({ id: 'rd1-' + i, tag: '閱讀判斷', passage: R1, prompt: s, options: TF, answer: a, explain: a === 2 ? '對話裡沒有提到，選 Not mentioned。' : a === 1 ? 'Kevin 說 No, I didn\'t.，遛狗的是他的姊姊或妹妹。' : '' }, '閱讀'));
+  const R2 = "Mom: Did you have lunch at school today, Leo?\nLeo: Yes, I did. I had noodles.\nMom: What time did you go swimming?\nLeo: I went swimming at four thirty.\nMom: Did you do your homework?\nLeo: Yes, I did it before dinner.";
+  [['Leo had noodles for lunch.', 0], ['Leo went swimming at four.', 1], ['Leo did the dishes after dinner.', 2]]
+    .forEach(([s, a], i) => add({ id: 'rd2-' + i, tag: '閱讀判斷', passage: R2, prompt: s, options: TF, answer: a, explain: a === 2 ? '對話沒有提到洗碗，選 Not mentioned。' : a === 1 ? 'Leo 是四點半（four thirty）去游泳。' : '' }, '閱讀'));
+  const R3 = 'Last Sunday was a busy day for Mia. She had breakfast at eight. Then she did the laundry with her dad. In the afternoon, she went shopping with her friends. She didn\'t cook dinner. Her brother cooked dinner, and it was yummy!';
+  [['Mia did the laundry last Sunday.', 0], ['Mia cooked dinner.', 1], ['Mia bought a new dress.', 2]]
+    .forEach(([s, a], i) => add({ id: 'rd3-' + i, tag: '閱讀判斷', passage: R3, prompt: s, options: TF, answer: a, explain: a === 2 ? '文章只說她去逛街，沒有說買了什麼，選 Not mentioned。' : a === 1 ? '煮晚餐的是她哥哥或弟弟。' : '' }, '閱讀'));
+  // 句子重組：看對話的另一半，排出空格那一句
+  [['What did you do yesterday?', 'A: ＿＿＿\nB: I walked the dog.'], ['I watched a movie last night.', 'A: What did you do last night?\nB: ＿＿＿'],
+   ['Did you clean the room?', "A: ＿＿＿\nB: No, I didn't. I cooked dinner."], ['She visited her grandparents.', 'A: What did Amy do last weekend?\nB: ＿＿＿'],
+   ['What time did you have breakfast?', 'A: ＿＿＿\nB: I had breakfast at seven.'], ['I went shopping with my mom.', 'A: What did you do yesterday afternoon?\nB: ＿＿＿'],
+   ['Did he go swimming yesterday?', 'A: ＿＿＿\nB: Yes, he did. He went with his dad.'], ['They did the dishes after dinner.', 'A: What did Tom and Ken do after dinner?\nB: ＿＿＿']]
+    .forEach(([a, ctx], i) => add({ id: 'od-' + i, type: 'order', tag: '句子重組', answer: a, ctx }, i < 4 ? 'U1' : 'U2'));
+  // 聽寫拼字：聽發音拼出來
+  ['cleaned', 'cooked', 'played', 'visited', 'watched', 'dishes', 'laundry', 'breakfast', 'lunch', 'shopping']
+    .forEach((w, i) => add({ id: 'sp-' + w, type: 'spell', tag: '聽寫拼字', word: w, show: spellMask(w) }, i < 5 ? 'U1' : 'U2'));
+});
+
+/* ---------------- 六上（新北）・康軒 Wonder World 9・第二次段考（Unit 3–4＋Review 2） ---------------- */
+addBank({
+  id: 'kh6a-2', title: '六上 第二次段考', sub: '康軒 Wonder World 9・Unit 3–4＋Review 2',
+  grade: 6, term: '上', publisher: '康軒', book: 'Wonder World 9', exam: 2, lessonId: 'ww9t2'
+}, add => {
+  // 課本 Unit 3 的景點是台灣真實地名，我們不考地理：只用 beach、lake 這類單字，答案都寫在題目裡。
+  // Unit 4 的地圖題：scene 是用 emoji 排的街道（上下兩排，中間是馬路），ctx 寫每個 emoji 是什麼地方。
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const other = g => (g === 'he' ? 'she' : 'he');
+  const kid = g => (g === 'he' ? '👦' : '👧');
+  const PL = [
+    { w: 'beach', d: "It's next to the sea. It has a lot of sand. People swim and play there." },
+    { w: 'forest', d: "It's a big place with a lot of tall trees. People go hiking there." },
+    { w: 'island', d: "It's land with water all around it. People go there by boat." },
+    { w: 'lake', d: "It's a lot of water with land all around it. People go biking around it." },
+    { w: 'mountain', d: "It's very, very high. It's hard to walk to the top." },
+    { w: 'river', d: 'It is long water. It moves across the land to the sea.' },
+    { w: 'hot spring', d: "It's hot water from under the ground. People sit in it on cold days." }];
+  const DIS3 = [[5, 2, 1], [4, 3, 0], [3, 0, 4], [2, 5, 6], [1, 2, 5], [3, 0, 6], [3, 5, 1]];
+  PL.forEach((p, i) => add({ id: 'u3-def-' + i, tag: '情境選答', ctx: p.d, prompt: 'What is it?', options: [p.w, ...DIS3[i].map(j => PL[j].w)], answer: 0 }, 'U3'));
+  // Unit 3・Where did … go?
+  const DO3 = ['We played in the sand.', 'We went hiking.', 'We went there by boat.', 'We went biking around it.', 'We walked to the top.', 'We went camping there.', 'The water was very warm.'];
+  const K = [['Kevin', 'he'], ['Emma', 'she'], ['Ben', 'he'], ['Amy', 'she'], ['Leo', 'he'], ['Mia', 'she'], ['Tom', 'he']];
+  const T = ['last Sunday', 'yesterday', 'last weekend', 'last Friday', 'last week', 'last Saturday', 'last night'];
+  PL.forEach((p, i) => {
+    const [n, g] = K[i], P = cap(g), t = T[i], q = PL[(i + 3) % 7].w;
+    add({ id: 'u3-where-' + i, tag: '對話選答', pic: kid(g), ctx: `${n}: I went to the ${p.w} ${t}. ${DO3[i]}`, prompt: `Where did ${n} go ${t}?`,
+      options: [`${P} went to the ${p.w}.`, `${P} goes to the ${p.w}.`, `${P} went to the ${q}.`, `Yes, ${g} did.`], answer: 0,
+      explain: `${n} 說 I went to the ${p.w}。別人問的時候換成 ${P} went to …，go 的過去式是 went。` }, 'U3');
+  });
+  // Unit 3・看行程表回答 Where / Did … go to …?
+  [{ n: 'Betty', g: 'she', rows: [['last Friday', 'island'], ['last Saturday', 'river'], ['last Sunday', 'hot spring']] },
+   { n: 'Andy', g: 'he', rows: [['last Monday', 'mountain'], ['last Wednesday', 'lake'], ['last weekend', 'beach']] },
+   { n: 'Zoe', g: 'she', rows: [['last Tuesday', 'lake'], ['last Thursday', 'forest'], ['last Saturday', 'beach']] }]
+    .forEach(({ n, g, rows }, k) => {
+      const P = cap(g), ctx = `${n}'s trips:\n` + rows.map(([t, w]) => `${cap(t)} — the ${w}`).join('\n');
+      const [[t0, w0], [t1, w1], [t2, w2]] = rows;
+      add({ id: `u3-trip-${k}-0`, tag: '對話選答', pic: kid(g), ctx, prompt: `Where did ${n} go ${t0}?`,
+        options: [`${P} went to the ${w0}.`, `${P} went to the ${w1}.`, `${P} goes to the ${w0}.`, `Yes, ${g} did.`], answer: 0, explain: `看行程表：${cap(t0)} — the ${w0}。` }, 'U3');
+      add({ id: `u3-trip-${k}-1`, tag: '對話選答', pic: kid(g), ctx, prompt: `Did ${n} go to the ${w1} ${t1}?`,
+        options: [`Yes, ${g} did.`, `No, ${g} didn't.`, `Yes, ${g} does.`, `Yes, ${other(g)} did.`], answer: 0, explain: `看行程表：${cap(t1)} — the ${w1}。Did 問，就用 did 答。` }, 'U3');
+      add({ id: `u3-trip-${k}-2`, tag: '對話選答', pic: kid(g), ctx, prompt: `Did ${n} go to the ${w1} ${t2}?`,
+        options: [`No, ${g} didn't. ${P} went to the ${w2}.`, `Yes, ${g} did.`, `No, ${g} doesn't. ${P} went to the ${w2}.`, `No, ${g} didn't. ${P} went to the ${w1}.`], answer: 0,
+        explain: `看行程表：${cap(t2)} — the ${w2}，所以答 No, ${g} didn't.` }, 'U3');
+    });
+  [['Where ___ you go last Sunday?', ['do', 'did', 'are', 'were'], 1, 'last Sunday 是過去，用 did。'],
+   ['I ___ to the lake yesterday.', ['go', 'goes', 'went', 'going'], 2, 'yesterday 是過去，go 要變 went。'],
+   ['My uncle ___ to the beach every summer.', ['go', 'goes', 'went', 'going'], 1, 'every summer 是每年的習慣，用現在式；my uncle 是 he，用 goes。'],
+   ['Did you go to the island? No, I ___.', ["don't", "didn't", "wasn't", "isn't"], 1, "Did 問，就用 didn't 答。"],
+   ['Did Amy go to the mountain last week? Yes, ___ did.', ['he', 'she', 'they', 'it'], 1, 'Amy 是女生，用 she。'],
+   ['We went hiking ___ the forest.', ['in', 'on', 'at', 'of'], 0, '在森林裡：in the forest。'],
+   ['They went camping ___ the river.', ['by', 'of', 'to', 'from'], 0, '在河邊：by the river。'],
+   ['Did they ___ to the hot spring last night?', ['go', 'went', 'goes', 'going'], 0, 'Did 後面的動詞用原形 go。'],
+   ["She ___ go to the beach last Sunday. It was rainy.", ["doesn't", "didn't", "don't", "isn't"], 1, "last Sunday 是過去，否定用 didn't。"],
+   ['___ did Kevin go last weekend? He went to the mountain.', ['What', 'Where', 'Who', 'When'], 1, '問「去哪裡」用 Where。']]
+    .forEach(([s, o, a, e], i) => add({ id: 'u3-g-' + i, tag: '文法選擇', prompt: s, options: o, answer: a, explain: e }, 'U3'));
+
+  // Unit 4・讀描述選地方
+  const PC = [
+    { w: 'convenience store', e: '🏪', d: "It's a small store. It's open twenty-four hours a day. You can buy snacks and pay bills there." },
+    { w: 'MRT station', e: '🚇', d: 'Many people wait for the train here. The train goes under the city.' },
+    { w: 'science museum', e: '🦖', d: 'You can learn about dinosaurs, space, and robots here.' },
+    { w: 'tea shop', e: '🧋', d: 'You can buy cold drinks like bubble tea here.' },
+    { w: 'bakery', e: '🥖', d: 'You can buy bread and cakes here.' },
+    { w: 'bookstore', e: '📖', d: 'This store sells only books. You can find storybooks and comic books here.' },
+    { w: 'hospital', e: '🏥', d: 'Doctors and nurses work here. Sick people go here.' },
+    { w: 'library', e: '📚', d: 'You can borrow books here, but you must give them back.' },
+    { w: 'post office', e: '🏣', d: 'You can buy stamps and send letters here.' },
+    { w: 'supermarket', e: '🛒', d: "It's a big store. You can buy meat, fruit, and milk here." },
+    { w: 'movie theater', e: '🎬', d: 'You can watch a movie on a big screen here.' },
+    { w: 'park', e: '🌳', d: 'It has grass, trees, and a playground. Kids play here.' }];
+  // 干擾選項避開說法也通的地方（例如便利商店也能寄包裹、買雜誌）
+  const DIS4 = [[1, 4, 7], [2, 5, 8], [3, 6, 9], [4, 7, 10], [5, 8, 11], [6, 9, 1], [7, 10, 1], [8, 11, 2], [9, 3, 11], [10, 1, 4], [11, 0, 6], [0, 3, 6]];
+  PC.forEach((p, i) => add({ id: 'u4-def-' + i, tag: '情境選答', ctx: p.d, prompt: 'What place is it?', options: [p.w, ...DIS4[i].map(j => PC[j].w)], answer: 0 }, 'U4'));
+  // Unit 4・看地圖：上下兩排店，中間是馬路。同一排旁邊是 next to，馬路對面是 across from
+  const at = w => PC.find(p => p.w === w);
+  const MAPS = [
+    { street: 'Park Street', top: ['convenience store', 'MRT station', 'tea shop'], bottom: ['library', 'science museum', 'bakery'], qs: [
+      ['Where is the MRT station?', "It's between the convenience store and the tea shop.", ["It's across from the library.", "It's next to the bakery.", "It's between the library and the bakery."]],
+      ['Is the tea shop across from the bakery?', 'Yes, it is.', ["No, it's not.", 'Yes, it does.', 'Yes, I did.']],
+      ['What is across from the library?', 'The convenience store.', ['The MRT station.', 'The science museum.', 'The tea shop.']]] },
+    { street: 'Green Street', top: ['hospital', 'post office', 'supermarket'], bottom: ['park', 'movie theater', 'bookstore'], qs: [
+      ['Is the post office next to the supermarket?', 'Yes, it is.', ["No, it's not.", 'Yes, it does.', "No, it's not. It's across from the supermarket."]],
+      ['Is the park next to the bookstore?', "No, it's not. It's next to the movie theater.", ['Yes, it is.', "No, it's not. It's next to the hospital.", "No, it doesn't. It's next to the movie theater."]],
+      ['Where is the movie theater?', "It's between the park and the bookstore.", ["It's across from the hospital.", "It's next to the supermarket.", "It's between the hospital and the supermarket."]]] },
+    { street: 'Happy Street', top: ['bakery', 'tea shop', 'convenience store'], bottom: ['science museum', 'MRT station', 'library'], qs: [
+      ['Where is the MRT station?', "It's across from the tea shop.", ["It's next to the bakery.", "It's across from the bakery.", "It's between the bakery and the convenience store."]],
+      ['Is the bakery next to the convenience store?', "No, it's not. It's next to the tea shop.", ['Yes, it is.', "No, it's not. It's next to the library.", "No, it's not. It's across from the library."]],
+      ['Where is the science museum?', "It's across from the bakery.", ["It's across from the tea shop.", "It's between the MRT station and the library.", "It's next to the convenience store."]]] }];
+  MAPS.forEach((m, k) => {
+    const scene = m.top.map(w => at(w).e).join(' ') + '\n━━━━━━\n' + m.bottom.map(w => at(w).e).join(' ');
+    const ctx = `The road in the middle is ${m.street}.\n` + [m.top, m.bottom].map(row => row.map(w => `${at(w).e} ${w}`).join(', ')).join('\n');
+    m.qs.forEach(([q, a, d], i) => add({ id: `u4-map-${k}-${i}`, tag: '看地圖選答', scene, ctx, prompt: q, options: [a, ...d], answer: 0,
+      explain: '同一排、緊鄰的是 next to；馬路對面正對的是 across from；兩家店中間的是 between … and …。' }, 'U4'));
+  });
+  [['The bakery is ___ to the park.', ['next', 'across', 'between', 'on'], 0, '在旁邊是 next to。'],
+   ['The library is across ___ the school.', ['from', 'to', 'of', 'at'], 0, '在對面是 across from。'],
+   ['The tea shop is between the bookstore ___ the bakery.', ['and', 'or', 'to', 'from'], 0, 'between A and B：在 A 和 B 中間。'],
+   ['The hospital is ___ Green Street.', ['on', 'at', 'in', 'to'], 0, '在某條街上，用 on。'],
+   ['Where ___ the MRT station?', ['is', 'are', 'do', 'did'], 0, 'the MRT station 是一個地方，用 is。'],
+   ['Is the park next to the library? No, it ___.', ["isn't", "doesn't", "didn't", "aren't"], 0, "Is 問，就用 isn't 答。"],
+   ['Is the post office across from the bakery? Yes, it ___.', ['is', 'does', 'did', 'was'], 0, 'Is 問，就用 is 答。'],
+   ["___ is the science museum? It's next to the park.", ['What', 'Where', 'Who', 'When'], 1, '問「在哪裡」用 Where。']]
+    .forEach(([s, o, a, e], i) => add({ id: 'u4-g-' + i, tag: '文法選擇', prompt: s, options: o, answer: a, explain: e }, 'U4'));
+  [['👧', "Lily: I'm hungry. I want some bread and cake.", 'Where can Lily go?', 'To the bakery.', ['To the post office.', 'To the hospital.', 'To the MRT station.']],
+   ['👦', "Ken: I'm thirsty. I want some bubble tea.", 'Where can Ken go?', 'To the tea shop.', ['To the library.', 'To the bookstore.', 'To the park.']],
+   ['👧', 'Amy: I want to send a letter to my grandma.', 'Where can Amy go?', 'To the post office.', ['To the bakery.', 'To the science museum.', 'To the tea shop.']],
+   ['👦', "Ben: It's midnight, and I need some milk.", 'Where can Ben go?', 'To the convenience store.', ['To the library.', 'To the bookstore.', 'To the science museum.']]]
+    .forEach(([pic, ctx, q, a, d], i) => add({ id: 'u4-need-' + i, tag: '情境選答', pic, ctx, prompt: q, options: [a, ...d], answer: 0 }, 'U4'));
+
+  // 發音（聽力）：y 的三種唸法，選項固定是 yellow、sky、baby
+  [['yard', 0], ['yolk', 0], ['young', 0], ['cry', 1], ['fly', 1], ['my', 1], ['puppy', 2], ['sunny', 2], ['city', 2]]
+    .forEach(([w, a]) => add({ id: 'ph-' + w, tag: '聽音辨字', audio: w, prompt: 'Which word has the same y sound?', options: ['yellow', 'sky', 'baby'], answer: a, fixed: true,
+      explain: [`y 在字的前面，跟 yellow、yes 一樣。`, `${w} 的 y 跟 sky、my 一樣。`, `${w} 的 y 跟 baby、sunny 一樣。`][a] }, '發音'));
+  // al、au、aw 唸起來一樣，所以干擾選項用唸法不同的字母組合
+  [['chalk', 'al'], ['talk', 'al'], ['walk', 'al'], ['August', 'Au'], ['launch', 'au'], ['sauce', 'au'], ['draw', 'aw'], ['lawn', 'aw'], ['strawberry', 'aw']]
+    .forEach(([w, pat]) => add({ id: 'ph-' + w.toLowerCase(), tag: '聽音辨字', audio: w, show: phonicsMask(w, pat), prompt: 'Which letters are missing?',
+      options: { al: ['al', 'ar', 'oa'], au: ['au', 'ou', 'oi'], Au: ['Au', 'Ou', 'Oi'], aw: ['aw', 'ow', 'ay'] }[pat], answer: 0,
+      explain: `${w} 的 ${pat}。al、au、aw 唸起來一樣（跟 walk 的 a 一樣），要記住拼法。` }, '發音'));
+  // 聽句子
+  [['I went to the forest last Sunday.', 'Where did she go last Sunday?', ['🌲 the forest', '🏞️ the river', '🏝️ the island']],
+   ['We went to the hot spring yesterday.', 'Where did they go yesterday?', ['♨️ the hot spring', '🏖️ the beach', '⛰️ the mountain']],
+   ['Ken went to the lake last weekend.', 'Where did Ken go last weekend?', ['🛶 the lake', '🏖️ the beach', '🌲 the forest']],
+   ['The tea shop is next to the bakery.', 'Where is the tea shop?', ['next to the bakery', 'across from the bakery', 'between the bakery and the park']],
+   ['The library is across from the hospital.', 'Where is the library?', ['across from the hospital', 'next to the hospital', 'between the hospital and the park']],
+   ['The MRT station is between the bookstore and the park.', 'Where is the MRT station?', ['between the bookstore and the park', 'next to the bookstore', 'across from the park']]]
+    .forEach(([a, q, o], i) => add({ id: 'ls-' + i, tag: '聽句子', audio: a, prompt: q, options: o, answer: 0 }, '聽力'));
+  [['Where did you go last weekend?', ['I went to the mountain.', 'Yes, I did.', "It's on Park Street."]],
+   ['Did you go to the beach yesterday?', ["No, I didn't. I went to the lake.", "No, it's not.", 'I go to the beach every day.']],
+   ['Where is the convenience store?', ["It's next to the park.", 'I went to the store.', 'Yes, it is.']],
+   ['Is the library across from the school?', ['Yes, it is.', 'Yes, I did.', 'I like the library.']],
+   ['What did you do at the river?', ['We went camping.', "It's next to the river.", 'Yes, we did.']]]
+    .forEach(([a, o], i) => add({ id: 'lq-' + i, tag: '聽問句選回答', audio: a, prompt: 'Choose the best answer.', options: o, answer: 0 }, '聽力'));
+  // 閱讀（True / False / Not mentioned）
+  const R1 = "Kevin: Where did you go last weekend, Emma?\nEmma: I went to the island with my family.\nKevin: Did you go swimming?\nEmma: No, I didn't. It was cold. We went biking.\nKevin: Sounds fun! I went to the hot spring with my grandpa.";
+  [['Emma went to the island last weekend.', 0], ['Emma went swimming.', 1], ["Kevin's grandpa likes hiking.", 2]]
+    .forEach(([s, a], i) => add({ id: 'rd1-' + i, tag: '閱讀判斷', passage: R1, prompt: s, options: TF, answer: a, explain: a === 2 ? '對話沒有提到爺爺喜歡什麼，選 Not mentioned。' : a === 1 ? "Emma 說 No, I didn't.，他們去騎腳踏車。" : '' }, '閱讀'));
+  const R2 = "Tourist: Excuse me. Where is the science museum?\nAmy: It's on Happy Street. It's across from the park.\nTourist: Is it next to the MRT station?\nAmy: Yes, it is. The MRT station is between the museum and a tea shop.\nTourist: Thank you!";
+  [['The science museum is on Happy Street.', 0], ['The science museum is next to the park.', 1], ['The tea shop is open twenty-four hours a day.', 2]]
+    .forEach(([s, a], i) => add({ id: 'rd2-' + i, tag: '閱讀判斷', passage: R2, prompt: s, options: TF, answer: a, explain: a === 2 ? '對話沒有提到飲料店幾點開，選 Not mentioned。' : a === 1 ? '博物館在公園的對面（across from），不是旁邊。' : '' }, '閱讀'));
+  const R3 = 'This is my neighborhood. My house is next to a bakery. Across from my house, there is a big park. The library is between the park and the post office. I go to the library every Saturday. I love my neighborhood!';
+  [['The bakery is next to the writer\'s house.', 0], ['The library is next to the bakery.', 1], ['The writer has a dog.', 2]]
+    .forEach(([s, a], i) => add({ id: 'rd3-' + i, tag: '閱讀判斷', passage: R3, prompt: s, options: TF, answer: a, explain: a === 2 ? '文章沒有提到狗，選 Not mentioned。' : a === 1 ? '圖書館在公園和郵局中間。' : '' }, '閱讀'));
+  // 句子重組
+  [['Where did you go last weekend?', 'A: ＿＿＿\nB: I went to the beach.', 'U3'], ['I went to the forest with my dad.', 'A: Where did you go yesterday?\nB: ＿＿＿', 'U3'],
+   ['Did you go to the hot spring?', 'A: ＿＿＿\nB: Yes, I did. The water was hot.', 'U3'], ['She went to the lake last Friday.', 'A: Where did Betty go last Friday?\nB: ＿＿＿', 'U3'],
+   ['Where is the post office?', "A: ＿＿＿\nB: It's next to the hospital.", 'U4'], ["It's across from the park.", 'A: Where is the library?\nB: ＿＿＿', 'U4'],
+   ['Is the bakery next to the bookstore?', "A: ＿＿＿\nB: No, it's not. It's next to the tea shop.", 'U4'], ["It's between the bakery and the bookstore.", 'A: Where is the tea shop?\nB: ＿＿＿', 'U4']]
+    .forEach(([a, ctx, u], i) => add({ id: 'od-' + i, type: 'order', tag: '句子重組', answer: a, ctx }, u));
+  // 聽寫拼字
+  ['beach', 'forest', 'island', 'river', 'mountain', 'museum', 'station', 'store', 'between', 'across']
+    .forEach((w, i) => add({ id: 'sp-' + w, type: 'spell', tag: '聽寫拼字', word: w, show: spellMask(w) }, i < 5 ? 'U3' : 'U4'));
+});
 /* ---------------- 英檢山・全民英檢初級 聽力＋閱讀（國小高年級・CEFR A2） ----------------
    照 2021 年起的新制題型和題數出兩回的量：聽力 4 部分 30 題 ×2、閱讀 3 部分 30 題 ×2。
    全部自命題，沒有用 LTTC 的考古題。fixed：選項照寫的順序，不打亂（看圖辨義的選項是唸出來的）。

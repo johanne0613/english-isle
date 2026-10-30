@@ -203,7 +203,7 @@ const LESSONS = {
      ========================================================== */
   ww7t1: {
     id: 'ww7t1', zone: 'castle', bankId: 'kh5a-1',
-    title: 'Test 1 Review', zh: '第一次段考：Unit 1–2',
+    title: 'Test 1 Review', zh: '五上・第一次段考：Unit 1–2',
     level: '康軒 Wonder World 7・五上', minutes: 75,
     format: '段考複習課（口說＋段考題型）',
     audience: '程度普通，在補學校進度、為國中打底。',
@@ -379,7 +379,7 @@ const LESSONS = {
 
   ww7t2: {
     id: 'ww7t2', zone: 'castle', bankId: 'kh5a-2',
-    title: 'Test 2 Review', zh: '第二次段考：Unit 3–4',
+    title: 'Test 2 Review', zh: '五上・第二次段考：Unit 3–4',
     level: '康軒 Wonder World 7・五上', minutes: 75,
     format: '段考複習課（口說＋段考題型）',
     audience: '程度普通，在補學校進度、為國中打底。',
@@ -550,6 +550,363 @@ const LESSONS = {
     materials: [
       { id: 'knsh', kind: '其他', title: '康軒數位高手（WW7 電子書）', url: 'https://digitalmaster.knsh.com.tw/', note: '老師帳號登入後，電子書 → 英語 WW7，對照課本頁碼。' },
       { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：五上康軒英語・期末考（第二次段考）', url: 'https://www.tcool.cc/mock/-501/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
+    ]
+  },
+
+  /* ==========================================================
+     這段在做什麼：段考城堡・康軒 Wonder World 9（新北市六上；英語從低年級開始的學校，六上用 WW9）
+     一個 Review 是一次段考範圍。題目用課本的單字和句型自己出，不照抄課文。
+     課本 Unit 3 的景點是台灣真實地名，我們不考地理：只用 beach、lake 這類單字，答案都寫在題目的英文裡。
+     ========================================================== */
+  ww9t1: {
+    id: 'ww9t1', zone: 'castle', bankId: 'kh6a-1',
+    title: 'Test 1 Review', zh: '六上・第一次段考：Unit 1–2',
+    level: '康軒 Wonder World 9・六上', minutes: 75,
+    format: '段考複習課（口說＋段考題型）',
+    audience: '六年級，程度普通，在補學校進度、為國中打底。',
+    scope: [
+      'Unit 1 First Day of School（課本 p.7–18）：6 個做家事、休閒的片語、What did you do yesterday? Did you …? 動詞加 -ed',
+      'Unit 2 A Great Day（p.19–30）：7 個作息片語、What time did you …? 不規則動詞 did、had、went',
+      'Review 1（p.31–34）',
+      '發音：-ed 的三種唸法、-ing、-ong'
+    ],
+    goals: [
+      '說出 13 個課本片語（過去式），並用它們造句',
+      '用 What did you do yesterday? 說昨天做了什麼',
+      '用 What time did you …? 說幾點做了什麼',
+      "用 Did you …? 問答，回答 Yes, I did. / No, I didn't.",
+      '分清楚現在式和過去式：every day / yesterday、walk / walked、go / went',
+      '熟悉段考的聽力、選擇、重組、拼字、閱讀題'
+    ],
+    assess: '口說題由電腦聽寫、給建議分數，老師可以改。選擇、重組、拼字題電腦直接改：第一次就對 3 顆糖，第二次對 2 顆，之後才對 1 顆。',
+    aiPoint: '語音辨識檢查句型有沒有說完整，例如 walked、went、he did。答錯幾次都會記下來，下課報告列出要加強的題型。',
+    ranks: [[90, 'Castle Champion 城堡冠軍'], [75, 'Brave Knight 勇敢騎士'], [60, 'Castle Guard 城堡守衛'], [0, 'Young Squire 見習騎士，繼續加油']],
+    stages: [
+      {
+        id: 'words', kind: 'word', title: 'Word Check', zh: '單字口說', minutes: 15,
+        skills: ['vocab', 'pron'],
+        intro: 'Say the words. Then make a sentence about yesterday.',
+        items: [
+          { id: 'cleaned', word: 'cleaned the room', alt: ['clean the room', 'cleaned my room', 'cleaned his room', 'cleaned her room'], pic: '🧹', pos: 'phrase', zh: '打掃房間', def: 'You made your room clean and tidy.', ex: 'I cleaned the room before dinner yesterday.' },
+          { id: 'cooked', word: 'cooked dinner', alt: ['cook dinner', 'cooks dinner'], pic: '🍳', pos: 'phrase', zh: '煮晚餐', def: 'You made the evening meal in the kitchen.', ex: 'Dad cooked dinner for us last night.' },
+          { id: 'recorder', word: 'played the recorder', alt: ['play the recorder', 'plays the recorder', 'played recorder'], pic: '🎶', pos: 'phrase', zh: '吹直笛', def: 'You made music with a long, thin instrument. You blew into it.', ex: 'Emma played the recorder in music class.' },
+          { id: 'visited', word: 'visited my grandparents', alt: ['visit my grandparents', 'visited his grandparents', 'visited her grandparents', 'visited our grandparents', 'visited grandparents'], pic: '👵', pos: 'phrase', zh: '拜訪祖父母', def: 'You went to see your grandpa and grandma.', ex: 'We visited my grandparents last Sunday.' },
+          { id: 'walked', word: 'walked the dog', alt: ['walk the dog', 'walks the dog', 'walked my dog', 'walked his dog', 'walked her dog'], pic: '🐕', pos: 'phrase', zh: '遛狗', def: 'You took your dog outside for a walk.', ex: 'Kevin walked the dog in the park this morning.' },
+          { id: 'watched', word: 'watched a movie', alt: ['watch a movie', 'watched the movie', 'watched movie'], pic: '🎬', pos: 'phrase', zh: '看電影', def: 'You sat down and saw a film.', ex: 'We watched a movie at home last Friday.' },
+          { id: 'dishes', word: 'did the dishes', alt: ['do the dishes', 'does the dishes', 'doing the dishes'], pic: '🍽️', pos: 'phrase', zh: '洗碗', def: 'You washed the plates and bowls after a meal.', ex: 'I did the dishes after dinner yesterday.' },
+          { id: 'laundry', word: 'did the laundry', alt: ['do the laundry', 'does the laundry', 'doing the laundry'], pic: '🧺', pos: 'phrase', zh: '洗衣服', def: 'You washed your dirty clothes.', ex: 'Mom did the laundry this morning.' },
+          { id: 'breakfast', word: 'had breakfast', alt: ['have breakfast', 'has breakfast', 'ate breakfast'], pic: '🥞', pos: 'phrase', zh: '吃早餐', def: 'You ate the first meal of the day.', ex: "I had breakfast at seven o'clock." },
+          { id: 'lunch', word: 'had lunch', alt: ['have lunch', 'has lunch', 'ate lunch'], pic: '🍱', pos: 'phrase', zh: '吃午餐', def: 'You ate the meal in the middle of the day.', ex: 'We had lunch at school at twelve.' },
+          { id: 'dinner', word: 'had dinner', alt: ['have dinner', 'has dinner', 'ate dinner'], pic: '🍲', pos: 'phrase', zh: '吃晚餐', def: 'You ate the meal in the evening.', ex: 'My family had dinner at a night market.' },
+          { id: 'shopping', word: 'went shopping', alt: ['go shopping', 'goes shopping'], pic: '🛍️', pos: 'phrase', zh: '去購物、逛街', def: 'You went to the stores to buy things.', ex: 'My sister went shopping last weekend.' },
+          { id: 'swimming', word: 'went swimming', alt: ['go swimming', 'goes swimming'], pic: '🏊', pos: 'phrase', zh: '去游泳', def: 'You went into the water and swam.', ex: 'Did you go swimming yesterday?' }
+        ]
+      },
+      {
+        id: 'talk', kind: 'question', title: 'Sentence Talk', zh: '句型問答', minutes: 15,
+        skills: ['grammar', 'fluency'],
+        intro: 'Read the card. Answer in a full sentence.',
+        items: [
+          { id: 't1', pic: '🙋', prompt: 'What did you do yesterday?', hint: 'I … yesterday.',
+            follow: '可以追問：Did you watch TV yesterday?',
+            expect: { minWords: 4, past: true } },
+          { id: 't2', pic: '👦', ctx: 'Ben: I walked the dog yesterday.', prompt: 'What did Ben do yesterday?', hint: 'He …',
+            follow: 'Ben 是男生，用 he；昨天的事，用過去式 walked。',
+            expect: { minWords: 4, groups: [{ any: ['he walked'], exact: true, miss: '說 He walked the dog.' }, { any: ['the dog', 'his dog'], miss: '說出 the dog' }],
+              avoid: [{ any: ['he walk the', 'he walks the'], tip: '昨天的事，walk 要加 -ed' }, { any: ['she walked'], tip: 'Ben 是男生，要用 he' }] } },
+          { id: 't3', pic: '👧', ctx: "Amy: I didn't watch TV last night. I played the recorder.", prompt: 'Did Amy watch TV last night?', hint: "No, she didn't. She …",
+            follow: "完整答法：No, she didn't. She played the recorder.",
+            expect: { minWords: 6, groups: [{ any: ['no'], miss: '先回答 No' }, { any: ['she didnt', 'she did not'], miss: "說 she didn't" }, { any: ['played the recorder'], exact: true, miss: '說出 Amy 做了什麼：played the recorder' }],
+              avoid: [{ any: ['she doesnt', 'she dont'], tip: "Did 問，要用 didn't 回答" }] } },
+          { id: 't4', pic: '👦', ctx: 'Tom: I cleaned my room this morning.', prompt: 'Did Tom clean his room this morning?', hint: 'Yes, he …',
+            follow: '簡答：Yes, he did.',
+            expect: { minWords: 3, groups: [{ any: ['yes'], miss: '回答 Yes' }, { any: ['he did'], miss: 'Did 問句，用 he did 回答' }],
+              avoid: [{ any: ['he does', 'he is'], tip: 'Did 問，就用 did 答' }] } },
+          { id: 't5', pic: '🍳', prompt: 'What time did you have breakfast this morning?', hint: 'I had breakfast at …',
+            follow: '追問：What did you have for breakfast?',
+            expect: { minWords: 5, groups: [{ any: ['had breakfast'], exact: true, miss: '用過去式 I had breakfast at …' }, { any: ['at'], miss: '時間前面加 at' }],
+              avoid: [{ any: ['i have breakfast'], tip: '今天早上已經過去了，have 要變 had' }] } },
+          { id: 't6', pic: '👧', ctx: "Mia's day yesterday: go shopping — 3:00", prompt: 'What time did Mia go shopping yesterday?', hint: 'She went shopping at …',
+            follow: 'Mia 是 she；昨天的事，go 要變 went。',
+            expect: { minWords: 5, groups: [{ any: ['she went shopping'], exact: true, miss: '說 She went shopping at …' }, { any: ['three'], miss: '說出時間 three' }],
+              avoid: [{ any: ['she go shopping', 'she goes shopping'], tip: '昨天的事，go 要變 went' }] } },
+          { id: 't7', pic: '👦', ctx: 'Ken: I did the dishes after dinner.', prompt: 'Did Ken do the laundry?', hint: "No, he didn't. He …",
+            follow: "完整答法：No, he didn't. He did the dishes.",
+            expect: { minWords: 6, groups: [{ any: ['no'], miss: '先回答 No' }, { any: ['he didnt', 'he did not'], miss: "說 he didn't" }, { any: ['did the dishes'], exact: true, miss: '說出 Ken 做了什麼：did the dishes' }],
+              avoid: [{ any: ['he do the dishes', 'he does the dishes'], tip: '過去的事，do 要變 did' }] } },
+          { id: 't8', pic: '🏊', prompt: 'Did you go swimming last weekend?', hint: "Yes, I did. / No, I didn't. I …",
+            follow: '答 No 的話，再說你做了什麼。',
+            expect: { minWords: 3, groups: [{ any: ['yes i did', 'no i didnt', 'no i did not'], miss: "用 Yes, I did. 或 No, I didn't. 回答" }] } },
+          { id: 't9', pic: '👦👧', ctx: 'Leo and Amy: We went swimming at four. Then we had dinner at six.', prompt: 'What time did Leo and Amy have dinner?', hint: 'They had dinner at …',
+            follow: '兩個人用 they；have 的過去式是 had。',
+            expect: { minWords: 5, groups: [{ any: ['they had dinner'], exact: true, miss: '說 They had dinner at …' }, { any: ['six'], miss: '說出時間 six' }],
+              avoid: [{ any: ['they have dinner'], tip: '過去的事，have 要變 had' }] } },
+          { id: 't10', pic: '📅', prompt: 'Tell me about your day yesterday. What did you do? What time?',
+            hint: 'I … at … Then I … at …',
+            follow: '進階題：至少說兩件事，用過去式，加上時間。',
+            expect: { minWords: 12, past: true, groups: [{ any: ['at'], miss: '加上時間 at …' }] } }
+        ]
+      },
+      {
+        id: 'role', kind: 'dialogue', title: 'Role Play', zh: '情境對話', minutes: 10,
+        skills: ['fluency', 'pron'],
+        intro: 'The teacher plays the other person. You answer.',
+        items: [
+          { id: 'monday', who: 'Emma', voice: 'classmate', pic: '🏫', mood: '星期一早上，同學 Emma 問你週末做了什麼。你週六遛狗、看電影；週日沒有打掃房間，去看爺爺奶奶。',
+            lines: [
+              { s: 'n', t: 'Good morning! What did you do last weekend?' },
+              { s: 's', t: 'I walked the dog and watched a movie.', expect: [['walked the dog'], ['watched a movie', 'watched']] },
+              { s: 'n', t: 'Cool! Did you clean your room on Sunday?' },
+              { s: 's', t: "No, I didn't. I visited my grandparents.", expect: [['no'], ['i didnt', 'i did not'], ['visited']] },
+              { s: 'n', t: 'Nice! I played the recorder all weekend.' },
+              { s: 's', t: 'Wow! Can you play a song for me?', expect: [['play'], ['song']] },
+              { s: 'n', t: 'Sure! Listen.' }
+            ] },
+          { id: 'dad', who: 'Dad', voice: 'dad', pic: '🏠', mood: '爸爸出差回家，問你昨天做了什麼。你 7:00 吃早餐、5:30 去游泳；晚餐後沒有洗碗，你洗了衣服。',
+            lines: [
+              { s: 'n', t: 'I missed you! What time did you have breakfast yesterday?' },
+              { s: 's', t: "I had breakfast at seven o'clock.", expect: [['had breakfast'], ['seven']] },
+              { s: 'n', t: 'Good. What did you do after school?' },
+              { s: 's', t: 'I went swimming at five thirty.', expect: [['went swimming'], ['five thirty']] },
+              { s: 'n', t: 'Did you do the dishes after dinner?' },
+              { s: 's', t: "No, I didn't. I did the laundry.", expect: [['no'], ['i didnt', 'i did not'], ['did the laundry']] },
+              { s: 'n', t: 'Thank you. You were a big help!' }
+            ] }
+        ]
+      },
+      {
+        id: 'listen', kind: 'choice', title: 'Listening', zh: '聽力題', minutes: 10,
+        skills: ['listening'],
+        intro: 'Press the play button. Listen and choose.',
+        items: [
+          { id: 'l1', tag: '聽音辨字', audio: 'rained', prompt: 'Which word has the same -ed sound?', options: ['played', 'cooked', 'visited'], answer: 0, explain: 'rained 的 -ed 唸 /d/，跟 played、listened 一樣。' },
+          { id: 'l2', tag: '聽音辨字', audio: 'helped', prompt: 'Which word has the same -ed sound?', options: ['played', 'cooked', 'visited'], answer: 1, explain: 'helped 的 -ed 唸 /t/，跟 cooked、watched 一樣。' },
+          { id: 'l3', tag: '聽音辨字', audio: 'shouted', prompt: 'Which word has the same -ed sound?', options: ['played', 'cooked', 'visited'], answer: 2, explain: '字的最後是 t 或 d，-ed 唸 /ɪd/，跟 visited、landed 一樣。' },
+          { id: 'l4', tag: '聽音辨字', audio: 'king', show: 'k _ _ _', prompt: 'Which letters are missing?', options: ['ong', 'ing', 'ang'], answer: 1, explain: 'king 的 ing 跟 ring、sing 一樣。' },
+          { id: 'l5', tag: '聽音辨字', audio: 'strong', show: 'str _ _ _', prompt: 'Which letters are missing?', options: ['ong', 'ing', 'ung'], answer: 0, explain: 'strong 的 ong 跟 long、wrong 一樣。' },
+          { id: 'l6', tag: '聽句子', audio: 'Kevin walked the dog yesterday.', prompt: 'What did Kevin do yesterday?', options: ['🎬 watched a movie', '🐕 walked the dog', '🧹 cleaned the room'], answer: 1 },
+          { id: 'l7', tag: '聽句子', audio: 'I had dinner at six thirty.', prompt: 'What time did she have dinner?', options: ['6:00', '7:30', '6:30'], answer: 2 },
+          { id: 'l8', tag: '聽問句選回答', audio: 'What did you do last night?', prompt: 'Choose the best answer.', options: ['I watched TV.', 'Yes, I did.', 'I watch TV every day.'], answer: 0, explain: '問 What did you do，用過去式回答。' },
+          { id: 'l9', tag: '聽問句選回答', audio: 'Did you go shopping yesterday?', prompt: 'Choose the best answer.', options: ['Yes, I do.', "No, I didn't.", 'I go shopping on Sundays.'], answer: 1, explain: "Did 開頭的問句，用 did / didn't 回答。" },
+          { id: 'l10', tag: '聽問句選回答', audio: 'What time did you go home?', prompt: 'Choose the best answer.', options: ['Yes, I did.', 'I go home every day.', 'I went home at five.'], answer: 2 }
+        ]
+      },
+      {
+        id: 'exam', kind: 'choice', title: 'Test Practice', zh: '段考題型', minutes: 15,
+        skills: ['grammar'],
+        intro: 'Choose, build, or spell. Just like the school test!',
+        items: [
+          { id: 'g1', tag: '文法選擇', prompt: 'I ___ the dog last night.', options: ['walk', 'walks', 'walked'], answer: 2, explain: 'last night 是過去，用 walked。' },
+          { id: 'g2', tag: '文法選擇', prompt: 'Emma ___ the recorder every day.', options: ['play', 'plays', 'played'], answer: 1, explain: 'every day 是每天的習慣，用現在式；Emma 是 she，加 s。' },
+          { id: 'g3', tag: '文法選擇', prompt: 'What ___ you do yesterday?', options: ['did', 'do', 'does'], answer: 0, explain: 'yesterday 是過去，用 did。' },
+          { id: 'g4', tag: '文法選擇', prompt: 'Did Ben visit his grandparents? No, he ___.', options: ["doesn't", "didn't", "isn't"], answer: 1, explain: "Did 問，就用 didn't 答。" },
+          { id: 'g5', tag: '文法選擇', prompt: 'We ___ shopping last Saturday.', options: ['go', 'goes', 'went'], answer: 2, explain: 'go 的過去式是 went。' },
+          { id: 'g6', tag: '文法選擇', prompt: 'My mom ___ the laundry this morning.', options: ['did', 'do', 'does'], answer: 0, explain: 'this morning 已經過去了，do 的過去式是 did。' },
+          { id: 'g7', tag: '文法選擇', prompt: 'What time did he ___ lunch?', options: ['has', 'have', 'had'], answer: 1, explain: 'did 後面的動詞用原形 have。' },
+          { id: 'o1', kind: 'order', tag: '句子重組', answer: 'What did you do yesterday?', zh: '你昨天做了什麼？', ctx: 'A: ＿＿＿\nB: I watched a movie with my dad.' },
+          { id: 'o2', kind: 'order', tag: '句子重組', answer: 'I cleaned the room last night.', zh: '我昨晚打掃了房間。', ctx: 'A: What did you do last night?\nB: ＿＿＿' },
+          { id: 'o3', kind: 'order', tag: '句子重組', answer: 'What time did you have lunch?', zh: '你幾點吃午餐？', ctx: 'A: ＿＿＿\nB: I had lunch at twelve thirty.' },
+          { id: 'o4', kind: 'order', tag: '句子重組', answer: 'She went shopping at three.', zh: '她三點去逛街。', ctx: 'A: What time did Mia go shopping?\nB: ＿＿＿' },
+          { id: 's1', kind: 'spell', tag: '聽寫拼字', word: 'cooked', pic: '🍳', zh: '煮（過去式）', show: 'c _ _ k _ d', skills: ['vocab'] },
+          { id: 's2', kind: 'spell', tag: '聽寫拼字', word: 'visited', pic: '👵', zh: '拜訪（過去式）', show: 'v _ s _ t _ d', skills: ['vocab'] },
+          { id: 's3', kind: 'spell', tag: '聽寫拼字', word: 'watched', pic: '🎬', zh: '看（過去式）', show: 'w _ t c h _ d', skills: ['vocab'] },
+          { id: 's4', kind: 'spell', tag: '聽寫拼字', word: 'dishes', pic: '🍽️', zh: '碗盤', show: 'd _ s h _ s', skills: ['vocab'] },
+          { id: 's5', kind: 'spell', tag: '聽寫拼字', word: 'laundry', pic: '🧺', zh: '要洗的衣服', show: 'l _ _ n d r y', skills: ['vocab'] }
+        ]
+      },
+      {
+        id: 'read', kind: 'choice', title: 'Reading', zh: '閱讀理解', minutes: 8,
+        skills: ['reading'],
+        intro: "Read Leo's diary. Then answer the questions.",
+        items: [
+          { id: 'r1', tag: '閱讀理解', passage: 'leo', prompt: 'What did Leo do after breakfast?', options: ['He walked the dog.', 'He went shopping.', 'He played the recorder.'], answer: 0 },
+          { id: 'r2', tag: '閱讀理解', passage: 'leo', prompt: 'What time did Leo and his mom go shopping?', options: ['At seven.', 'At ten.', 'At six thirty.'], answer: 1 },
+          { id: 'r3', tag: '閱讀理解', passage: 'leo', prompt: 'Did Leo watch TV in the afternoon?', options: ['Yes, he did.', "No, he doesn't.", "No, he didn't."], answer: 2 },
+          { id: 'r4', tag: '閱讀理解', passage: 'leo', prompt: 'Who cooked dinner?', options: ['Leo.', "Leo's dad.", "Leo's mom."], answer: 1 }
+        ]
+      }
+    ],
+    passages: {
+      leo: "Hi, I'm Leo. Last Saturday was a busy day. I had breakfast with my family at seven. After breakfast, I walked the dog in the park. At ten, Mom and I went shopping. We had lunch at a noodle shop. In the afternoon, I didn't watch TV. I cleaned my room and did the laundry. At six thirty, Dad cooked dinner for us. After dinner, I played the recorder. It was a great day!"
+    },
+    materials: [
+      { id: 'knsh', kind: '其他', title: '康軒數位高手（WW9 電子書）', url: 'https://digitalmaster.knsh.com.tw/', note: '老師帳號登入後，電子書 → 英語 WW9，對照課本頁碼。' },
+      { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：六上康軒英語・期中考（第一次段考）', url: 'https://www.tcool.cc/mock/-12/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
+    ]
+  },
+
+  ww9t2: {
+    id: 'ww9t2', zone: 'castle', bankId: 'kh6a-2',
+    title: 'Test 2 Review', zh: '六上・第二次段考：Unit 3–4',
+    level: '康軒 Wonder World 9・六上', minutes: 75,
+    format: '段考複習課（口說＋段考題型）',
+    audience: '六年級，程度普通，在補學校進度、為國中打底。',
+    scope: [
+      "Unit 3 Amy's Graduation Trip（課本 p.35–46）：7 個地方（beach、forest、island、lake、mountain、river、hot spring）、Where did you go …? Did you go to …?",
+      'Unit 4 A Small World（p.47–58）：4 個地點、3 個位置詞（next to、across from、between）、Where is the …? Is the … next to …?',
+      'Review 2（p.59–62）',
+      '發音：y 的三種唸法、al、au、aw'
+    ],
+    goals: [
+      '說出 14 個課本單字和片語，並用它們造句',
+      '用 Where did you go last weekend? 說去了哪裡',
+      "用 Did you go to …? 問答，回答 Yes, I did. / No, I didn't.",
+      '用 next to、across from、between 說地點在哪裡',
+      '分清楚 go / went、in the forest / on Park Street、between … and …',
+      '熟悉段考的聽力、選擇、重組、拼字、閱讀題'
+    ],
+    assess: '口說題由電腦聽寫、給建議分數，老師可以改。選擇、重組、拼字題電腦直接改：第一次就對 3 顆糖，第二次對 2 顆，之後才對 1 顆。',
+    aiPoint: "語音辨識檢查句型有沒有說完整，例如 went to、it's between … and …。答錯幾次都會記下來，下課報告列出要加強的題型。",
+    ranks: [[90, 'Castle Champion 城堡冠軍'], [75, 'Brave Knight 勇敢騎士'], [60, 'Castle Guard 城堡守衛'], [0, 'Young Squire 見習騎士，繼續加油']],
+    stages: [
+      {
+        id: 'words', kind: 'word', title: 'Word Check', zh: '單字口說', minutes: 15,
+        skills: ['vocab', 'pron'],
+        intro: 'Say the word. Then make a sentence with it.',
+        items: [
+          { id: 'beach', word: 'beach', pic: '🏖️', pos: 'noun', zh: '海灘', def: 'Land with sand next to the sea.', ex: 'We went to the beach last Saturday.' },
+          { id: 'forest', word: 'forest', pic: '🌲', pos: 'noun', zh: '森林', def: 'A big place with a lot of trees.', ex: 'Amy went hiking in the forest.' },
+          { id: 'island', word: 'island', pic: '🏝️', pos: 'noun', zh: '島', def: 'Land with water all around it.', ex: 'Did you go to the island by boat?' },
+          { id: 'lake', word: 'lake', pic: '🛶', pos: 'noun', zh: '湖', def: 'A lot of water with land all around it.', ex: 'We went biking around the lake.' },
+          { id: 'mountain', word: 'mountain', pic: '⛰️', pos: 'noun', zh: '山', def: 'A very high hill. It is hard to walk to the top.', ex: 'My dad and I went to the mountain last weekend.' },
+          { id: 'river', word: 'river', pic: '🏞️', pos: 'noun', zh: '河', def: 'Long water that moves across the land to the sea.', ex: 'We went camping by the river.' },
+          { id: 'hotspring', word: 'hot spring', alt: ['hot springs'], pic: '♨️', pos: 'noun', zh: '溫泉', def: 'Hot water that comes out of the ground.', ex: 'Grandpa went to the hot spring yesterday.' },
+          { id: 'store', word: 'convenience store', alt: ['convenience stores'], pic: '🏪', pos: 'noun', zh: '便利商店', def: 'A small store. It is open twenty-four hours a day.', ex: 'The convenience store is next to my school.' },
+          { id: 'mrt', word: 'MRT station', alt: ['mrt', 'm r t station', 'metro station', 'mrt stations'], pic: '🚇', pos: 'noun', zh: '捷運站', def: 'A place where you get on and off the MRT train.', ex: "Let's meet at the MRT station." },
+          { id: 'museum', word: 'science museum', alt: ['museum', 'science museums'], pic: '🦖', pos: 'noun', zh: '科學博物館', def: 'A place where you learn about dinosaurs, space, and robots.', ex: 'The science museum is across from the park.' },
+          { id: 'tea', word: 'tea shop', alt: ['tea shops', 'teashop'], pic: '🧋', pos: 'noun', zh: '飲料店', def: 'A shop that sells bubble tea and other drinks.', ex: 'Is the tea shop next to the bakery?' },
+          { id: 'across', word: 'across from', pic: '↔️', pos: 'phrase', zh: '在…的對面', def: 'On the other side of the street.', ex: 'The library is across from the park.' },
+          { id: 'between', word: 'between', pic: '🏠🏪🏠', pos: 'preposition', zh: '在…的中間', def: 'In the middle of two things.', ex: 'The tea shop is between the bakery and the bookstore.' },
+          { id: 'next', word: 'next to', pic: '👫', pos: 'phrase', zh: '在…的旁邊', def: 'Very close, right beside something.', ex: 'The MRT station is next to the convenience store.' }
+        ]
+      },
+      {
+        id: 'talk', kind: 'question', title: 'Sentence Talk', zh: '句型問答', minutes: 15,
+        skills: ['grammar', 'fluency'],
+        intro: 'Read the card. Answer in a full sentence.',
+        items: [
+          { id: 't1', pic: '🧳', prompt: 'Where did you go last weekend?', hint: 'I went to … last weekend.',
+            follow: '可以追問：What did you do there?',
+            expect: { minWords: 4, groups: [{ any: ['i went'], exact: true, miss: '用 I went to … 回答' }],
+              avoid: [{ any: ['i go to'], tip: 'last weekend 是過去，go 要變 went' }] } },
+          { id: 't2', pic: '👧', ctx: 'Lucy: I went to the beach last Sunday.', prompt: 'Where did Lucy go last Sunday?', hint: 'She went to …',
+            follow: 'Lucy 是女生，用 she；過去的事用 went。',
+            expect: { minWords: 5, groups: [{ any: ['she went'], exact: true, miss: '說 She went to …' }, { any: ['beach'], miss: '說出 the beach' }],
+              avoid: [{ any: ['he went'], tip: 'Lucy 是女生，要用 she' }, { any: ['she go to', 'she goes to'], tip: '過去的事，go 要變 went' }] } },
+          { id: 't3', pic: '👦', ctx: "Max: I didn't go to the lake. I went to the river.", prompt: 'Did Max go to the lake?', hint: "No, he didn't. He went to …",
+            follow: "完整答法：No, he didn't. He went to the river.",
+            expect: { minWords: 7, groups: [{ any: ['no'], miss: '先回答 No' }, { any: ['he didnt', 'he did not'], miss: "說 he didn't" }, { any: ['river'], miss: '說出 Max 去了哪裡：the river' }],
+              avoid: [{ any: ['he doesnt', 'he dont'], tip: "Did 問，要用 didn't 回答" }] } },
+          { id: 't4', pic: '👦👧', ctx: 'Ben and Amy: We went hiking in the forest yesterday.', prompt: 'Did Ben and Amy go to the forest yesterday?', hint: 'Yes, they …',
+            follow: '簡答：Yes, they did.',
+            expect: { minWords: 3, groups: [{ any: ['yes'], miss: '回答 Yes' }, { any: ['they did'], miss: '兩個人用 they did' }] } },
+          { id: 't5', pic: '🗺️', ctx: 'Park Street, from left to right:\n🏪 convenience store, 🚇 MRT station, 🧋 tea shop', prompt: 'Where is the MRT station?', hint: "It's between the … and the …",
+            follow: "完整答法：It's between the convenience store and the tea shop.",
+            expect: { minWords: 7, groups: [{ any: ['its between', 'it is between'], miss: "用 It's between … 回答" }, { any: ['convenience store'], miss: '說出 convenience store' }, { any: ['tea shop'], miss: '說出 tea shop' }] } },
+          { id: 't6', pic: '🗺️', ctx: 'Park Street, from left to right:\n🏪 convenience store, 🚇 MRT station, 🧋 tea shop', prompt: 'Is the tea shop next to the convenience store?', hint: "No, it's not. It's next to the …",
+            follow: "完整答法：No, it's not. It's next to the MRT station.",
+            expect: { minWords: 7, groups: [{ any: ['no'], miss: '先回答 No' }, { any: ['its not', 'it is not', 'it isnt'], miss: "說 it's not" }, { any: ['mrt station', 'station'], miss: '說出旁邊是 MRT station' }] } },
+          { id: 't7', pic: '🗺️', ctx: '📚 library\n━━━ Green Street ━━━\n🦖 science museum', prompt: 'Where is the library?', hint: "It's across from the …",
+            follow: '在馬路對面，用 across from。',
+            expect: { minWords: 5, groups: [{ any: ['across from'], miss: '用 across from 回答' }, { any: ['science museum', 'museum'], miss: '說出 science museum' }] } },
+          { id: 't8', pic: '🧋', ctx: 'Lily: My favorite tea shop is on Happy Street.', prompt: 'Where is the tea shop?', hint: "It's on …",
+            follow: '在某條街上，用 on。',
+            expect: { minWords: 4, groups: [{ any: ['its on', 'it is on'], miss: "用 It's on … 回答" }, { any: ['happy street'], miss: '說出 Happy Street' }] } },
+          { id: 't9', pic: '🏫', prompt: 'What is next to your school?', hint: 'The … is next to my school.',
+            follow: '追問：What is across from your school?',
+            expect: { minWords: 5, groups: [{ any: ['next to'], miss: '用 next to 說' }] } },
+          { id: 't10', pic: '🧳', prompt: 'Tell me about a trip. Where did you go? What did you do there?',
+            hint: 'Last …, I went to … I … there. It was …',
+            follow: '進階題：說去哪裡、做了什麼，用過去式。',
+            expect: { minWords: 12, past: true, groups: [{ any: ['went to'], miss: '說你去了哪裡：I went to …' }] } }
+        ]
+      },
+      {
+        id: 'role', kind: 'dialogue', title: 'Role Play', zh: '情境對話', minutes: 10,
+        skills: ['fluency', 'pron'],
+        intro: 'The teacher plays the other person. You answer.',
+        items: [
+          { id: 'uncle', who: 'Uncle Sam', voice: 'uncle', pic: '📱', mood: '住在美國的 Uncle Sam 打視訊電話。你週六去湖邊騎腳踏車；週日沒有去海邊，去了溫泉。',
+            lines: [
+              { s: 'n', t: 'Hi there! Where did you go last weekend?' },
+              { s: 's', t: 'I went to the lake last Saturday.', expect: [['went to'], ['lake']] },
+              { s: 'n', t: 'That sounds fun. What did you do there?' },
+              { s: 's', t: 'I went biking around the lake.', expect: [['went biking', 'biking'], ['lake']] },
+              { s: 'n', t: 'Cool! Did you go to the beach on Sunday?' },
+              { s: 's', t: "No, I didn't. I went to the hot spring.", expect: [['no'], ['i didnt', 'i did not'], ['hot spring']] },
+              { s: 'n', t: 'Lucky you! I miss Taiwan.' }
+            ] },
+          { id: 'tourist', who: 'A Tourist', voice: 'tourist', pic: '🧭', mood: '你在 Green Street。這一邊從左到右是 convenience store、MRT station、tea shop；對面是 science museum。外國遊客來問路。',
+            lines: [
+              { s: 'n', t: 'Excuse me. Where is the MRT station?' },
+              { s: 's', t: "It's on Green Street.", expect: [['its on', 'it is on'], ['green street']] },
+              { s: 'n', t: 'Is it next to the science museum?' },
+              { s: 's', t: "No, it's not. It's across from the science museum.", expect: [['no'], ['its not', 'it is not', 'it isnt'], ['across from']] },
+              { s: 'n', t: 'I see. Is it between the convenience store and the tea shop?' },
+              { s: 's', t: 'Yes, it is.', expect: [['yes'], ['it is']] },
+              { s: 'n', t: 'Thank you so much!' },
+              { s: 's', t: "You're welcome.", expect: [['welcome']] }
+            ] }
+        ]
+      },
+      {
+        id: 'listen', kind: 'choice', title: 'Listening', zh: '聽力題', minutes: 10,
+        skills: ['listening'],
+        intro: 'Press the play button. Listen and choose.',
+        items: [
+          { id: 'l1', tag: '聽音辨字', audio: 'yard', prompt: 'Which word has the same y sound?', options: ['yellow', 'sky', 'baby'], answer: 0, explain: 'y 在字的前面，唸起來跟 yellow、yes 一樣。' },
+          { id: 'l2', tag: '聽音辨字', audio: 'fly', prompt: 'Which word has the same y sound?', options: ['yellow', 'sky', 'baby'], answer: 1, explain: 'fly 的 y 跟 sky、my 一樣。' },
+          { id: 'l3', tag: '聽音辨字', audio: 'puppy', prompt: 'Which word has the same y sound?', options: ['yellow', 'sky', 'baby'], answer: 2, explain: 'puppy 的 y 跟 baby、sunny 一樣。' },
+          { id: 'l4', tag: '聽音辨字', audio: 'chalk', show: 'ch _ _ k', prompt: 'Which letters are missing?', options: ['ar', 'al', 'oa'], answer: 1, explain: 'chalk 的 al 跟 talk、walk 一樣。' },
+          { id: 'l5', tag: '聽音辨字', audio: 'draw', show: 'dr _ _', prompt: 'Which letters are missing?', options: ['aw', 'ay', 'ow'], answer: 0, explain: 'draw 的 aw 跟 lawn、saw 一樣。' },
+          { id: 'l6', tag: '聽句子', audio: 'We went to the island last Friday.', prompt: 'Where did they go last Friday?', options: ['⛰️ the mountain', '🏖️ the beach', '🏝️ the island'], answer: 2 },
+          { id: 'l7', tag: '聽句子', audio: 'The bakery is next to the post office.', prompt: 'Where is the bakery?', options: ['next to the post office', 'across from the post office', 'between the post office and the park'], answer: 0 },
+          { id: 'l8', tag: '聽問句選回答', audio: 'Where did you go yesterday?', prompt: 'Choose the best answer.', options: ['Yes, I did.', 'I went to the river.', "It's next to the river."], answer: 1 },
+          { id: 'l9', tag: '聽問句選回答', audio: 'Is the library across from the park?', prompt: 'Choose the best answer.', options: ['Yes, it is.', 'Yes, I did.', 'I went to the park.'], answer: 0, explain: 'Is 開頭的問句，用 it is / it\'s not 回答。' },
+          { id: 'l10', tag: '聽問句選回答', audio: 'Did you go to the hot spring last week?', prompt: 'Choose the best answer.', options: ["No, it's not.", 'I go there every week.', "No, I didn't."], answer: 2 }
+        ]
+      },
+      {
+        id: 'exam', kind: 'choice', title: 'Test Practice', zh: '段考題型', minutes: 15,
+        skills: ['grammar'],
+        intro: 'Choose, build, or spell. Just like the school test!',
+        items: [
+          { id: 'g1', tag: '文法選擇', prompt: 'Where ___ you go last weekend?', options: ['do', 'did', 'are'], answer: 1, explain: 'last weekend 是過去，用 did。' },
+          { id: 'g2', tag: '文法選擇', prompt: 'I ___ to the forest yesterday.', options: ['go', 'goes', 'went'], answer: 2, explain: 'yesterday 是過去，go 要變 went。' },
+          { id: 'g3', tag: '文法選擇', prompt: 'Did they go to the beach? Yes, they ___.', options: ['did', 'do', 'are'], answer: 0, explain: 'Did 問，就用 did 答。' },
+          { id: 'g4', tag: '文法選擇', prompt: 'The tea shop is ___ the bakery and the bookstore.', options: ['next to', 'between', 'across from'], answer: 1, explain: 'between A and B：在 A 和 B 的中間。' },
+          { id: 'g5', tag: '文法選擇', prompt: 'The park is across ___ the library.', options: ['to', 'of', 'from'], answer: 2, explain: '對面是 across from。' },
+          { id: 'g6', tag: '文法選擇', prompt: 'The MRT station is ___ Park Street.', options: ['on', 'in', 'at'], answer: 0, explain: '在某條街上，用 on。' },
+          { id: 'g7', tag: '文法選擇', prompt: 'Is the hospital next to the school? No, it ___.', options: ["didn't", "isn't", "doesn't"], answer: 1, explain: "Is 問，就用 it isn't / it's not 答。" },
+          { id: 'o1', kind: 'order', tag: '句子重組', answer: 'Where did you go last Sunday?', zh: '你上星期日去了哪裡？', ctx: 'A: ＿＿＿\nB: I went to the mountain with my dad.' },
+          { id: 'o2', kind: 'order', tag: '句子重組', answer: 'I went to the hot spring.', zh: '我去了溫泉。', ctx: 'A: Where did you go yesterday?\nB: ＿＿＿ The water was very warm.' },
+          { id: 'o3', kind: 'order', tag: '句子重組', answer: 'Is the bakery next to the bookstore?', zh: '麵包店在書店旁邊嗎？', ctx: "A: ＿＿＿\nB: Yes, it is. They are on Pink Street." },
+          { id: 'o4', kind: 'order', tag: '句子重組', answer: "It's across from the park.", zh: '它在公園對面。', ctx: 'A: Where is the library?\nB: ＿＿＿' },
+          { id: 's1', kind: 'spell', tag: '聽寫拼字', word: 'beach', pic: '🏖️', zh: '海灘', show: 'b _ _ c h', skills: ['vocab'] },
+          { id: 's2', kind: 'spell', tag: '聽寫拼字', word: 'forest', pic: '🌲', zh: '森林', show: 'f _ r _ s t', skills: ['vocab'] },
+          { id: 's3', kind: 'spell', tag: '聽寫拼字', word: 'river', pic: '🏞️', zh: '河', show: 'r _ v _ r', skills: ['vocab'] },
+          { id: 's4', kind: 'spell', tag: '聽寫拼字', word: 'station', pic: '🚇', zh: '車站', show: 's t _ t _ _ n', skills: ['vocab'] },
+          { id: 's5', kind: 'spell', tag: '聽寫拼字', word: 'between', pic: '🏠🏪🏠', zh: '在…中間', show: 'b _ t w _ _ n', skills: ['vocab'] }
+        ]
+      },
+      {
+        id: 'read', kind: 'choice', title: 'Reading', zh: '閱讀理解', minutes: 8,
+        skills: ['reading'],
+        intro: "Read Nora's post. Then answer the questions.",
+        items: [
+          { id: 'r1', tag: '閱讀理解', passage: 'nora', prompt: "Where did Nora's family go hiking?", options: ['On the island.', 'In the forest.', 'By the lake.'], answer: 1 },
+          { id: 'r2', tag: '閱讀理解', passage: 'nora', prompt: 'Did they go to the beach on Sunday?', options: ['Yes, they did.', "No, it's not.", "No, they didn't."], answer: 2 },
+          { id: 'r3', tag: '閱讀理解', passage: 'nora', prompt: "Why didn't they go to the beach on Sunday?", options: ['It was rainy.', 'It was hot.', 'They were tired.'], answer: 0 },
+          { id: 'r4', tag: '閱讀理解', passage: 'nora', prompt: 'Where is the science museum?', options: ['Next to the beach.', 'Between the forest and the river.', 'Across from their hotel.'], answer: 2 }
+        ]
+      }
+    ],
+    passages: {
+      nora: "Hi, I'm Nora. Last weekend, my family and I went on a trip. On Saturday, we went hiking in the forest. The trees were tall and green. We had lunch by the river. At night, we went to a hot spring. The water was very hot! On Sunday, it was rainy, so we didn't go to the beach. We went to the science museum. It's across from our hotel. I saw a big dinosaur there. It was a great trip!"
+    },
+    materials: [
+      { id: 'knsh', kind: '其他', title: '康軒數位高手（WW9 電子書）', url: 'https://digitalmaster.knsh.com.tw/', note: '老師帳號登入後，電子書 → 英語 WW9，對照課本頁碼。' },
+      { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：六上康軒英語・期末考（第二次段考）', url: 'https://www.tcool.cc/mock/-615/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
     ]
   },
 
@@ -729,8 +1086,8 @@ const ZONES = [
     desc: '跟著節日換主題，每個月一檔。這個月是萬聖節。', lessons: ['halloween'],
     plan: ['11 月 Thanksgiving 感恩節', '12 月 Christmas 聖誕節', '1–2 月 Lunar New Year 農曆新年'] },
   { id: 'castle', name: 'Exam Castle', zh: '段考城堡', x: 72, y: 70.2, open: true,
-    desc: '康軒 Wonder World 7 段考複習：課本單字、句型口說、段考題型。一個 Review 是一次段考範圍。', lessons: ['ww7t1', 'ww7t2'],
-    plan: ['下學期：Wonder World 8 第一、二次段考', '錯題本：把答錯的題目集中再練一次'] },
+    desc: '康軒 Wonder World 段考複習：課本單字、句型口說、段考題型。一個 Review 是一次段考範圍。六上用 WW9，五上用 WW7。', lessons: ['ww9t1', 'ww9t2', 'ww7t1', 'ww7t2'],
+    plan: ['下學期：五下 Wonder World 8、六下 Wonder World 10', '錯題本：把答錯的題目集中再練一次'] },
   { id: 'speaking', name: 'Speaking Bay', zh: '口說海灣', x: 24, y: 58.1, open: false,
     desc: '日常口說練習。', plan: ['情境角色扮演', 'Show and Tell 上台報告', '看圖說故事題庫'] },
   { id: 'writing', name: 'Writing Woods', zh: '寫作森林', x: 40, y: 32.3, open: false,
