@@ -5,6 +5,7 @@
 // 已經錄好的會跳過，新增課程後再跑一次，只會錄新的句子。金鑰只從環境變數讀，不會寫進任何檔案。
 // Gemini 額度用完時，剩下的句子自動改用微軟 Edge 的免費語音（edge-tts，不用金鑰、沒有每日上限）一句一句錄。
 // 只想用 edge-tts：node tools/make-audio.js --edge（安裝：uv tool install edge-tts）
+// 先錄急用的：node tools/make-audio.js --only=ww7t1,kh5a-1（只錄這幾堂課、這幾份題庫的句子，其他的不動）
 // edge-tts 錄的句子記在 audio/edge.json；下次用 Gemini 金鑰執行時，會自動換成 Gemini 版本（Gemini 的聲音比較自然）。
 const fs = require('fs');
 const path = require('path');
@@ -20,6 +21,7 @@ const MODELS = (process.env.TTS_MODELS || 'gemini-3.8-flash-tts,gemini-3.1-flash
 const BATCH = Number(process.env.TTS_BATCH || 10);
 const GAP_MS = Number(process.env.TTS_GAP_MS || 21000);
 const USE_EDGE = process.argv.includes('--edge');
+const ONLY = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
 const EDGE = process.env.EDGE_TTS || 'edge-tts';
 
 // 這段在做什麼：每個角色用哪個聲音、什麼語氣（寫成「導演筆記」，模型才不會把說明唸出來）
@@ -203,7 +205,8 @@ function recordAllEdge(items, manifest, manifestPath) {
   // 這段在做什麼：讀課程檔 lessons.js 和題庫 bank.js，拿到所有要唸的句子（不用開瀏覽器）
   if (!fs.existsSync(path.join(ROOT, 'lessons.js'))) { console.error('找不到 lessons.js。請切到 dashboard 分支再執行，錄好再把 audio 資料夾複製到 main。'); process.exit(1); }
   const bankFile = path.join(ROOT, 'bank.js');
-  const catalog = vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'lessons.js'), 'utf8') + '\n;' + (fs.existsSync(bankFile) ? fs.readFileSync(bankFile, 'utf8') : '') + '\n;speechCatalog();');
+  const lists = vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'lessons.js'), 'utf8') + '\n;' + (fs.existsSync(bankFile) ? fs.readFileSync(bankFile, 'utf8') : '') + '\n;({ all: speechCatalog(), only: ONLY.length ? speechCatalog(ONLY) : null });', { ONLY });
+  const allCatalog = lists.all, catalog = lists.only || lists.all;  // 清掉用不到的音檔時，一定要看全部的清單
 
   const manifestPath = path.join(OUT, 'manifest.json');
   const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : {};
@@ -253,10 +256,10 @@ function recordAllEdge(items, manifest, manifestPath) {
       recordAllEdge(rest, manifest, manifestPath);
     } else process.exitCode = 2;
   }
-  const valid = new Set(catalog.map(c => c.role + '|' + c.text));
+  const valid = new Set(allCatalog.map(c => c.role + '|' + c.text));
   Object.keys(manifest).forEach(k => { if (!valid.has(k)) delete manifest[k]; });
   [...edgeKeys].forEach(k => { if (!valid.has(k)) edgeKeys.delete(k); }); saveEdgeKeys();
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 1));
   fs.rmSync(TMP, { recursive: true, force: true });
-  console.log(`\n已錄好 ${Object.keys(manifest).length} / ${catalog.length} 句`);
+  console.log(`\n已錄好 ${allCatalog.filter(c => manifest[c.role + '|' + c.text]).length} / ${allCatalog.length} 句`);
 })();
