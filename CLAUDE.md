@@ -43,7 +43,7 @@
 - 金鑰不要貼在對話或寫進檔案，要用環境變數。可以在終端機用 `read -rs GEMINI_API_KEY` 讓使用者自己貼。
 - 一次錄很多句再依停頓切開，有時會切錯（一句被切成兩段、或混到下一句）。現在含兩個以上短句的句子會單獨錄；錄完最好用 whisper 轉文字比對一次。使用者 Mac 上有 `whisper-cli` 和 `~/whisper-models/ggml-large-v3-turbo.bin`。
 - 切錯的句子：從 `audio/manifest.json` 刪掉那一行和 mp3，再跑一次錄音程式。剩很少句時用 `TTS_BATCH=1` 一句一句錄最穩。
-- 聲音角色：`teacher`（老師）、`word`（唸單字）、情境對話的角色，還有英檢山用的 `examiner`（Flyers 考官，英國腔）、`narrator`（GEPT 聽力唸題目的旁白）、`duo`（GEPT 對話，一男一女）。
+- 聲音角色：`teacher`（老師）、`word`（唸單字）、情境對話的角色（WW9 加了 `classmate`、`dad`、`uncle`、`tourist`），還有英檢山用的 `examiner`（Flyers 考官，英國腔）、`narrator`（GEPT 聽力唸題目的旁白）、`duo`（GEPT 對話，一男一女）。
 - GEPT 聽力的 `audio` 格式：`M: …`、`W: …` 開頭的行是對話（Gemini 用兩個聲音一次錄）；最後一行 `Q: …` 是題目，用旁白另外錄，網站播完對話再接著播題目（`audioParts()` 在 `lessons.js`）。含換行或兩句以上的句子、對話都單獨錄。
 - whisper 比對的小程式沒有放進 repo：把音檔轉 16 kHz wav，用 `whisper-cli -m ~/whisper-models/ggml-large-v3-turbo.bin -l en -nt -np -f 檔案` 轉文字，跟 `manifest.json` 的原句比對字的重合率（對話要先拿掉 M: W: Q:）。
 - Gemini 額度用完時，剩下的句子會自動改用 edge-tts（微軟免費語音，不用金鑰、沒有每日上限）一句一句錄，音量會調到跟 Gemini 差不多。只想用 edge-tts：`node tools/make-audio.js --edge`。使用者 Mac 已用 `uv tool install edge-tts` 裝好。edge-tts 只當臨時替代：錄過的句子記在 `audio/edge.json`，下次用 Gemini 金鑰執行時會自動換成 Gemini。Gemini 每日額度在太平洋時間午夜重置（台灣 15:00，冬令時間 16:00）。
@@ -51,16 +51,29 @@
 ## 學生和課程
 
 - 新北市國小學生，課本是康軒 Wonder World。冊次看學校英語從幾年級開始：三年級才開始的學校六上用 WW7；新北這類從低年級開始的學校，五上用 WW7、六上用 WW9（使用者 2026-10-30 確認週五學生用 Book 9）。
-- 星期五 19:30–21:00，1 位學生：**六年級**（使用者 2026-10-30 更正），程度普通，要補學校進度、為國中打底。用「段考城堡」，課本 **WW9（六上）**。段考城堡現有的 WW7 是五上的內容，WW9 要另外做。
+- 星期五 19:30–21:00，1 位學生：**六年級**（使用者 2026-10-30 更正），程度普通，要補學校進度、為國中打底。用「段考城堡」，課本 **WW9（六上）**，2026-10-30 做好（在測試版）。段考城堡的 WW7 是五上的內容。
 - 星期日 14:00–16:00，雙胞胎分開上課：程度好，有上吉的堡，目標是增能和超前。之後的區域是英檢山（Cambridge Flyers、GEPT 初級）和閱讀燈塔。
 - 題目要用課本的單字和句型自己出，不照抄課文對話。
 - 出題原則（使用者 2026-10-27 定的）：每一題都要能從題目裡的英文找到答案。不考地理常識、不考背課本、不考中翻英。人物題給英文自我介紹再問 he / she；單字用英文描述；拼字用聽寫；句子重組給對話的另一半。
 
-## 段考城堡（2026-10-26 做好，2026-10-27 上正式版）
+## 段考城堡（WW7 五上 2026-10-27 上正式版；WW9 六上 2026-10-30 在測試版）
 
-- 語音全部錄好（182 句），全部是 Gemini。使用者比較過，Gemini 比 edge-tts 自然很多。
-- 一個 Review 是一次段考範圍（使用者確認）。WW7（新北五上）：第一次段考 Unit 1–2＋Review 1（課本 p.15–46），第二次段考 Unit 3–4＋Review 2（p.47–78）。中秋節單元（p.79）沒放進去。
-- 課程在 `lessons.js` 的 `ww7t1`、`ww7t2`，地圖上的區域 id 是 `castle`。
+- 地圖上的區域 id 是 `castle`。四堂課照這個順序排：`ww9t1`、`ww9t2`（六上）、`ww7t1`、`ww7t2`（五上）。課程卡標題的中文寫「六上・第一次段考」「五上・第一次段考」，`level` 寫冊次和年級，避免老師點錯。
+- 一個 Review 是一次段考範圍（使用者確認）。
+  - WW7（新北五上）：第一次段考 Unit 1–2＋Review 1（課本 p.15–46），第二次段考 Unit 3–4＋Review 2（p.47–78）。中秋節單元（p.79）沒放進去。語音 182 句全部是 Gemini。使用者比較過，Gemini 比 edge-tts 自然很多。
+  - WW9（新北六上，115 上）：第一次段考 Unit 1–2＋Review 1（p.7–34），第二次段考 Unit 3–4＋Review 2（p.35–62）。Culture & Festivals（p.63）、Task（p.68）沒放進去。
+- WW9 內容（2026-10-30 從康軒數位高手電子書讀的，只整理單字句型，題目自己出）：
+  - Unit 1 First Day of School：規則動詞過去式 -ed（cleaned the room、cooked dinner、played the recorder、visited my grandparents、walked the dog、watched a movie）、What did you do yesterday? Did you …? 發音：-ed 的三種唸法。
+  - Unit 2 A Great Day：did / had / went（did the dishes、did the laundry、had breakfast / lunch / dinner、went shopping / swimming）、What time did you …? 發音：-ing、-ong。
+  - Unit 3 Amy's Graduation Trip：beach、forest、island、lake、mountain、river、hot spring、Where did you go …? 發音：y 的三種唸法（yellow、sky、baby）。
+  - Unit 4 A Small World：convenience store、MRT station、science museum、tea shop、next to、across from、between、Where is the …? 發音：al、au、aw。
+- WW9 出題的做法（照出題原則）：
+  - 課本 Unit 3 的景點是台灣真實地名，不考地理：只用 beach、lake 這類單字，地點題的答案都寫在題目裡（行程表、對話）。
+  - 單字用英文描述考（例如 It's land with water all around it. → island）。干擾選項避開說法也通的地方（便利商店也能寄包裹、買雜誌，所以不跟 post office、bookstore 放在一起）。
+  - -ed、y 的發音題：選項固定是代表字（played / cooked / visited；yellow / sky / baby），問 Which word has the same … sound?（`fixed: true`）。
+  - al、au、aw 唸起來一樣，「缺哪些字母」的干擾選項要用唸法不同的組合（ar、oa、ou、oi、ow、ay），不然只靠聽分不出來。
+  - Unit 4 的地圖題（題型「看地圖選答」）：`scene` 用 emoji 排成上下兩排店、中間一條馬路，`ctx` 用英文寫每個 emoji 是什麼地方。同一排緊鄰是 next to，正對面是 across from。出新地圖題時要確認干擾選項沒有剛好也對的（例如中間那家店同時是 between 和 across from）。
+  - 句型題檢查過去式時，`groups` 要加 `exact: true`：比對會把 walk / walked 當成同一個字。
 - 每堂六關：單字口說、句型問答、情境對話、聽力題、段考題型（文法選擇、句子重組、看圖拼字）、閱讀理解。
 - 新題型 `choice`、`order`、`spell` 由電腦直接改：第一次答對 3 顆糖，第二次 2 顆，之後 1 顆。
 - 句型題可以設 `groups`（每組都要說到）和 `avoid`（常見錯誤，一字不差才算，例如 she have、he go home）。
@@ -73,7 +86,7 @@
 
 ## 段考刷題和題庫（2026-10-27 做好並上正式版）
 
-- 題庫在 `bank.js`，每份標年級、版本、冊次、第幾次段考：`kh5a-1`（第一次段考）、`kh5a-2`（第二次段考）。之後加國中、會考就再加一份。英檢的題庫 `gept-e1` 見「英檢山」。
+- 題庫在 `bank.js`，每份標年級、版本、冊次、第幾次段考：五上 WW7 `kh5a-1`、`kh5a-2`；六上 WW9 `kh6a-1`（136 題）、`kh6a-2`（122 題）。之後加國中、會考就再加一份。英檢的題庫 `gept-e1` 見「英檢山」。
 - 分頁名稱 2026-10-28 改成「刷題」（學生頁、後台都是）。每份題庫可以設 `drill` 決定按鈕叫什麼：沒設是「段考刷題」，英檢是「英檢刷題」。
 - 題目是自命題，用課本單字句型照模板產生，每題有 `source`。收進學校公開的真實考題時，`source` 寫學校＋學年＋段考，圖片換成我們的。
 - 學生：專屬連結 →「段考刷題」分頁。隨機刷題、錯題本（答錯放進來、答對拿掉）、老師指定的題目。
@@ -119,6 +132,7 @@
 
 1. Taffy 在正式版測試新版（2026-10-27 換上），修正回報的問題；週五 19:00 上課前要處理完，不行就 revert 換回舊版。
 2. 舊版存在老師電腦瀏覽器的上課紀錄：登入後台會出現「上傳到雲端」。
-3. 下學期：Wonder World 8 的段考城堡。
-4. 英檢山：使用者和 Taffy 在測試版試用 Flyers 口說、GEPT 刷題；沒問題、使用者說「可以換」再上正式版。語音先用 edge-tts 錄好，Gemini 額度有了就重錄（跑一次 make-audio 就會換掉 `audio/edge.json` 裡的句子），錄完用 whisper 比對。
-5. 接下來的區域：閱讀燈塔 → 口說海灣 → 寫作森林 → 會考區；11/8 前另外做節慶廣場的感恩節課。
+3. 段考城堡 WW9（六上）：2026-10-30 放上測試版，等使用者看過、說「可以換」，再在非上課時段換到正式版。語音還沒錄完前，沒錄到的句子會用電腦內建語音。
+4. 下學期：五下 Wonder World 8、六下 Wonder World 10 的段考城堡。
+5. 英檢山：使用者和 Taffy 在測試版試用 Flyers 口說、GEPT 刷題；沒問題、使用者說「可以換」再上正式版。語音先用 edge-tts 錄好，Gemini 額度有了就重錄（跑一次 make-audio 就會換掉 `audio/edge.json` 裡的句子），錄完用 whisper 比對。
+6. 接下來的區域：閱讀燈塔 → 口說海灣 → 寫作森林 → 會考區；11/8 前另外做節慶廣場的感恩節課。
