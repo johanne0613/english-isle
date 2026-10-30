@@ -32,10 +32,11 @@ function phonicsMask(word, pat) {
 const spellMask = w => [...w].map((c, i) => (i % 2 === 0 ? c : '_')).join(' ');
 const TF = ['True', 'False', 'Not mentioned'];
 
-/* ---------------- 五上（新北）・康軒 Wonder World 7・第一次段考（Unit 1–2＋Review 1） ---------------- */
+/* ---------------- 六上・康軒 Wonder World 7・第一次段考（Unit 1–2＋Review 1） ---------------- */
+/* 題庫代號 kh5a-1、kh5a-2 是一開始誤以為五上取的；學生的刷題紀錄用這個代號存，所以不改代號，只改顯示的年級 */
 addBank({
-  id: 'kh5a-1', title: '五上 第一次段考', sub: '康軒 Wonder World 7・Unit 1–2＋Review 1',
-  grade: 5, term: '上', publisher: '康軒', book: 'Wonder World 7', exam: 1, lessonId: 'ww7t1'
+  id: 'kh5a-1', title: '六上 WW7・第一次段考', sub: '康軒 Wonder World 7・Unit 1–2＋Review 1',
+  grade: 6, term: '上', publisher: '康軒', book: 'Wonder World 7', exam: 1, lessonId: 'ww7t1'
 }, add => {
   // 出題原則：每一題都要能從題目裡的英文找到答案。不考地理常識、不考背課本、不考中翻英。
   // 人物旁邊的 👦 👧 只是告訴學生是男生還是女生（用 he 還是 she）。
@@ -148,10 +149,10 @@ addBank({
     .forEach(([w, caps], i) => add({ id: 'sp-' + w.toLowerCase(), type: 'spell', tag: '聽寫拼字', word: w, caps: !!caps, show: spellMask(w) }, i < 5 ? 'U1' : 'U2'));
 });
 
-/* ---------------- 五上（新北）・康軒 Wonder World 7・第二次段考（Unit 3–4＋Review 2） ---------------- */
+/* ---------------- 六上・康軒 Wonder World 7・第二次段考（Unit 3–4＋Review 2） ---------------- */
 addBank({
-  id: 'kh5a-2', title: '五上 第二次段考', sub: '康軒 Wonder World 7・Unit 3–4＋Review 2',
-  grade: 5, term: '上', publisher: '康軒', book: 'Wonder World 7', exam: 2, lessonId: 'ww7t2'
+  id: 'kh5a-2', title: '六上 WW7・第二次段考', sub: '康軒 Wonder World 7・Unit 3–4＋Review 2',
+  grade: 6, term: '上', publisher: '康軒', book: 'Wonder World 7', exam: 2, lessonId: 'ww7t2'
 }, add => {
   const F = [
     { w: 'pizza', zh: '披薩', pic: '🍕' }, { w: 'rice', zh: '飯', pic: '🍚' }, { w: 'soup', zh: '湯', pic: '🍲' }, { w: 'steak', zh: '牛排', pic: '🥩' },
@@ -271,9 +272,9 @@ addBank({
     .forEach((w, i) => add({ id: 'sp-' + w, type: 'spell', tag: '聽寫拼字', word: w, show: spellMask(w) }, i < 5 ? 'U3' : 'U4'));
 });
 
-/* ---------------- 六上（新北）・康軒 Wonder World 9・第一次段考（Unit 1–2＋Review 1） ---------------- */
+/* ---------------- 六上・康軒 Wonder World 9・第一次段考（Unit 1–2＋Review 1） ---------------- */
 addBank({
-  id: 'kh6a-1', title: '六上 第一次段考', sub: '康軒 Wonder World 9・Unit 1–2＋Review 1',
+  id: 'kh6a-1', title: '六上 WW9・第一次段考', sub: '康軒 Wonder World 9・Unit 1–2＋Review 1',
   grade: 6, term: '上', publisher: '康軒', book: 'Wonder World 9', exam: 1, lessonId: 'ww9t1'
 }, add => {
   // Unit 1 是規則動詞過去式（加 -ed），Unit 2 是不規則的 did、had、went。
@@ -451,9 +452,9 @@ addBank({
     .forEach((w, i) => add({ id: 'sp-' + w, type: 'spell', tag: '聽寫拼字', word: w, show: spellMask(w) }, i < 5 ? 'U1' : 'U2'));
 });
 
-/* ---------------- 六上（新北）・康軒 Wonder World 9・第二次段考（Unit 3–4＋Review 2） ---------------- */
+/* ---------------- 六上・康軒 Wonder World 9・第二次段考（Unit 3–4＋Review 2） ---------------- */
 addBank({
-  id: 'kh6a-2', title: '六上 第二次段考', sub: '康軒 Wonder World 9・Unit 3–4＋Review 2',
+  id: 'kh6a-2', title: '六上 WW9・第二次段考', sub: '康軒 Wonder World 9・Unit 3–4＋Review 2',
   grade: 6, term: '上', publisher: '康軒', book: 'Wonder World 9', exam: 2, lessonId: 'ww9t2'
 }, add => {
   // 課本 Unit 3 的景點是台灣真實地名，我們不考地理：只用 beach、lake 這類單字，答案都寫在題目裡。
