@@ -1,4 +1,8 @@
 [
+ "classmate|Sure! Listen.",
+ "dad|Good. What did you do after school?",
+ "dad|I missed you! What time did you have breakfast yesterday?",
+ "dad|Thank you. You were a big help!",
  "duo|M: Did you enjoy the school trip yesterday?\nW: Yes! We saw many animals at the farm, and I fed the baby goats.",
  "duo|M: Excuse me. Is there a convenience store near here?\nW: Yes. Go straight and turn left at the bank. It's next to the park.",
  "duo|M: Hello, this is Peter. Can I speak to Amy?\nW: Sorry, she's taking a shower. Can she call you back?\nM: Sure. Thank you.",
@@ -32,6 +36,7 @@
  "teacher|I love Sundays. In the morning, I play basketball with my brother. In the afternoon, we help Dad in the garden. At night, our family watches a movie together.",
  "teacher|May I speak to Mr. Chen, please?",
  "teacher|My name is Sandy. Every morning, I walk my dog in the park. After that, I eat breakfast and take the bus to school.",
+ "teacher|Tell me about a trip. Where did you go? What did you do there?",
  "teacher|Tomorrow will be cloudy in the morning. In the afternoon, it will rain a lot, so take an umbrella with you.",
  "teacher|Welcome to Happy Zoo. The zoo opens at nine. You can watch the monkeys eat lunch at twelve and see the elephants take a bath at two.",
  "teacher|What is the woman doing?\nA. She is walking on the beach.\nB. She is swimming in the sea.\nC. She is fishing on a boat.",
@@ -39,5 +44,11 @@
  "teacher|What's the weather like?\nA. It's rainy, so the boy has an umbrella.\nB. It's sunny and very hot.\nC. It's snowing, and the boy is cold.",
  "teacher|What's wrong with the woman?\nA. She has a toothache.\nB. She is very hungry.\nC. She has a cold.",
  "teacher|When is the birthday party?\nA. It's on May second.\nB. It's on March second.\nC. It's on May third.",
- "teacher|Where is the man?\nA. He is in the bathroom.\nB. He is in the garden.\nC. He is in the kitchen."
+ "teacher|Where is the man?\nA. He is in the bathroom.\nB. He is in the garden.\nC. He is in the kitchen.",
+ "tourist|Excuse me. Where is the MRT station?",
+ "tourist|I see. Is it between the convenience store and the tea shop?",
+ "uncle|Cool! Did you go to the beach on Sunday?",
+ "uncle|Hi there! Where did you go last weekend?",
+ "uncle|Lucky you! I miss Taiwan.",
+ "uncle|That sounds fun. What did you do there?"
 ]
