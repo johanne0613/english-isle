@@ -197,14 +197,14 @@ const LESSONS = {
   },
 
   /* ==========================================================
-     這段在做什麼：段考城堡・康軒 Wonder World 7（六上，週五那位六年級學生用）
+     這段在做什麼：段考城堡・康軒 Wonder World 7（新北市五上；英語從低年級開始的學校，五上用 WW7、六上用 WW9）
      一個 Review 是一次段考範圍。題目用課本的單字和句型自己出，不照抄課文。
      段考題型：choice 選擇題（有 audio 就是聽力題）、order 句子重組、spell 看圖拼字
      ========================================================== */
   ww7t1: {
     id: 'ww7t1', zone: 'castle', bankId: 'kh5a-1',
     title: 'Test 1 Review', zh: '第一次段考：Unit 1–2',
-    level: '康軒 Wonder World 7・六上', minutes: 75,
+    level: '康軒 Wonder World 7・五上', minutes: 75,
     format: '段考複習課（口說＋段考題型）',
     audience: '程度普通，在補學校進度、為國中打底。',
     scope: [
@@ -373,14 +373,14 @@ const LESSONS = {
     },
     materials: [
       { id: 'knsh', kind: '其他', title: '康軒數位高手（WW7 電子書）', url: 'https://digitalmaster.knsh.com.tw/', note: '老師帳號登入後，電子書 → 英語 WW7，對照課本頁碼。' },
-      { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：六上康軒英語・期中考（第一次段考）', url: 'https://www.tcool.cc/mock/-12/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
+      { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：五上康軒英語・期中考（第一次段考）', url: 'https://www.tcool.cc/mock/-23/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
     ]
   },
 
   ww7t2: {
     id: 'ww7t2', zone: 'castle', bankId: 'kh5a-2',
     title: 'Test 2 Review', zh: '第二次段考：Unit 3–4',
-    level: '康軒 Wonder World 7・六上', minutes: 75,
+    level: '康軒 Wonder World 7・五上', minutes: 75,
     format: '段考複習課（口說＋段考題型）',
     audience: '程度普通，在補學校進度、為國中打底。',
     scope: [
@@ -549,7 +549,7 @@ const LESSONS = {
     },
     materials: [
       { id: 'knsh', kind: '其他', title: '康軒數位高手（WW7 電子書）', url: 'https://digitalmaster.knsh.com.tw/', note: '老師帳號登入後，電子書 → 英語 WW7，對照課本頁碼。' },
-      { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：六上康軒英語・期末考（第二次段考）', url: 'https://www.tcool.cc/mock/-615/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
+      { id: 'tcool', kind: '學習單', title: 'tcool 題庫網：五上康軒英語・期末考（第二次段考）', url: 'https://www.tcool.cc/mock/-501/', note: '各校考古題的線上刷題。第一次打開會有「確認不是機器人」的驗證。' }
     ]
   },
 
